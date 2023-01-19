@@ -1,0 +1,2090 @@
+/*
+* Resume template
+* Created by : Ahmed Essa
+* website : www.ahmedessa.net
+*/
+
+
+/* Table of Content
+==================================================
+	- Google fonts & font family -
+	- typography -
+	- General -
+    - Preloader -
+	- Header -
+    - home section -
+    - About section -
+    - experience section -
+    - projects section -
+    - Contact section -
+    - Responsive media queries -
+*/
+
+
+/* Google fonts & font family
+==================================================*/
+
+@import 'https://fonts.googleapis.com/css?family=Lato:100,100i,300,300i,400,400i,700,700i,900,900i|Open+Sans:300,300i,400,400i,600,600i,700,700i,800,800i|Playfair+Display:400,400i,700,700i,900,900i';
+
+/*
+font-family: 'Playfair Display', serif;
+font-family: 'Lato', sans-serif;
+font-family: 'Open Sans', sans-serif;
+*/
+
+
+/* typography
+==================================================*/
+
+h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 80px;
+    line-height: 70px;
+
+}
+
+.header-title {
+    color: rgb(255, 255, 255);
+    text-shadow: #000 2px 0 10px;
+}
+
+h4 {
+    font-family: 'Lato', sans-serif;
+    text-transform: capitalize;
+    letter-spacing: 2px;
+    position: relative;
+    color: #425BB5;
+    margin-left: 40px;
+    font-weight: 700;
+}
+
+h4:before {
+    position: absolute;
+    width: 30px;
+    left: -40px;
+    content: "";
+    display: block;
+    height: 2px;
+    background: #425BB5;
+    top: 9px;
+}
+
+
+/* General
+==================================================*/
+
+body {
+    font-family: 'Open Sans', sans-serif;
+    font-size: 14px;
+    line-height: 24px;
+}
+
+.size-50 {
+    font-size: 50px;
+    line-height: 50px
+}
+
+.h-50 {
+    height: 50px;
+}
+
+
+/* preloader
+==================================================*/
+
+#preloader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #fff;
+    z-index: 10000
+}
+
+#status,
+.preloader {
+    top: 50%;
+    left: 50%;
+    position: absolute
+}
+
+#status {
+    width: 100px;
+    height: 100px;
+    background-repeat: no-repeat;
+    background-position: center;
+    margin: -50px 0 0 -50px
+}
+
+.preloader {
+    height: 40px;
+    width: 40px;
+    margin-top: -20px;
+    margin-left: -20px
+}
+
+.preloader:before {
+    content: "";
+    display: block;
+    position: absolute;
+    left: -1px;
+    top: -1px;
+    height: 100%;
+    width: 100%;
+    -webkit-animation: rotation 1s linear infinite;
+    animation: rotation 1s linear infinite;
+    border: 2px solid #425BB5;
+    border-top: 2px solid transparent;
+    border-radius: 100%
+}
+
+.preloader>.icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    height: 25px;
+    width: 10.6px;
+    margin-top: -12.5px;
+    margin-left: -5.3px;
+    -webkit-animation: wink 1s ease-in-out infinite alternate;
+    animation: wink 1s ease-in-out infinite alternate
+}
+
+@media only screen and (min-width:768px) {
+    .preloader {
+        height: 60px;
+        width: 60px;
+        margin-top: -30px;
+        margin-left: -30px
+    }
+
+    .preloader:before {
+        left: -2px;
+        top: -2px;
+        border-width: 2px
+    }
+
+    .preloader>.icon {
+        height: 37.5px;
+        width: 15.9px;
+        margin-top: -18.75px;
+        margin-left: -7.95px
+    }
+}
+
+@media only screen and (min-width:1200px) {
+    .preloader {
+        height: 60px;
+        width: 60px;
+        margin-top: -30px;
+        margin-left: -30px
+    }
+
+    .preloader>.icon {
+        height: 50px;
+        width: 21.2px;
+        margin-top: -25px;
+        margin-left: -10.6px
+    }
+}
+
+@-webkit-keyframes rotation {
+    from {
+        -webkit-transform: rotate(0);
+        transform: rotate(0)
+    }
+
+    to {
+        -webkit-transform: rotate(359deg);
+        transform: rotate(359deg)
+    }
+}
+
+@keyframes rotation {
+    from {
+        -webkit-transform: rotate(0);
+        transform: rotate(0)
+    }
+
+    to {
+        -webkit-transform: rotate(359deg);
+        transform: rotate(359deg)
+    }
+}
+
+@-webkit-keyframes wink {
+    from {
+        opacity: 0
+    }
+
+    to {
+        opacity: 1
+    }
+}
+
+@keyframes wink {
+    from {
+        opacity: 0
+    }
+
+    to {
+        opacity: 1
+    }
+}
+
+
+/* Header
+==================================================*/
+
+header {
+    text-align: center;
+    -webkit-transition: all .5s;
+    transition: all .5s;
+    height: 65px;
+}
+
+nav ul {
+    display: inline-block;
+    padding-left: 0;
+    list-style: none;
+    padding: 20px;
+    margin-bottom: 0;
+    -webkit-transition: all .5s;
+    transition: all .5s;
+}
+
+nav li {
+    display: inline-block;
+    margin: 10px;
+}
+
+nav li a {
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: rgb(206, 236, 255);
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.bg-nav {
+    background: #fff;
+    border-bottom: 1px solid #f3f3f3
+}
+
+.bg-nav ul {
+    padding: 10px;
+}
+
+a:focus {
+    color: #444;
+    text-decoration: none;
+}
+
+a:hover {
+    color: #425BB5;
+    text-decoration: none;
+}
+
+a.active {
+    color: #425BB5;
+}
+
+
+/* home section
+==================================================*/
+
+#home {
+    background: linear-gradient(to left, rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 1)), url(https://i.imgur.com/FgqnSHQ.jpg);
+    background-size: cover;
+    height: 100vh;
+}
+
+.table-cell {
+    display: table-cell;
+    vertical-align: middle;
+}
+
+.disply-table {
+    display: table;
+    height: 100vh;
+}
+
+
+/* about section
+==================================================*/
+
+#about,
+#iskanmagar,
+#photographer,
+#imposter,
+#get_here,
+#writer,
+#poetry,
+#philosophy {
+    padding: 100px 0;
+}
+
+.about-img-div img {
+    margin: 0 auto;
+}
+
+.about-border {
+    border: 10px solid #425BB5;
+
+}
+.about-border-bot {
+    bottom: 40px;
+}
+.about-border-top {
+    top: 40px;
+}
+
+.about-border {
+    position: absolute;
+    width: 400px;
+    height: 400px;
+    /* top: 40px; */
+    left: 50px;
+    z-index: 1
+}
+
+
+/* experience section
+==================================================*/
+/* #get_here, #publications, #talks {
+    padding: 100px 0;
+} */
+#certificates,
+#publications,
+#talks,
+#experience,
+#volunteering,
+#education,
+#projects {
+    padding: 100px 0;
+    background: #f3f3f3
+}
+
+.experience-row {
+    padding: 20px 0;
+    border-bottom: 1px solid #ddd;
+}
+
+.experience-row h3 {
+    font-family: 'Lato', sans-serif;
+    text-transform: capitalize;
+    letter-spacing: 2px;
+    color: #425BB5;
+    font-size: 16px;
+    font-weight: bold
+}
+
+.experience-row p {
+    color: #888;
+    margin-top: 20px;
+    font-size: 15px;
+}
+
+.experience-row .date {
+    color: #000;
+    font-size: 17px;
+}
+
+.timeline {
+    padding-left: 0;
+    list-style: none;
+    position: relative;
+}
+
+.timeline:before {
+    background-color: black;
+    content: '';
+    margin-left: -1px;
+    position: absolute;
+    top: 0;
+    left: 2em;
+    width: 2px;
+    height: 100%;
+}
+
+.timeline-event {
+    position: relative;
+}
+
+.timeline-event:hover .timeline-event-icon {
+    -webkit-transform: rotate(-45deg);
+    transform: rotate(-45deg);
+    background-color: #425BB5;
+}
+
+.timeline-event:hover .timeline-event-thumbnail {
+    box-shadow: inset 40em 0 0 0 #425BB5;
+}
+
+.timeline-event-copy {
+    padding: 2em;
+    position: relative;
+    top: -1.875em;
+    left: 4em;
+    width: 100%;
+}
+
+.timeline-event-copy h3 {
+    font-size: 1.75em;
+}
+
+.timeline-event-copy h4 {
+    font-size: 1.2em;
+    margin-bottom: 1.2em;
+}
+
+.timeline-event-copy strong {
+    font-weight: 700;
+}
+
+.timeline-event-copy p:not(.timeline-event-thumbnail) {
+    padding-bottom: 1.2em;
+}
+
+.timeline-event-icon {
+    -webkit-transition: -webkit-transform 0.2s ease-in;
+    transition: -webkit-transform 0.2s ease-in;
+    transition: transform 0.2s ease-in;
+    transition: transform 0.2s ease-in, -webkit-transform 0.2s ease-in;
+    -webkit-transform: rotate(45deg);
+    transform: rotate(45deg);
+    background-color: #425BB5;
+    outline: 10px solid #f3f3f3;
+    display: block;
+    margin: 0.5em 0.5em 0.5em -0.5em;
+    position: absolute;
+    top: 0;
+    left: 2em;
+    width: 1em;
+    height: 1em;
+}
+
+.timeline-event-thumbnail {
+    -moz-transition: box-shadow 0.5s ease-in 0.1s;
+    -o-transition: box-shadow 0.5s ease-in 0.1s;
+    -webkit-transition: box-shadow 0.5s ease-in;
+    -webkit-transition-delay: 0.1s;
+    -webkit-transition: box-shadow 0.5s ease-in 0.1s;
+    transition: box-shadow 0.5s ease-in 0.1s;
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+    background-color: black;
+    box-shadow: inset 0 0 0 0em #425BB5;
+    display: inline-block;
+    margin-bottom: 1.2em;
+    padding: 0.25em 1em 0.2em 1em;
+}
+
+
+/* projects section
+==================================================*/
+
+#projects {
+    padding: 100px 0;
+}
+
+.portfolio .categories-grid span {
+    font-size: 30px;
+    margin-bottom: 30px;
+    display: inline-block;
+}
+
+.portfolio .categories-grid .categories ul li {
+    list-style: none;
+    margin: 20px 0;
+}
+
+.portfolio .categories-grid .categories ul li a {
+    display: inline-block;
+    color: #60606e;
+    padding: 0 10px;
+    margin: 0 14px;
+    -webkit-transition: all .2s ease-in-out .2s;
+    transition: all .2s ease-in-out .2s;
+}
+
+.portfolio .categories-grid .categories ul li a:hover,
+.portfolio .categories-grid .categories ul li a:focus {
+    text-decoration: none;
+}
+
+.portfolio .categories-grid .categories ul li a.active {
+    background-color: #425BB5;
+    padding: 0px 20px;
+    color: white;
+    text-decoration: none;
+}
+
+.portfolio_filter {
+    padding-left: 0;
+}
+
+.portfolio_item {
+    position: relative;
+    overflow: hidden;
+    display: block;
+    margin-bottom: 30px;
+}
+
+.portfolio_item .portfolio_item_hover {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    height: 100%;
+    width: 100%;
+    background-color: #425BB5;
+    -webkit-transform: translateY(100%);
+    transform: translateY(100%);
+    opacity: 0;
+    -webkit-transition: all .2s ease-in-out;
+    transition: all .2s ease-in-out;
+    color: #333;
+}
+
+.portfolio_item .portfolio_item_hover .item_info {
+    text-align: center;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    -webkit-transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%);
+    padding: 10px;
+    width: 100%;
+    font-weight: bold;
+}
+
+.portfolio_item .portfolio_item_hover .item_info span {
+    display: block;
+    color: #fff;
+    font-size: 18px;
+    -webkit-transform: translateY(-100px);
+    transform: translateY(-100px);
+    -webkit-transition: all .3s ease-in-out .3s;
+    transition: all .3s ease-in-out .3s;
+    opacity: 0;
+}
+
+.portfolio_item .portfolio_item_hover .item_info em {
+    font-style: normal;
+    display: inline-block;
+    background-color: #425BB5;
+    padding: 5px 20px;
+    color: #fff;
+    margin-top: 10px;
+    -webkit-transform: translateY(100px);
+    transform: translateY(100px);
+    -webkit-transition: all .3s ease-in-out .3s;
+    transition: all .3s ease-in-out .3s;
+    opacity: 0;
+    font-size: 10px;
+    letter-spacing: 2px;
+}
+
+.portfolio_item:hover .portfolio_item_hover {
+    opacity: 1;
+    -webkit-transform: translateX(0);
+    transform: translateX(0);
+}
+
+.portfolio_item:hover .item_info em,
+.portfolio_item:hover .item_info span {
+    opacity: 1;
+    -webkit-transform: translateX(0);
+    transform: translateX(0);
+}
+
+.portfolio .categories-grid .categories ul li {
+    float: left;
+}
+
+.portfolio .categories-grid .categories ul li a {
+    padding: 0 10px;
+    -webkit-transition: all .2s ease-in-out .2s;
+    transition: all .2s ease-in-out .2s;
+}
+
+.portfolio_filter {
+    padding-left: 0;
+    display: inline-block;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.portfolio_item img {
+    -webkit-filter: grayscale(100%);
+    filter: grayscale(100%);
+}
+
+.portfolio-padding {
+    padding: 50px 0;
+}
+
+.portfolio-inner {
+    padding-bottom: 0 !important;
+    padding-top: 55px;
+}
+
+.modal-content {
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0);
+    border: none;
+}
+
+.popup-modal {
+    background: #fff;
+}
+
+.close-popup-modal {
+    float: right;
+    margin: 20px;
+    font-size: 22px;
+    opacity: 0;
+    cursor: pointer;
+    -webkit-transition: all .3s;
+    transition: all .3s;
+    -webkit-transition-delay: .6s;
+    transition-delay: .6s;
+    position: fixed;
+    z-index: 100000;
+    right: 14px;
+}
+
+.animatedModal-on .close-popup-modal {
+    opacity: 1;
+    
+}
+
+.modal-content h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 40px;
+    line-height: 50px;
+}
+
+
+/* contact
+==================================================*/
+
+#contact {
+    padding: 100px 0;
+    background: #f3f3f3
+}
+
+#contact-form input,
+#contact-form textarea {
+    height: 50px;
+    margin-bottom: 10px;
+    border-radius: 0;
+}
+
+#contact-form label {
+    display: block;
+    margin-bottom: .2em;
+    font-size: 13px;
+    line-height: 13px;
+    font-size: 1.3rem;
+    line-height: 1.3rem;
+    color: #000;
+}
+
+#contact-form label.error {
+    margin-top: 10px;
+    margin-bottom: 1em;
+    font-size: 12px;
+    line-height: 12px;
+    font-size: 1.2rem;
+    line-height: 1.2rem;
+    color: #D33E43;
+    margin-left: 10px
+}
+
+#contact-form input[type="text"].error,
+#contact-form input[type="password"].error,
+#contact-form input[type="date"].error,
+#contact-form input[type="datetime"].error,
+#contact-form input[type="datetime-local"].error,
+#contact-form input[type="month"].error,
+#contact-form input[type="week"].error,
+#contact-form input[type="email"].error,
+#contact-form input[type="number"].error,
+#contact-form input[type="search"].error,
+#contact-form input[type="tel"].error,
+#contact-form input[type="time"].error,
+#contact-form input[type="url"].error,
+#contact-form textarea.error {
+    border-color: #D33E43
+}
+
+textarea {
+    resize: none;
+}
+
+fieldset {
+    border: 0px;
+    margin: 0;
+    padding: 0
+}
+
+.required {
+    color: #e9266d
+}
+
+#success,
+#error {
+    display: none
+}
+
+#success p,
+#error p {
+    display: block;
+}
+
+#success p {
+    color: #425BB5;
+    font-size: 15px;
+    text-align: center;
+    padding: 10px;
+    border: 2px solid #425BB5;
+    margin-top: 10px;
+}
+
+#error p {
+    color: #D33E43;
+    font-size: 15px;
+    text-align: center;
+    padding: 10px;
+    border: 2px solid #D33E43;
+    margin-top: 10px;
+}
+
+#submit {
+    background-color: #425BB5;
+    color: #fff;
+    padding: 10px 40px;
+    border-radius: 0;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-weight: bold;
+    width: 100%;
+}
+
+.social {
+    padding-left: 0;
+    list-style: none;
+    margin-top: 20px;
+}
+
+.social li {
+    float: left;
+}
+
+.social li a {
+    color: #333;
+    font-size: 35px;
+    margin-right: 15px;
+    transition: all .3s;
+    -webkit-transition: all .3s;
+}
+
+.social li a:hover {
+    color: #425BB5;
+}
+
+
+/* Responsive media queries
+==================================================*/
+
+@media (max-width: 991px) {
+    .portfolio .categories-grid .categories ul li a {
+        padding: 0 2px;
+    }
+}
+
+@media (max-width: 768px) {
+    .timeline-event-copy {
+        width: 90%;
+        left: 2em;
+    }
+}
+
+@media (max-width: 500px) {
+    h1 {
+        font-family: 'Playfair Display', serif;
+        font-size: 50px;
+        line-height: 50px;
+    }
+
+    #home,
+    .disply-table {
+        height: 600px;
+    }
+
+    .about-border {
+        width: 265px;
+    }
+
+    .portfolio .categories-grid .categories ul li {
+        list-style: none;
+        margin: 10px 0;
+    }
+}
+
+@media (max-width: 420px) {
+    nav li {
+        margin: 6px;
+    }
+
+    nav li a {
+        font-size: 10px;
+    }
+}
+
+/* Additional */
+
+
+
+
+
+/* ############################################################################ */
+.arrow-left {
+    width: 150px;
+    height: 150px;
+    border: 2px solid #333;
+    border-left: 0;
+    border-top: 0;
+
+    transform: rotate(135deg);
+}
+
+
+.neuron {
+    fill: #3fa9f5;
+}
+
+.input {
+    fill: #3fd7f5;
+}
+
+.output {
+    fill: #3f7cf5;
+}
+
+.axon {
+    fill: none;
+    stroke: #3fa9f5;
+    stroke-width: 12;
+}
+
+
+
+/* Poem */
+@-webkit-keyframes beam-blink {
+	75% {
+		border-color: transparent;
+	}
+}
+
+@keyframes beam-blink {
+	75% {
+		border-color: transparent;
+	}
+}
+
+* {
+	-webkit-backface-visibility: hidden;
+	backface-visibility: hidden;
+}
+
+html,
+body {
+	height: 100%;
+}
+
+.poem {
+	background-repeat: repeat-y;
+	background-position: center center;
+	background-size: cover, 100% 3px;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+.poem::after {
+	content: "​";
+	-webkit-animation: typed 20.12s linear 1s infinite, beam-blink 1s infinite;
+	animation: typed 20.12s linear 1s infinite, beam-blink 1s infinite;
+}
+
+@media (max-width: 575px) {
+	.poem::after {
+		text-align: center;
+
+	}
+}
+
+.poem::before {
+	content: "";
+	width: 100%;
+	color: #fff;
+	letter-spacing: 0.7px;
+	white-space: pre-wrap;
+}
+
+@media (max-width: 575px) {
+	.poem::before {
+		content: "";
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* Poem */
+@charset "UTF-8";
+@-webkit-keyframes typed {
+  /* string 1, char 1 */
+  0%, 0.3636973012% {
+    content: "M";
+  }
+  /* string 1, char 2 */
+  0.3646973012%, 0.7283946025% {
+    content: "ML";
+  }
+  /* string 1, char 3 */
+  0.7293946025%, 1.0930919037% {
+    content: "ML ";
+  }
+  /* string 1, char 4 */
+  1.0940919037%, 1.457789205% {
+    content: "ML R";
+  }
+  /* string 1, char 5 */
+  1.458789205%, 1.8224865062% {
+    content: "ML Re";
+  }
+  /* string 1, char 6 */
+  1.8234865062%, 2.1871838074% {
+    content: "ML Res";
+  }
+  /* string 1, char 7 */
+  2.1881838074%, 2.5518811087% {
+    content: "ML Rese";
+  }
+  /* string 1, char 8 */
+  2.5528811087%, 2.9165784099% {
+    content: "ML Resea";
+  }
+  /* string 1, char 9 */
+  2.9175784099%, 3.2812757112% {
+    content: "ML Resear";
+  }
+  /* string 1, char 10 */
+  3.2822757112%, 3.6459730124% {
+    content: "ML Researc";
+  }
+  /* string 1, char 11 */
+  3.6469730124%, 4.0106703136% {
+    content: "ML Research";
+  }
+  /* string 1, char 12 */
+  4.0116703136%, 4.3753676149% {
+    content: "ML Researche";
+  }
+  /* string 1, char 13 */
+  4.3763676149%, 4.7400649161% {
+    content: "ML Researcher";
+  }
+  /* string 1, char 14 */
+  4.7410649161%, 12.6904660832% {
+    content: "ML Researcher!";
+  }
+  /* string 1, char 15 */
+  12.6914660832%, 12.9822239241% {
+    content: "ML Researcher";
+  }
+  /* string 1, char 16 */
+  12.9832239241%, 13.2739817651% {
+    content: "ML Researche";
+  }
+  /* string 1, char 17 */
+  13.2749817651%, 13.5657396061% {
+    content: "ML Research";
+  }
+  /* string 1, char 18 */
+  13.5667396061%, 13.8574974471% {
+    content: "ML Researc";
+  }
+  /* string 1, char 19 */
+  13.8584974471%, 14.1492552881% {
+    content: "ML Resear";
+  }
+  /* string 1, char 20 */
+  14.1502552881%, 14.4410131291% {
+    content: "ML Resea";
+  }
+  /* string 1, char 21 */
+  14.4420131291%, 14.7327709701% {
+    content: "ML Rese";
+  }
+  /* string 1, char 22 */
+  14.7337709701%, 15.0245288111% {
+    content: "ML Res";
+  }
+  /* string 1, char 23 */
+  15.0255288111%, 15.3162866521% {
+    content: "ML Re";
+  }
+  /* string 1, char 24 */
+  15.3172866521%, 15.6080444931% {
+    content: "ML R";
+  }
+  /* string 1, char 25 */
+  15.6090444931%, 15.8998023341% {
+    content: "ML ";
+  }
+  /* string 1, char 26 */
+  15.9008023341%, 16.1915601751% {
+    content: "ML";
+  }
+  /* string 1, char 27 */
+  16.1925601751%, 16.483318016% {
+    content: "M";
+  }
+  /* string 1, char 28 */
+  16.484318016%, 20.1302910284% {
+    content: "​";
+  }
+  /* string 2, char 1 */
+  20.1312910284%, 20.4949883297% {
+    content: "D";
+  }
+  /* string 2, char 2 */
+  20.4959883297%, 20.8596856309% {
+    content: "Da";
+  }
+  /* string 2, char 3 */
+  20.8606856309%, 21.2243829322% {
+    content: "Dat";
+  }
+  /* string 2, char 4 */
+  21.2253829322%, 21.5890802334% {
+    content: "Data";
+  }
+  /* string 2, char 5 */
+  21.5900802334%, 21.9537775346% {
+    content: "Data ";
+  }
+  /* string 2, char 6 */
+  21.9547775346%, 22.3184748359% {
+    content: "Data S";
+  }
+  /* string 2, char 7 */
+  22.3194748359%, 22.6831721371% {
+    content: "Data Sc";
+  }
+  /* string 2, char 8 */
+  22.6841721371%, 23.0478694384% {
+    content: "Data Sci";
+  }
+  /* string 2, char 9 */
+  23.0488694384%, 23.4125667396% {
+    content: "Data Scie";
+  }
+  /* string 2, char 10 */
+  23.4135667396%, 23.7772640408% {
+    content: "Data Scien";
+  }
+  /* string 2, char 11 */
+  23.7782640408%, 24.1419613421% {
+    content: "Data Scient";
+  }
+  /* string 2, char 12 */
+  24.1429613421%, 24.5066586433% {
+    content: "Data Scienti";
+  }
+  /* string 2, char 13 */
+  24.5076586433%, 24.8713559446% {
+    content: "Data Scientis";
+  }
+  /* string 2, char 14 */
+  24.8723559446%, 32.8217571116% {
+    content: "Data Scientist";
+  }
+  /* string 2, char 15 */
+  32.8227571116%, 33.1135149526% {
+    content: "Data Scientis";
+  }
+  /* string 2, char 16 */
+  33.1145149526%, 33.4052727936% {
+    content: "Data Scienti";
+  }
+  /* string 2, char 17 */
+  33.4062727936%, 33.6970306346% {
+    content: "Data Scient";
+  }
+  /* string 2, char 18 */
+  33.6980306346%, 33.9887884756% {
+    content: "Data Scien";
+  }
+  /* string 2, char 19 */
+  33.9897884756%, 34.2805463166% {
+    content: "Data Scie";
+  }
+  /* string 2, char 20 */
+  34.2815463166%, 34.5723041575% {
+    content: "Data Sci";
+  }
+  /* string 2, char 21 */
+  34.5733041575%, 34.8640619985% {
+    content: "Data Sc";
+  }
+  /* string 2, char 22 */
+  34.8650619985%, 35.1558198395% {
+    content: "Data S";
+  }
+  /* string 2, char 23 */
+  35.1568198395%, 35.4475776805% {
+    content: "Data ";
+  }
+  /* string 2, char 24 */
+  35.4485776805%, 35.7393355215% {
+    content: "Data";
+  }
+  /* string 2, char 25 */
+  35.7403355215%, 36.0310933625% {
+    content: "Dat";
+  }
+  /* string 2, char 26 */
+  36.0320933625%, 36.3228512035% {
+    content: "Da";
+  }
+  /* string 2, char 27 */
+  36.3238512035%, 36.6146090445% {
+    content: "D";
+  }
+  /* string 2, char 28 */
+  36.6156090445%, 40.2615820569% {
+    content: "​";
+  }
+  /* string 3, char 1 */
+  40.2625820569%, 40.6262793581% {
+    content: "M";
+  }
+  /* string 3, char 2 */
+  40.6272793581%, 40.9909766594% {
+    content: "ML";
+  }
+  /* string 3, char 3 */
+  40.9919766594%, 41.3556739606% {
+    content: "ML ";
+  }
+  /* string 3, char 4 */
+  41.3566739606%, 41.7203712619% {
+    content: "ML E";
+  }
+  /* string 3, char 5 */
+  41.7213712619%, 42.0850685631% {
+    content: "ML En";
+  }
+  /* string 3, char 6 */
+  42.0860685631%, 42.4497658643% {
+    content: "ML Eng";
+  }
+  /* string 3, char 7 */
+  42.4507658643%, 42.8144631656% {
+    content: "ML Engi";
+  }
+  /* string 3, char 8 */
+  42.8154631656%, 43.1791604668% {
+    content: "ML Engin";
+  }
+  /* string 3, char 9 */
+  43.1801604668%, 43.5438577681% {
+    content: "ML Engine";
+  }
+  /* string 3, char 10 */
+  43.5448577681%, 43.9085550693% {
+    content: "ML Enginee";
+  }
+  /* string 3, char 11 */
+  43.9095550693%, 51.8589562363% {
+    content: "ML Engineer";
+  }
+  /* string 3, char 12 */
+  51.8599562363%, 52.1507140773% {
+    content: "ML Enginee";
+  }
+  /* string 3, char 13 */
+  52.1517140773%, 52.4424719183% {
+    content: "ML Engine";
+  }
+  /* string 3, char 14 */
+  52.4434719183%, 52.7342297593% {
+    content: "ML Engin";
+  }
+  /* string 3, char 15 */
+  52.7352297593%, 53.0259876003% {
+    content: "ML Engi";
+  }
+  /* string 3, char 16 */
+  53.0269876003%, 53.3177454413% {
+    content: "ML Eng";
+  }
+  /* string 3, char 17 */
+  53.3187454413%, 53.6095032823% {
+    content: "ML En";
+  }
+  /* string 3, char 18 */
+  53.6105032823%, 53.9012611233% {
+    content: "ML E";
+  }
+  /* string 3, char 19 */
+  53.9022611233%, 54.1930189643% {
+    content: "ML ";
+  }
+  /* string 3, char 20 */
+  54.1940189643%, 54.4847768053% {
+    content: "ML";
+  }
+  /* string 3, char 21 */
+  54.4857768053%, 54.7765346462% {
+    content: "M";
+  }
+  /* string 3, char 22 */
+  54.7775346462%, 58.4235076586% {
+    content: "​";
+  }
+  /* string 4, char 1 */
+  58.4245076586%, 58.7882049599% {
+    content: "S";
+  }
+  /* string 4, char 2 */
+  58.7892049599%, 59.1529022611% {
+    content: "So";
+  }
+  /* string 4, char 3 */
+  59.1539022611%, 59.5175995624% {
+    content: "Sof";
+  }
+  /* string 4, char 4 */
+  59.5185995624%, 59.8822968636% {
+    content: "Soft";
+  }
+  /* string 4, char 5 */
+  59.8832968636%, 60.2469941648% {
+    content: "Softw";
+  }
+  /* string 4, char 6 */
+  60.2479941648%, 60.6116914661% {
+    content: "Softwa";
+  }
+  /* string 4, char 7 */
+  60.6126914661%, 60.9763887673% {
+    content: "Softwar";
+  }
+  /* string 4, char 8 */
+  60.9773887673%, 61.3410860686% {
+    content: "Software";
+  }
+  /* string 4, char 9 */
+  61.3420860686%, 61.7057833698% {
+    content: "Software ";
+  }
+  /* string 4, char 10 */
+  61.7067833698%, 62.070480671% {
+    content: "Software E";
+  }
+  /* string 4, char 11 */
+  62.071480671%, 62.4351779723% {
+    content: "Software En";
+  }
+  /* string 4, char 12 */
+  62.4361779723%, 62.7998752735% {
+    content: "Software Eng";
+  }
+  /* string 4, char 13 */
+  62.8008752735%, 63.1645725748% {
+    content: "Software Engi";
+  }
+  /* string 4, char 14 */
+  63.1655725748%, 63.529269876% {
+    content: "Software Engin";
+  }
+  /* string 4, char 15 */
+  63.530269876%, 63.8939671772% {
+    content: "Software Engine";
+  }
+  /* string 4, char 16 */
+  63.8949671772%, 64.2586644785% {
+    content: "Software Enginee";
+  }
+  /* string 4, char 17 */
+  64.2596644785%, 72.2090656455% {
+    content: "Software Engineer";
+  }
+  /* string 4, char 18 */
+  72.2100656455%, 72.5008234865% {
+    content: "Software Enginee";
+  }
+  /* string 4, char 19 */
+  72.5018234865%, 72.7925813275% {
+    content: "Software Engine";
+  }
+  /* string 4, char 20 */
+  72.7935813275%, 73.0843391685% {
+    content: "Software Engin";
+  }
+  /* string 4, char 21 */
+  73.0853391685%, 73.3760970095% {
+    content: "Software Engi";
+  }
+  /* string 4, char 22 */
+  73.3770970095%, 73.6678548505% {
+    content: "Software Eng";
+  }
+  /* string 4, char 23 */
+  73.6688548505%, 73.9596126915% {
+    content: "Software En";
+  }
+  /* string 4, char 24 */
+  73.9606126915%, 74.2513705325% {
+    content: "Software E";
+  }
+  /* string 4, char 25 */
+  74.2523705325%, 74.5431283735% {
+    content: "Software ";
+  }
+  /* string 4, char 26 */
+  74.5441283735%, 74.8348862144% {
+    content: "Software";
+  }
+  /* string 4, char 27 */
+  74.8358862144%, 75.1266440554% {
+    content: "Softwar";
+  }
+  /* string 4, char 28 */
+  75.1276440554%, 75.4184018964% {
+    content: "Softwa";
+  }
+  /* string 4, char 29 */
+  75.4194018964%, 75.7101597374% {
+    content: "Softw";
+  }
+  /* string 4, char 30 */
+  75.7111597374%, 76.0019175784% {
+    content: "Soft";
+  }
+  /* string 4, char 31 */
+  76.0029175784%, 76.2936754194% {
+    content: "Sof";
+  }
+  /* string 4, char 32 */
+  76.2946754194%, 76.5854332604% {
+    content: "So";
+  }
+  /* string 4, char 33 */
+  76.5864332604%, 76.8771911014% {
+    content: "S";
+  }
+  /* string 4, char 34 */
+  76.8781911014%, 80.5241641138% {
+    content: "​";
+  }
+  /* string 5, char 1 */
+  80.5251641138%, 80.888861415% {
+    content: "M";
+  }
+  /* string 5, char 2 */
+  80.889861415%, 81.2535587163% {
+    content: "Me";
+  }
+  /* string 5, char 3 */
+  81.2545587163%, 81.6182560175% {
+    content: "Mem";
+  }
+  /* string 5, char 4 */
+  81.6192560175%, 81.9829533187% {
+    content: "Meme";
+  }
+  /* string 5, char 5 */
+  81.9839533187%, 82.34765062% {
+    content: "Meme ";
+  }
+  /* string 5, char 6 */
+  82.34865062%, 82.7123479212% {
+    content: "Meme E";
+  }
+  /* string 5, char 7 */
+  82.7133479212%, 83.0770452225% {
+    content: "Meme En";
+  }
+  /* string 5, char 8 */
+  83.0780452225%, 83.4417425237% {
+    content: "Meme Eng";
+  }
+  /* string 5, char 9 */
+  83.4427425237%, 83.8064398249% {
+    content: "Meme Engi";
+  }
+  /* string 5, char 10 */
+  83.8074398249%, 84.1711371262% {
+    content: "Meme Engin";
+  }
+  /* string 5, char 11 */
+  84.1721371262%, 84.5358344274% {
+    content: "Meme Engine";
+  }
+  /* string 5, char 12 */
+  84.5368344274%, 84.9005317287% {
+    content: "Meme Enginee";
+  }
+  /* string 5, char 13 */
+  84.9015317287%, 92.8509328957% {
+    content: "Meme Engineer";
+  }
+  /* string 5, char 14 */
+  92.8519328957%, 93.1426907367% {
+    content: "Meme Enginee";
+  }
+  /* string 5, char 15 */
+  93.1436907367%, 93.4344485777% {
+    content: "Meme Engine";
+  }
+  /* string 5, char 16 */
+  93.4354485777%, 93.7262064187% {
+    content: "Meme Engin";
+  }
+  /* string 5, char 17 */
+  93.7272064187%, 94.0179642597% {
+    content: "Meme Engi";
+  }
+  /* string 5, char 18 */
+  94.0189642597%, 94.3097221007% {
+    content: "Meme Eng";
+  }
+  /* string 5, char 19 */
+  94.3107221007%, 94.6014799416% {
+    content: "Meme En";
+  }
+  /* string 5, char 20 */
+  94.6024799416%, 94.8932377826% {
+    content: "Meme E";
+  }
+  /* string 5, char 21 */
+  94.8942377826%, 95.1849956236% {
+    content: "Meme ";
+  }
+  /* string 5, char 22 */
+  95.1859956236%, 95.4767534646% {
+    content: "Meme";
+  }
+  /* string 5, char 23 */
+  95.4777534646%, 95.7685113056% {
+    content: "Mem";
+  }
+  /* string 5, char 24 */
+  95.7695113056%, 96.0602691466% {
+    content: "Me";
+  }
+  /* string 5, char 25 */
+  96.0612691466%, 96.3520269876% {
+    content: "M";
+  }
+  /* string 5, char 26 */
+  96.3530269876%, 100% {
+    content: "​";
+  }
+}
+@keyframes typed {
+  /* string 1, char 1 */
+  0%, 0.3636973012% {
+    content: "M";
+  }
+  /* string 1, char 2 */
+  0.3646973012%, 0.7283946025% {
+    content: "ML";
+  }
+  /* string 1, char 3 */
+  0.7293946025%, 1.0930919037% {
+    content: "ML ";
+  }
+  /* string 1, char 4 */
+  1.0940919037%, 1.457789205% {
+    content: "ML R";
+  }
+  /* string 1, char 5 */
+  1.458789205%, 1.8224865062% {
+    content: "ML Re";
+  }
+  /* string 1, char 6 */
+  1.8234865062%, 2.1871838074% {
+    content: "ML Res";
+  }
+  /* string 1, char 7 */
+  2.1881838074%, 2.5518811087% {
+    content: "ML Rese";
+  }
+  /* string 1, char 8 */
+  2.5528811087%, 2.9165784099% {
+    content: "ML Resea";
+  }
+  /* string 1, char 9 */
+  2.9175784099%, 3.2812757112% {
+    content: "ML Resear";
+  }
+  /* string 1, char 10 */
+  3.2822757112%, 3.6459730124% {
+    content: "ML Researc";
+  }
+  /* string 1, char 11 */
+  3.6469730124%, 4.0106703136% {
+    content: "ML Research";
+  }
+  /* string 1, char 12 */
+  4.0116703136%, 4.3753676149% {
+    content: "ML Researche";
+  }
+  /* string 1, char 13 */
+  4.3763676149%, 4.7400649161% {
+    content: "ML Researcher";
+  }
+  /* string 1, char 14 */
+  4.7410649161%, 12.6904660832% {
+    content: "ML Researcher!";
+  }
+  /* string 1, char 15 */
+  12.6914660832%, 12.9822239241% {
+    content: "ML Researcher";
+  }
+  /* string 1, char 16 */
+  12.9832239241%, 13.2739817651% {
+    content: "ML Researche";
+  }
+  /* string 1, char 17 */
+  13.2749817651%, 13.5657396061% {
+    content: "ML Research";
+  }
+  /* string 1, char 18 */
+  13.5667396061%, 13.8574974471% {
+    content: "ML Researc";
+  }
+  /* string 1, char 19 */
+  13.8584974471%, 14.1492552881% {
+    content: "ML Resear";
+  }
+  /* string 1, char 20 */
+  14.1502552881%, 14.4410131291% {
+    content: "ML Resea";
+  }
+  /* string 1, char 21 */
+  14.4420131291%, 14.7327709701% {
+    content: "ML Rese";
+  }
+  /* string 1, char 22 */
+  14.7337709701%, 15.0245288111% {
+    content: "ML Res";
+  }
+  /* string 1, char 23 */
+  15.0255288111%, 15.3162866521% {
+    content: "ML Re";
+  }
+  /* string 1, char 24 */
+  15.3172866521%, 15.6080444931% {
+    content: "ML R";
+  }
+  /* string 1, char 25 */
+  15.6090444931%, 15.8998023341% {
+    content: "ML ";
+  }
+  /* string 1, char 26 */
+  15.9008023341%, 16.1915601751% {
+    content: "ML";
+  }
+  /* string 1, char 27 */
+  16.1925601751%, 16.483318016% {
+    content: "M";
+  }
+  /* string 1, char 28 */
+  16.484318016%, 20.1302910284% {
+    content: "​";
+  }
+  /* string 2, char 1 */
+  20.1312910284%, 20.4949883297% {
+    content: "D";
+  }
+  /* string 2, char 2 */
+  20.4959883297%, 20.8596856309% {
+    content: "Da";
+  }
+  /* string 2, char 3 */
+  20.8606856309%, 21.2243829322% {
+    content: "Dat";
+  }
+  /* string 2, char 4 */
+  21.2253829322%, 21.5890802334% {
+    content: "Data";
+  }
+  /* string 2, char 5 */
+  21.5900802334%, 21.9537775346% {
+    content: "Data ";
+  }
+  /* string 2, char 6 */
+  21.9547775346%, 22.3184748359% {
+    content: "Data S";
+  }
+  /* string 2, char 7 */
+  22.3194748359%, 22.6831721371% {
+    content: "Data Sc";
+  }
+  /* string 2, char 8 */
+  22.6841721371%, 23.0478694384% {
+    content: "Data Sci";
+  }
+  /* string 2, char 9 */
+  23.0488694384%, 23.4125667396% {
+    content: "Data Scie";
+  }
+  /* string 2, char 10 */
+  23.4135667396%, 23.7772640408% {
+    content: "Data Scien";
+  }
+  /* string 2, char 11 */
+  23.7782640408%, 24.1419613421% {
+    content: "Data Scient";
+  }
+  /* string 2, char 12 */
+  24.1429613421%, 24.5066586433% {
+    content: "Data Scienti";
+  }
+  /* string 2, char 13 */
+  24.5076586433%, 24.8713559446% {
+    content: "Data Scientis";
+  }
+  /* string 2, char 14 */
+  24.8723559446%, 32.8217571116% {
+    content: "Data Scientist";
+  }
+  /* string 2, char 15 */
+  32.8227571116%, 33.1135149526% {
+    content: "Data Scientis";
+  }
+  /* string 2, char 16 */
+  33.1145149526%, 33.4052727936% {
+    content: "Data Scienti";
+  }
+  /* string 2, char 17 */
+  33.4062727936%, 33.6970306346% {
+    content: "Data Scient";
+  }
+  /* string 2, char 18 */
+  33.6980306346%, 33.9887884756% {
+    content: "Data Scien";
+  }
+  /* string 2, char 19 */
+  33.9897884756%, 34.2805463166% {
+    content: "Data Scie";
+  }
+  /* string 2, char 20 */
+  34.2815463166%, 34.5723041575% {
+    content: "Data Sci";
+  }
+  /* string 2, char 21 */
+  34.5733041575%, 34.8640619985% {
+    content: "Data Sc";
+  }
+  /* string 2, char 22 */
+  34.8650619985%, 35.1558198395% {
+    content: "Data S";
+  }
+  /* string 2, char 23 */
+  35.1568198395%, 35.4475776805% {
+    content: "Data ";
+  }
+  /* string 2, char 24 */
+  35.4485776805%, 35.7393355215% {
+    content: "Data";
+  }
+  /* string 2, char 25 */
+  35.7403355215%, 36.0310933625% {
+    content: "Dat";
+  }
+  /* string 2, char 26 */
+  36.0320933625%, 36.3228512035% {
+    content: "Da";
+  }
+  /* string 2, char 27 */
+  36.3238512035%, 36.6146090445% {
+    content: "D";
+  }
+  /* string 2, char 28 */
+  36.6156090445%, 40.2615820569% {
+    content: "​";
+  }
+  /* string 3, char 1 */
+  40.2625820569%, 40.6262793581% {
+    content: "M";
+  }
+  /* string 3, char 2 */
+  40.6272793581%, 40.9909766594% {
+    content: "ML";
+  }
+  /* string 3, char 3 */
+  40.9919766594%, 41.3556739606% {
+    content: "ML ";
+  }
+  /* string 3, char 4 */
+  41.3566739606%, 41.7203712619% {
+    content: "ML E";
+  }
+  /* string 3, char 5 */
+  41.7213712619%, 42.0850685631% {
+    content: "ML En";
+  }
+  /* string 3, char 6 */
+  42.0860685631%, 42.4497658643% {
+    content: "ML Eng";
+  }
+  /* string 3, char 7 */
+  42.4507658643%, 42.8144631656% {
+    content: "ML Engi";
+  }
+  /* string 3, char 8 */
+  42.8154631656%, 43.1791604668% {
+    content: "ML Engin";
+  }
+  /* string 3, char 9 */
+  43.1801604668%, 43.5438577681% {
+    content: "ML Engine";
+  }
+  /* string 3, char 10 */
+  43.5448577681%, 43.9085550693% {
+    content: "ML Enginee";
+  }
+  /* string 3, char 11 */
+  43.9095550693%, 51.8589562363% {
+    content: "ML Engineer";
+  }
+  /* string 3, char 12 */
+  51.8599562363%, 52.1507140773% {
+    content: "ML Enginee";
+  }
+  /* string 3, char 13 */
+  52.1517140773%, 52.4424719183% {
+    content: "ML Engine";
+  }
+  /* string 3, char 14 */
+  52.4434719183%, 52.7342297593% {
+    content: "ML Engin";
+  }
+  /* string 3, char 15 */
+  52.7352297593%, 53.0259876003% {
+    content: "ML Engi";
+  }
+  /* string 3, char 16 */
+  53.0269876003%, 53.3177454413% {
+    content: "ML Eng";
+  }
+  /* string 3, char 17 */
+  53.3187454413%, 53.6095032823% {
+    content: "ML En";
+  }
+  /* string 3, char 18 */
+  53.6105032823%, 53.9012611233% {
+    content: "ML E";
+  }
+  /* string 3, char 19 */
+  53.9022611233%, 54.1930189643% {
+    content: "ML ";
+  }
+  /* string 3, char 20 */
+  54.1940189643%, 54.4847768053% {
+    content: "ML";
+  }
+  /* string 3, char 21 */
+  54.4857768053%, 54.7765346462% {
+    content: "M";
+  }
+  /* string 3, char 22 */
+  54.7775346462%, 58.4235076586% {
+    content: "​";
+  }
+  /* string 4, char 1 */
+  58.4245076586%, 58.7882049599% {
+    content: "S";
+  }
+  /* string 4, char 2 */
+  58.7892049599%, 59.1529022611% {
+    content: "So";
+  }
+  /* string 4, char 3 */
+  59.1539022611%, 59.5175995624% {
+    content: "Sof";
+  }
+  /* string 4, char 4 */
+  59.5185995624%, 59.8822968636% {
+    content: "Soft";
+  }
+  /* string 4, char 5 */
+  59.8832968636%, 60.2469941648% {
+    content: "Softw";
+  }
+  /* string 4, char 6 */
+  60.2479941648%, 60.6116914661% {
+    content: "Softwa";
+  }
+  /* string 4, char 7 */
+  60.6126914661%, 60.9763887673% {
+    content: "Softwar";
+  }
+  /* string 4, char 8 */
+  60.9773887673%, 61.3410860686% {
+    content: "Software";
+  }
+  /* string 4, char 9 */
+  61.3420860686%, 61.7057833698% {
+    content: "Software ";
+  }
+  /* string 4, char 10 */
+  61.7067833698%, 62.070480671% {
+    content: "Software E";
+  }
+  /* string 4, char 11 */
+  62.071480671%, 62.4351779723% {
+    content: "Software En";
+  }
+  /* string 4, char 12 */
+  62.4361779723%, 62.7998752735% {
+    content: "Software Eng";
+  }
+  /* string 4, char 13 */
+  62.8008752735%, 63.1645725748% {
+    content: "Software Engi";
+  }
+  /* string 4, char 14 */
+  63.1655725748%, 63.529269876% {
+    content: "Software Engin";
+  }
+  /* string 4, char 15 */
+  63.530269876%, 63.8939671772% {
+    content: "Software Engine";
+  }
+  /* string 4, char 16 */
+  63.8949671772%, 64.2586644785% {
+    content: "Software Enginee";
+  }
+  /* string 4, char 17 */
+  64.2596644785%, 72.2090656455% {
+    content: "Software Engineer";
+  }
+  /* string 4, char 18 */
+  72.2100656455%, 72.5008234865% {
+    content: "Software Enginee";
+  }
+  /* string 4, char 19 */
+  72.5018234865%, 72.7925813275% {
+    content: "Software Engine";
+  }
+  /* string 4, char 20 */
+  72.7935813275%, 73.0843391685% {
+    content: "Software Engin";
+  }
+  /* string 4, char 21 */
+  73.0853391685%, 73.3760970095% {
+    content: "Software Engi";
+  }
+  /* string 4, char 22 */
+  73.3770970095%, 73.6678548505% {
+    content: "Software Eng";
+  }
+  /* string 4, char 23 */
+  73.6688548505%, 73.9596126915% {
+    content: "Software En";
+  }
+  /* string 4, char 24 */
+  73.9606126915%, 74.2513705325% {
+    content: "Software E";
+  }
+  /* string 4, char 25 */
+  74.2523705325%, 74.5431283735% {
+    content: "Software ";
+  }
+  /* string 4, char 26 */
+  74.5441283735%, 74.8348862144% {
+    content: "Software";
+  }
+  /* string 4, char 27 */
+  74.8358862144%, 75.1266440554% {
+    content: "Softwar";
+  }
+  /* string 4, char 28 */
+  75.1276440554%, 75.4184018964% {
+    content: "Softwa";
+  }
+  /* string 4, char 29 */
+  75.4194018964%, 75.7101597374% {
+    content: "Softw";
+  }
+  /* string 4, char 30 */
+  75.7111597374%, 76.0019175784% {
+    content: "Soft";
+  }
+  /* string 4, char 31 */
+  76.0029175784%, 76.2936754194% {
+    content: "Sof";
+  }
+  /* string 4, char 32 */
+  76.2946754194%, 76.5854332604% {
+    content: "So";
+  }
+  /* string 4, char 33 */
+  76.5864332604%, 76.8771911014% {
+    content: "S";
+  }
+  /* string 4, char 34 */
+  76.8781911014%, 80.5241641138% {
+    content: "​";
+  }
+  /* string 5, char 1 */
+  80.5251641138%, 80.888861415% {
+    content: "M";
+  }
+  /* string 5, char 2 */
+  80.889861415%, 81.2535587163% {
+    content: "Me";
+  }
+  /* string 5, char 3 */
+  81.2545587163%, 81.6182560175% {
+    content: "Mem";
+  }
+  /* string 5, char 4 */
+  81.6192560175%, 81.9829533187% {
+    content: "Meme";
+  }
+  /* string 5, char 5 */
+  81.9839533187%, 82.34765062% {
+    content: "Meme ";
+  }
+  /* string 5, char 6 */
+  82.34865062%, 82.7123479212% {
+    content: "Meme E";
+  }
+  /* string 5, char 7 */
+  82.7133479212%, 83.0770452225% {
+    content: "Meme En";
+  }
+  /* string 5, char 8 */
+  83.0780452225%, 83.4417425237% {
+    content: "Meme Eng";
+  }
+  /* string 5, char 9 */
+  83.4427425237%, 83.8064398249% {
+    content: "Meme Engi";
+  }
+  /* string 5, char 10 */
+  83.8074398249%, 84.1711371262% {
+    content: "Meme Engin";
+  }
+  /* string 5, char 11 */
+  84.1721371262%, 84.5358344274% {
+    content: "Meme Engine";
+  }
+  /* string 5, char 12 */
+  84.5368344274%, 84.9005317287% {
+    content: "Meme Enginee";
+  }
+  /* string 5, char 13 */
+  84.9015317287%, 92.8509328957% {
+    content: "Meme Engineer";
+  }
+  /* string 5, char 14 */
+  92.8519328957%, 93.1426907367% {
+    content: "Meme Enginee";
+  }
+  /* string 5, char 15 */
+  93.1436907367%, 93.4344485777% {
+    content: "Meme Engine";
+  }
+  /* string 5, char 16 */
+  93.4354485777%, 93.7262064187% {
+    content: "Meme Engin";
+  }
+  /* string 5, char 17 */
+  93.7272064187%, 94.0179642597% {
+    content: "Meme Engi";
+  }
+  /* string 5, char 18 */
+  94.0189642597%, 94.3097221007% {
+    content: "Meme Eng";
+  }
+  /* string 5, char 19 */
+  94.3107221007%, 94.6014799416% {
+    content: "Meme En";
+  }
+  /* string 5, char 20 */
+  94.6024799416%, 94.8932377826% {
+    content: "Meme E";
+  }
+  /* string 5, char 21 */
+  94.8942377826%, 95.1849956236% {
+    content: "Meme ";
+  }
+  /* string 5, char 22 */
+  95.1859956236%, 95.4767534646% {
+    content: "Meme";
+  }
+  /* string 5, char 23 */
+  95.4777534646%, 95.7685113056% {
+    content: "Mem";
+  }
+  /* string 5, char 24 */
+  95.7695113056%, 96.0602691466% {
+    content: "Me";
+  }
+  /* string 5, char 25 */
+  96.0612691466%, 96.3520269876% {
+    content: "M";
+  }
+  /* string 5, char 26 */
+  96.3530269876%, 100% {
+    content: "​";
+  }
+}
+@-webkit-keyframes beam-blink {
+  75% {
+    border-color: transparent;
+  }
+}
+@keyframes beam-blink {
+  75% {
+    border-color: transparent;
+  }
+}
