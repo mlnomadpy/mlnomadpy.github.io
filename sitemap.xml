@@ -47,6 +47,11 @@
   </url>
   
   <url>
+    <loc>http://www.tahabouhsine.com/tags/another-tag/</loc>
+    <lastmod>2022-12-21</lastmod>
+  </url>
+  
+  <url>
     <loc>http://www.tahabouhsine.com/tags/second-tag/</loc>
     <lastmod>2022-12-21</lastmod>
   </url>
@@ -58,11 +63,6 @@
   
   <url>
     <loc>http://www.tahabouhsine.com/tags/posts-with-two-tags/</loc>
-    <lastmod>2022-12-21</lastmod>
-  </url>
-  
-  <url>
-    <loc>http://www.tahabouhsine.com/tags/another-tag/</loc>
     <lastmod>2022-12-21</lastmod>
   </url>
   
