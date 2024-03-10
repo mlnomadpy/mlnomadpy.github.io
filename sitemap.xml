@@ -23,56 +23,66 @@
   
   <url>
     <loc>http://www.tahabouhsine.com/about/</loc>
-    <lastmod>2023-07-18</lastmod>
+    <lastmod>2023-11-20</lastmod>
   </url>
   
   <url>
     <loc>http://www.tahabouhsine.com/posts/</loc>
-    <lastmod>2023-07-18</lastmod>
+    <lastmod>2023-11-20</lastmod>
   </url>
   
   <url>
     <loc>http://www.tahabouhsine.com/</loc>
-    <lastmod>2023-07-18</lastmod>
+    <lastmod>2023-11-20</lastmod>
   </url>
   
   <url>
     <loc>http://www.tahabouhsine.com/page-list/</loc>
-    <lastmod>2023-07-18</lastmod>
+    <lastmod>2023-11-20</lastmod>
   </url>
   
   <url>
-    <loc>http://www.tahabouhsine.com/projects/rgb-based-ml-system-for-atmospheric-visibility-estimation/</loc>
-    <lastmod>2023-07-18</lastmod>
+    <loc>http://www.tahabouhsine.com/portfolio/</loc>
+    <lastmod>2023-11-20</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://www.tahabouhsine.com/postslist/</loc>
+    <lastmod>2023-11-20</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://www.tahabouhsine.com/projects/seeing-the-unseen-seenn-multimodal-ml-system-for-atmospheric-visibility-estimation/</loc>
+    <lastmod>2023-11-20</lastmod>
   </url>
   
   <url>
     <loc>http://www.tahabouhsine.com/tags/</loc>
-    <lastmod>2023-07-18</lastmod>
-  </url>
-  
-  <url>
-    <loc>http://www.tahabouhsine.com/tags/another-tag/</loc>
-    <lastmod>2023-07-18</lastmod>
+    <lastmod>2023-11-20</lastmod>
   </url>
   
   <url>
     <loc>http://www.tahabouhsine.com/tags/second-tag/</loc>
-    <lastmod>2023-07-18</lastmod>
-  </url>
-  
-  <url>
-    <loc>http://www.tahabouhsine.com/tags/number-2/</loc>
-    <lastmod>2023-07-18</lastmod>
+    <lastmod>2023-11-20</lastmod>
   </url>
   
   <url>
     <loc>http://www.tahabouhsine.com/tags/posts-with-two-tags/</loc>
-    <lastmod>2023-07-18</lastmod>
+    <lastmod>2023-11-20</lastmod>
   </url>
   
   <url>
-    <loc>http://www.tahabouhsine.com/talks/ml-in-depth-extra:-beyond-model.fit/</loc>
-    <lastmod>2023-07-18</lastmod>
+    <loc>http://www.tahabouhsine.com/tags/number-2/</loc>
+    <lastmod>2023-11-20</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://www.tahabouhsine.com/tags/another-tag/</loc>
+    <lastmod>2023-11-20</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://www.tahabouhsine.com/talks/ml-ascent-3-a-hands-on-workshop-on-representation-learning-for-computer-vision-using-keras-and-tensorflow/</loc>
+    <lastmod>2023-11-20</lastmod>
   </url>
 </urlset>

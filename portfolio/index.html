@@ -1,0 +1,366 @@
+<h1 id="portfolio-taha-bouhsine" tabindex="-1">Portfolio - Taha Bouhsine <a class="direct-link" href="#portfolio-taha-bouhsine" aria-hidden="true">#</a></h1>
+<p>Welcome to my portfolio page, which showcases my projects, publications, talks, certificates, education, professional experiences, and volunteering contributions in the field of artificial intelligence, machine learning, and more.</p>
+<h2 id="table-of-contents" tabindex="-1">Table of Contents <a class="direct-link" href="#table-of-contents" aria-hidden="true">#</a></h2>
+<ul>
+<li><a href="#my-portfolio">My Portfolio</a>
+<ul>
+<li><a href="#table-of-contents">Table of Contents</a></li>
+<li><a href="#projects">Projects</a></li>
+<li><a href="#publications">Publications</a></li>
+<li><a href="#talks">Talks</a></li>
+<li><a href="#certificates">Certificates</a></li>
+<li><a href="#education">Education</a></li>
+<li><a href="#experiences">Experiences</a></li>
+<li><a href="#volunteering">Volunteering</a></li>
+</ul>
+</li>
+</ul>
+<h2 id="projects" tabindex="-1">Projects <a class="direct-link" href="#projects" aria-hidden="true">#</a></h2>
+<h3 id="seeing-the-unseen-seenn-multimodal-ml-system-for-atmospheric-visibility-estimation" tabindex="-1"><strong>Seeing the Unseen: SeeNN Multimodal ML System for Atmospheric Visibility Estimation</strong> <a class="direct-link" href="#seeing-the-unseen-seenn-multimodal-ml-system-for-atmospheric-visibility-estimation" aria-hidden="true">#</a></h3>
+<ul>
+<li>Rowan University &amp; Federal Aviation Administration USA</li>
+</ul>
+<p><strong>Overview:</strong></p><p>Our ongoing project focuses on developing an advanced multimodal machine learning system tailored for in-flight long-range atmospheric visibility estimation. The system leverages RGB (color) and Depth data, collected from various sources like cameras and depth sensors, to accurately predict visibility conditions during flight.</p><p>Our multimodal machine learning system, designed and trained using TensorFlow and Keras, serves as a valuable tool for in-flight long-range atmospheric visibility estimation. By combining RGB and Depth data in a unified model, we aim to provide accurate and reliable visibility predictions during flight operations. The application of this technology extends to various domains, including aviation, environmental monitoring, and weather prediction, ensuring safer and more efficient air travel experiences.</p><br><h3>System Overview:</h3><p>Our first step involves data preprocessing, where we clean, handle missing values, and align the RGB and Depth data to ensure smooth fusion during the training phase. TensorFlow and Keras are our primary tools for building the machine learning model.</p><h3>Model Architecture:</h3>The core of our system is a sophisticated multimodal deep learning architecture that seamlessly integrates the RGB and Depth information. The RGB model consists of Convolutional Layers, Pooling Layers, and a Flatten layer, while the Depth model mirrors the RGB model's structure, ending in a cross-attention multimodal fusion technique. These models are trained using TensorFlow and Keras, enabling us to optimize their performance efficiently.<h4>Mermaid Diagram: Model Architecture</h4><center><img src='https://i.imgur.com/DKoozw9.png' style='width: 50vw;'></center><h3>Application Flow</h3><p>Once trained, our system is ready for real-world applications. During in-flight operations, pilots and relevant personnel can interact with the system through a user-friendly interface. By providing images or video streams containing RGB and Depth data, they initiate the visibility estimation process. The input data undergoes preprocessing and is then fed into the trained multimodal model for accurate visibility prediction.</p></div><br>
+<h3 id="deeparganiawatch-a-patch-based-deep-learning-system-for-change-detection-of-argania-deforestation-using-multispectral-sentinel-2" tabindex="-1"><strong>DeepArganiaWatch: A Patch-Based Deep Learning System for Change Detection of Argania Deforestation using Multispectral Sentinel-2</strong> <a class="direct-link" href="#deeparganiawatch-a-patch-based-deep-learning-system-for-change-detection-of-argania-deforestation-using-multispectral-sentinel-2" aria-hidden="true">#</a></h3>
+<ul>
+<li>@IRF-SIC</li>
+</ul>
+<p><strong>Overview:</strong></p><p>DeepArganiaWatch is an advanced project that focuses on developing a Patch-Based Deep Learning System for change detection of Argania deforestation using Sentinel-2 multispectral imagery. The project comprises two major components: DeepArganiaDetector, a deep learning segmentation model specifically designed for Argania tree detection, and a change detection module that utilizes DeepArganiaDetector to detect and visualize deforestation changes between two dates specified by the user.</p><p><strong>DeepArganiaDetector:</strong></p><p>The foundation of DeepArganiaWatch lies in the development of DeepArganiaDetector, a deep learning segmentation model. DeepArganiaDetector is trained to take 64x64 pixel patches from Sentinel-2 multispectral imagery, consisting of 13 channels. It performs semantic segmentation to isolate Argania trees by outputting a 64x64 binary mask where &quot;1&quot; denotes the presence of Argania trees and &quot;0&quot; represents the background.</p><center><img src='https://i.imgur.com/Z8ZK0q3.png' style='width:50vw;'></center><p><strong>Training DeepArganiaDetector:</strong></p><p>DeepArganiaDetector is pre-trained on the EuroSAT dataset using a U-Net architecture, producing an output of 64x64x13 for Argania tree, The last layer of the model is then modified to output a 64x64x1 binary mask to perform accurate Argania tree segmentation on our custom dataset. The model is fine-tuned on our dataset to achieve precise segmentation of Argania trees.</p><p><strong>Change Detection Module:</strong></p><p>The Change Detection module is an essential part of DeepArganiaWatch. Users input two dates and a 64x64 region of interest. DeepArganiaDetector is applied separately to the Sentinel-2 imagery from each date, producing two binary masks representing Argania tree presence for each date. The change map is then generated by analyzing the differences between the two binary masks. This process allows us to visualize and quantify deforestation changes in the specified region over time.</p><p><strong>DeepArganiaWatch - Advancing ArganiaWatch:</strong></p><p>DeepArganiaWatch is an improved version of ArganiaWatch, enhancing the accuracy and performance of change detection through the utilization of the DeepArganiaDetector model. By employing deep learning techniques and multispectral Sentinel-2 imagery, DeepArganiaWatch provides a more precise and comprehensive analysis of Argania deforestation, empowering researchers and environmentalists to make informed decisions for conservation and sustainable land management.</p><p><strong>Conclusion:</strong></p><p>DeepArganiaWatch represents a significant advancement in change detection of Argania deforestation using multispectral Sentinel-2 imagery. The integration of DeepArganiaDetector, a powerful deep learning segmentation model, allows us to precisely identify Argania trees and visualize changes in the tree cover over time. This project&#39;s impact extends to environmental conservation efforts, providing valuable insights to policymakers and researchers in preserving and safeguarding the Argania tree population. DeepArganiaWatch builds upon the foundation of ArganiaWatch, enabling more accurate detection of deforestation changes and enhancing our understanding of the dynamic landscape of the Argania trees in the Souss region.</p>
+<h3 id="arganiawatch-a-machine-learning-system-for-change-detection-of-argania-deforestation-using-sentinel-2" tabindex="-1"><strong>ArganiaWatch: A Machine Learning System for Change Detection of Argania Deforestation using Sentinel-2</strong> <a class="direct-link" href="#arganiawatch-a-machine-learning-system-for-change-detection-of-argania-deforestation-using-sentinel-2" aria-hidden="true">#</a></h3>
+<ul>
+<li>@IRF-SIC</li>
+</ul>
+<p><strong>Overview:</strong></p><p>ArganWatch is an innovative project that focuses on developing a cutting-edge Machine Learning System for change detection of Argania deforestation using Sentinel-2 satellite imagery. Leveraging the powerful ArganiaDetector model, previously developed for Argania tree detection, we feed it geolocation data and extract Sentinel-2 time series values from 2015 to 2022. By analyzing the temporal changes in the pixel values, the system accurately determines whether the Argania trees have been affected by deforestation or are still intact.</p><p><strong>System Overview:</strong></p><p>The foundation of the ArganWatch project is the ArganiaDetector model, which has been trained on Sentinel-2 pixel values to identify Argania trees with a high accuracy rate of 90%. To repurpose this model for change detection, we feed it specific geolocation data, and it analyzes Sentinel-2 time series values covering the period from 2015 to 2022. The system then detects changes in the Argania tree cover, helping identify potential deforestation areas.</p><p><strong>Machine Learning Approach:</strong></p><p>The ArganWatch system utilizes the TensorFlow Decision Forest library, which powered the original ArganiaDetector model, to perform change detection. The model processes the Sentinel-2 pixel values extracted from the time series data and predicts whether Argania trees have been deforested or are still present. By capitalizing on the pre-trained model, we efficiently repurpose it for a new application, saving computational resources and time.</p><p><strong>Application Flow:</strong></p><p>The ArganWatch application follows a structured flow to detect changes in Argania tree cover:</p><ol><li><p><strong>User Input:</strong> Users provide geolocation data through the application interface.</p></li><li><p><strong>Time Series Data Extraction:</strong> The system retrieves Sentinel-2 imagery time series data for the specified location from 2015 to 2022.</p></li><li><p><strong>Feature Extraction:</strong> The ArganiaDetector model processes the time series data, extracting relevant features for change detection.</p></li><li><p><strong>Change Detection:</strong> Using the trained model, the system analyzes the extracted features and predicts whether Argania trees have been deforested or are still existing.</p></li><li><p><strong>Results and Reporting:</strong> The application provides users with detailed reports and visualizations, highlighting the detected changes and potential deforestation areas.</p></li></ol><p><strong>Conclusion:</strong></p><p>The ArganWatch project introduces a powerful Machine Learning System for change detection of Argania deforestation using Sentinel-2 satellite imagery. By repurposing the ArganiaDetector model, we efficiently analyze temporal changes in pixel values to detect potential deforestation areas from 2015 to 2022. The system&#39;s accurate change detection capabilities offer valuable insights to researchers, environmentalists, and policymakers, facilitating timely interventions for preserving and conserving the Argania tree population. ArganWatch emphasizes the importance of monitoring and protecting Argania trees, contributing to sustainable land management and promoting a greener and healthier environment for future generations.</p>
+<h3 id="tifinaght-ocr-system" tabindex="-1"><strong>Tifinaght-OCR System</strong> <a class="direct-link" href="#tifinaght-ocr-system" aria-hidden="true">#</a></h3>
+<ul>
+<li>@AgaNext</li>
+</ul>
+<h3 id="geoargania-a-geolocation-mapping-dataset-of-argania-trees-in-the-souss-region-for-building-arganiadetector-machine-learning-system" tabindex="-1"><strong>GeoArgania: A Geolocation Mapping Dataset of Argania Trees in the Souss Region for Building ArganiaDetector Machine Learning System</strong> <a class="direct-link" href="#geoargania-a-geolocation-mapping-dataset-of-argania-trees-in-the-souss-region-for-building-arganiadetector-machine-learning-system" aria-hidden="true">#</a></h3>
+<ul>
+<li>@IRF-SIC</li>
+</ul>
+<p><strong>Introduction:</strong></p><p>The GeoArgania All Trees Matters project aims to create a Geolocation Mapping Dataset of Argania trees (Argania spinosa) in the Souss region of Morocco. Leveraging Google Earth Engine, Sentinel-2 imagery, and TensorFlow Decision Forest, we intend to develop the ArganiaDetector Machine Learning System. This system will enable a comprehensive analysis of the temporal and spatial dynamics of the Argania tree population from 2015 to 2022, supporting evidence-based conservation strategies and sustainable land management practices.</p><p><strong>System Overview:</strong></p><p>The core of the project is a comprehensive dataset containing geolocated information for 91,000 Argania trees. This dataset was meticulously collected and validated to ensure accuracy and reliability. To detect Argania trees effectively, we employ the TensorFlow Decision Forest library, specifically using a Gradient Boosted Tree model, which exhibits excellent performance with an accuracy rate of 90%.</p><p><strong>Machine Learning Model Flow:</strong></p><p>The machine learning model follows a structured flow to detect Argania trees based on Sentinel-2 pixel values. The steps involved in the model flow are as follows:</p><center><img src='https://i.imgur.com/PxDopxa.png' style='width: 50vw;;'></center><p><strong>Application Flow:</strong></p><p>The ArganiaDetector Machine Learning System is accessible through a user-friendly interface built using Flask. The application flow for users is as follows:</p><ol><li><p><strong>User Input:</strong> Users can upload geolocated images containing Argania trees through the interface.</p></li><li><p><strong>ArganiaDetector System:</strong> The uploaded images are processed by the ArganiaDetector system, which triggers the machine learning model for tree detection.</p></li><li><p><strong>Machine Learning Model:</strong> The TensorFlow Decision Forest model analyzes the Sentinel-2 pixel values in the images to identify Argania trees.</p></li><li><p><strong>Argania Tree Detection Results:</strong> The system provides the detection results, indicating the presence and locations of Argania trees on the images.</p></li></ol><p><strong>Conclusion:</strong></p><p>The GeoArgania All Trees Matters project endeavors to contribute to the understanding and conservation of Argania trees in the Souss region. By combining Google Earth Engine, Sentinel-2 imagery, and TensorFlow Decision Forest, we have built a powerful ArganiaDetector Machine Learning System. The comprehensive geolocation mapping dataset and high accuracy achieved by the machine learning model enable evidence-based conservation strategies and sustainable land management practices. The application of this system can foster collaboration among researchers, environmentalists, and policymakers, ensuring the protection and preservation of Argania trees.</p>
+<h3 id="rgb-based-ml-system-for-atmospheric-visibility-estimation" tabindex="-1"><strong>RGB-Based ML System for Atmospheric Visibility Estimation</strong> <a class="direct-link" href="#rgb-based-ml-system-for-atmospheric-visibility-estimation" aria-hidden="true">#</a></h3>
+<ul>
+<li>Rowan University &amp; Federal Aviation Administration USA</li>
+</ul>
+<p>Visibility degradation is the cause of many road accidents and air crashes around the globe, it is caused and controlled by multiple key factors that hinder the observer from having a clear vision of what's ahead, playing a crucial role in aviation safety. Alas, researchers and engineers created many tools to measure or restore images suffering from those degradations. This paper compares different image-based deep learning architectures for Atmospheric Visibility Range Classification. A Vision Transformer trained from scratch and three pre-trained Convolution Neural Network (CNN) models were examined and contrasted in terms of accuracy, obtaining a validation accuracy of more than 95 %. Our experiment shows that the different models trained on the Federal Aviation Administration (FAA) initial dataset can be used towards building an efficient tool to aid in Flight Control for long-range visibility estimation. Results showed that DenseNet121 was the best-performing model with 99 % training accuracy and 98 % validation accuracy and showed early convergence, while the Vision Transformer kept on showing signs of improving but falling behind only by a bit behind DenseNet121 by the end of the experiment.</p>
+<h3 id="argania-forest-change-detection-from-sentinel-2-satellite-images-using-u-net-architectures" tabindex="-1"><strong>Argania Forest Change Detection From Sentinel-2 Satellite Images using U-Net Architectures</strong> <a class="direct-link" href="#argania-forest-change-detection-from-sentinel-2-satellite-images-using-u-net-architectures" aria-hidden="true">#</a></h3>
+<ul>
+<li>@IRF-SIC</li>
+</ul>
+<p>Land Cover Change Detection (LCCD) is an important task from the perspective of regional resource monitoring, land use and environmental planning. One of the major concerns for maintaining biodiversity is deforestation. Meanwhile, the recent advances in the field of image processing by Convolutional Neural Networks (CNNs) and the wide availability of high spatiotemporal resolution satellite imagery provide an unprecedented configuration for the implementation of effective and scalable forest cover change monitoring systems. The objective of this study is to evaluate the performance of two of the most effective deep learning architectures, namely, U-Net and Improved U-Net for the mapping of forest cover to identify deforestation areas between two dates. To this end, two 10m resolution satellite images from the Sentinel-2 satellite covering the Argania forest, a UNESCO Biosphere reserve in the Souss-Massa region in Morocco were used. The implemented methods involve training CNN with two different patch sizes (32–16) in a post-classification framework to compare the classification maps and deduce the change map. The classification accuracy of the two models reached 100% with an advantage to U-Net with an average of Intersection-Over-Union (mIoU) equal to 0.851. The obtained results indicated that Argania forest areas were decreasing over the years, while residential areas and greenhouses were expanding.</p>
+<h3 id="30daysofml" tabindex="-1"><strong>#30DaysofML</strong> <a class="direct-link" href="#30daysofml" aria-hidden="true">#</a></h3>
+<ul>
+<li>GDSCUIZ &amp; TFUG Agadir</li>
+</ul>
+<p>One of the hurdles that hinder self-learners is the language barrier. Instead of focusing on understanding the knowledge required, the learners put great effort into just understanding a single sentence of what&#39;s been explained.</p><p>For the goal of breaking this barrier and helping in enforcing the Democratization of Artificial Intelligence, we, <a href='https://gdsc.community.dev/university-of-ibn-zohr/'>@GDSCUIZ</a> and <a href='https://www.meetup.com/TFUGAgadir'>@TFUGAgadir</a>, ought to create this series of events fully presented in Moroccan Darija, to introduce our attendees to the general concepts needed to solve problems using Machine Learning.</p><p>At the end of the <a href='https://gdscuiz.github.io/30daysofml'>#30DaysOfML</a>, our attendees will have a certificate indicating the number of events they did attend. The attendees who finish all the assignments will be offered the <a href='https://www.tensorflow.org/certificate'>TensorFlow Developer Certificate</a> Voucher to pass the exam.</p><p>This <a href='https://gdscuiz.github.io/30daysofml'><strong>#30DaysOfML</strong></a> is split into 5 phases.</p><p>The first phase, <a href='https://gdscuiz.github.io/30daysofml/events/mlstart'><strong>#MLStart</strong></a>, introduce the attendees to the basics needed to get started with creating solutions using Machine Learning.</p><p>The second phase, <a href='https://gdscuiz.github.io/30daysofml/events/mlready'><strong>#MLReady</strong></a>, will get into more details about the application of machine learning in NLP, Computer Vision, and Time Series with TensorFlow.</p><p>After attending the <a href='https://gdscuiz.github.io/30daysofml/events/mlstart'><strong>#MLStart</strong></a> and <a href='https://gdscuiz.github.io/30daysofml/events/mlready'><strong>#MLReady</strong></a> and finishing the assignments before the deadline, students will be eligible to receive a voucher to pass the TensorFlow Certificate Program exam (Limited Number, Sponsored by <a href=''><strong>Google Developers</strong></a>).</p><p>Then the <a href='https://gdscuiz.github.io/30daysofml/events/mldeploy'><strong>#MLDeploy</strong></a> will focus more on Machine Learning models deployment in the Google and TensorFlow ecosystem.</p><p>Then the <a href='https://gdscuiz.github.io/30daysofml/events/mlinnovate'><strong>#MLInnovate</strong></a>, where we will host Machine Learning practitioners to learn how they use ML to create impactful solutions.</p><p>Lastly, as part of the <a href='https://gdscuiz.github.io/30daysofml'><strong>#30DaysOfML</strong></a>, we did launch the <a href='https://gdscuiz.github.io/30daysofml/events/mlolympiad'><strong>#MLOlympiad</strong></a> Kaggle competition, where participants try to create Machine Learning models to <strong>classify</strong> whether a genome sequence belongs to <strong>Humans</strong> or <strong>Gorillas</strong>. </p> 
+<h2 id="publications" tabindex="-1">Publications <a class="direct-link" href="#publications" aria-hidden="true">#</a></h2>
+<ul>
+<li>
+<p><strong>Atmospheric Visibility Image-Based System for Instrument Meteorological Conditions Estimation: A Deep Learning Approach</strong></p>
+</li>
+<li>
+<p><strong>Argania Forest Change Detection From Sentinel-2 Satellite Images using u-net Architectures</strong></p>
+</li>
+</ul>
+<h2 id="talks" tabindex="-1">Talks <a class="direct-link" href="#talks" aria-hidden="true">#</a></h2>
+<h3 id="ml-in-depth-extra-beyond-model-fit" tabindex="-1"><strong>ML in Depth Extra: Beyond Model.fit</strong> <a class="direct-link" href="#ml-in-depth-extra-beyond-model-fit" aria-hidden="true">#</a></h3>
+<ul>
+<li>@DevMENA
+<a href="https://www.youtube.com/embed/sKOz-hmxf8o">Link to talk</a></li>
+</ul>
+<p>In the world of machine learning, Keras's Model.fit has been a popular choice for training deep learning models. However, to truly understand the inner workings and gain fine-grained control over the training process, it is essential to go beyond the convenience of Model.fit and delve into building a custom training loop. In this talk, we will explore the implementation of a custom training loop using Python and TensorFlow, with a special focus on leveraging the powerful logging capabilities of Weights and Biases (wandb). Join us as we embark on a journey to unlock the potential of custom training loops and take our machine learning expertise to the next level.</p>
+<h3 id="ml-in-depth-4-deploying-ml-models" tabindex="-1"><strong>ML in Depth 4: Deploying ML Models</strong> <a class="direct-link" href="#ml-in-depth-4-deploying-ml-models" aria-hidden="true">#</a></h3>
+<ul>
+<li>@DevMENA
+<a href="https://www.youtube.com/embed/-FqzzWEz24A">Link to talk</a></li>
+</ul>
+<h3 id="ml-in-depth-3-deep-computer-vision-object-detection" tabindex="-1"><strong>ML In Depth: 3 - Deep Computer Vision - Object Detection</strong> <a class="direct-link" href="#ml-in-depth-3-deep-computer-vision-object-detection" aria-hidden="true">#</a></h3>
+<ul>
+<li>@DevMENA
+<a href="https://www.youtube.com/embed/6BfKnpFKfVE">Link to talk</a></li>
+</ul>
+<p>The ML in Depth 3 - Deep Vision: Object Detection workshop provided a practical approach to implementing object detection models using deep learning techniques. The session covered essential stages in developing and deploying such models.  The talk's key points were as follows:  Data Annotation: Attendees learned effective data annotation techniques using the Computer Vision Annotation Tool (CVAT). This open-source tool is designed specifically for computer vision tasks, making data labeling more efficient.  Data Loading and Preparation: The workshop explained the crucial steps for loading and preparing annotated data for model training. Techniques such as data cleaning, normalization, and augmentation were demonstrated.  Model Training: Participants dived into the process of training an object detection model. Various strategies to optimize model performance were explored during this stage.  Model Evaluation: The session introduced attendees to important evaluation metrics like Precision, Recall, and Intersection over Union (IoU) for measuring the effectiveness of the trained model.  Model Deployment: Finally, the workshop guided participants through the process of deploying the trained model into a web application for real-time object detection.</p>
+<h3 id="ml-in-depth-2-deep-computer-vision-segmentation" tabindex="-1"><strong>ML In Depth: 2 - Deep Computer Vision - Segmentation</strong> <a class="direct-link" href="#ml-in-depth-2-deep-computer-vision-segmentation" aria-hidden="true">#</a></h3>
+<ul>
+<li>@DevMENA
+<a href="https://www.youtube.com/embed/R8gpb6zcTXs">Link to talk</a> | <a href="https://docs.google.com/presentation/d/e/2PACX-1vRA4Bc-3ykc3pkrgY7YQCSzGZQRU4cljpIMhvc1T4D6ksww51t42EiswRnhArWaLyzQjyIdMnx1pTsD/embed?start=false&amp;loop=false&amp;delayms=60000">Slides</a></li>
+</ul>
+<h3 id="ml-in-depth-1-deep-computer-vision-classification" tabindex="-1"><strong>ML In Depth: 1 - Deep Computer Vision - Classification</strong> <a class="direct-link" href="#ml-in-depth-1-deep-computer-vision-classification" aria-hidden="true">#</a></h3>
+<ul>
+<li>@DevMENA
+<a href="https://www.youtube.com/embed/XOAml6CnoAw">Link to talk</a> | <a href="https://docs.google.com/presentation/d/e/2PACX-1vQ_cEl7ikIUZ2C2jZDe2oMLluEzNaUFJ8B-jKBehC5OLT3Lria10G7L5EeqDTfFdQ18ZV_bZU5-By5p/embed?start=false&amp;loop=false&amp;delayms=60000">Slides</a></li>
+</ul>
+<p>The ML workshop on Deep Computer Vision - Classification covered the basics of using Deep Learning for image classification. Participants learned about Convolutional Neural Networks (CNNs), and how to train their own models using TensorFlow.  The workshop included a practical exercise where attendees built a web application to interact with their trained models in real-time. They also learned about evaluation metrics and strategies to improve model performance.  No prior experience in computer vision or Deep Learning was needed, making the workshop accessible to everyone. Overall, it provided valuable knowledge and practical skills for exploring image classification with Deep Learning techniques.</p>
+<h3 id="blablaconf-22-ml-for-production-the-art-of-mlops-in-the-tensorflow-ecosystem" tabindex="-1"><strong>BlaBlaConf 22  ML for Production - The Art of MLOps in the TensorFlow Ecosystem</strong> <a class="direct-link" href="#blablaconf-22-ml-for-production-the-art-of-mlops-in-the-tensorflow-ecosystem" aria-hidden="true">#</a></h3>
+<ul>
+<li>@GeeksBlaBla
+<a href="https://www.youtube.com/embed/3egPCCl7TgI">Link to talk</a> | <a href="https://docs.google.com/presentation/d/e/2PACX-1vT3k2Uuvj5oKQ02fl0F-yG8uWouxFoq-Sa8BhyacrMr7fzEs790J5n0BrTDR7XrlkRrshsImSO9rc1G/embed?start=false&amp;loop=false&amp;delayms=60000">Slides</a></li>
+</ul>
+<p>During the talk titled &quot;ML For Production: The Art Of MLOps In TensorFlow Ecosystem,&quot; we delved into the process of building machine learning solutions and how to enhance them with the power of MLOps. Here&#39;s a brief summary of the key points covered:</p><ol><li><p><strong>Building Machine Learning Solutions:</strong> We explored the art of crafting machine learning solutions that can revolutionize industries. The talk highlighted the importance of creating intelligent and efficient models to achieve remarkable results in real-world applications.</p></li><li><p><strong>Empowering with MLOps:</strong> MLOps emerged as our guiding light throughout the talk. We discussed how MLOps acts as a magician&#39;s assistant, harmonizing data science and engineering efforts, and enabling seamless collaboration. This empowers teams to streamline the entire ML development process.</p></li><li><p><strong>Deployment Strategies:</strong> Once our machine learning models were crafted, we faced the challenge of deploying them effectively. MLOps took center stage again, providing us with a diverse set of deployment strategies. We explored traditional and cutting-edge techniques, granting us the flexibility to choose the best fit for our specific project needs.</p></li><li><p><strong>Automation and Control:</strong> MLOps was revealed as the driving force behind automation. It automates deployment pipelines, ensuring smooth and successful model launches into the production environment. Additionally, MLOps offers data scientists and developers greater control over the deployment process.</p></li></ol><p>The talk highlighted the crucial role of MLOps in elevating machine learning solutions to production-ready standards. By fostering seamless collaboration, providing a diverse range of deployment strategies, and automating processes, MLOps empowers teams to bring their ML dreams to life in the TensorFlow ecosystem.</p>
+<h3 id="menadd-intro-to-jax-flax" tabindex="-1"><strong>MENADD - Intro to JAX/Flax</strong> <a class="direct-link" href="#menadd-intro-to-jax-flax" aria-hidden="true">#</a></h3>
+<ul>
+<li>@GDGMENA
+<a href="https://www.youtube.com/embed/EZLNsChZlzU">Link to talk</a> | <a href="https://docs.google.com/presentation/d/e/2PACX-1vQQdiG-31g61qp3GI3Dbd4bHfNZ7oUv12s8xs2ssUkF2mU1V5qL7MIT289srRr-s_jXjCCC6hXetW-I/embed?start=false&amp;loop=false&amp;delayms=60000">Slides</a></li>
+</ul>
+<p>This talk on Introduction to JAX and FLAX aimed to simplify complex concepts and provide the audience with a clear understanding of these powerful libraries. I started by explaining JAX's significance in automatic differentiation and accelerated linear algebra for improved numerical computations and machine learning tasks. Moving on to FLAX, I highlighted its user-friendly abstractions for building neural networks effortlessly. Practical examples demonstrated how JAX and FLAX enable efficient gradient computations, making model development and training seamless. From basic mathematical operations to real-world applications like image recognition and natural language processing, the audience witnessed the versatility of these libraries. I concluded by sharing real-world use cases, igniting curiosity among listeners to explore the potential of JAX and FLAX further in their machine learning projects.</p>
+<h3 id="menadd-introduction-to-reinforcement-learning" tabindex="-1"><strong>MENADD - Introduction to Reinforcement Learning</strong> <a class="direct-link" href="#menadd-introduction-to-reinforcement-learning" aria-hidden="true">#</a></h3>
+<ul>
+<li>@GDGMENA</li>
+</ul>
+<p>In my presentation on Introduction to Reinforcement Learning, I provided the audience with an accessible overview of this exciting field in artificial intelligence. I began by explaining the fundamental concepts of reinforcement learning, where agents learn to make decisions through interactions with an environment, receiving rewards or penalties based on their actions. The audience learned about the key components of reinforcement learning, including states, actions, and rewards, and how they form the basis of the learning process. I introduced popular algorithms like Q-Learning and Deep Q Networks (DQN), showcasing how they enable agents to learn optimal strategies in complex environments. Practical examples and simulations further illustrated the potential of reinforcement learning in solving real-world problems, ranging from game playing to robotic control. By the end of the talk, the audience gained a foundational understanding of reinforcement learning and left inspired to explore its applications in various domains.</p>
+<h3 id="devfest-ml-for-production-the-art-of-mlops-in-the-tensorflow-ecosystem" tabindex="-1"><strong>Devfest - ML for Production - The Art of MLOps in the TensorFlow Ecosystem</strong> <a class="direct-link" href="#devfest-ml-for-production-the-art-of-mlops-in-the-tensorflow-ecosystem" aria-hidden="true">#</a></h3>
+<ul>
+<li>@GDGCasablanca</li>
+</ul>
+<h3 id="ml-101" tabindex="-1"><strong>ML 101</strong> <a class="direct-link" href="#ml-101" aria-hidden="true">#</a></h3>
+<ul>
+<li>@GDSCENSAMRabat
+<a href="https://docs.google.com/presentation/d/e/2PACX-1vTio8G2Oi5-uDzn6YQ38GnypSAuZoQaiQuBSekKCs51A2voqjzNgf9oMiUGDIQrQqsgfERXTYuPK7B6/embed?start=false&amp;loop=false&amp;delayms=60000">Slides</a></li>
+</ul>
+<p>In my ML 101 talk, I covered the basics of Machine Learning, aiming to make the topic approachable to everyone in the audience. I started by explaining the core concepts of supervised, unsupervised, and reinforcement learning, along with their respective use cases. The audience gained insights into the importance of training data, feature engineering, and model evaluation. I illustrated the machine learning workflow step-by-step, from data collection and preprocessing to model training and deployment. To make the topic more engaging, I introduced the audience to Teachable Machine, a user-friendly web-based tool developed by Google. With Teachable Machine, I demonstrated how even beginners could create a simple solution using machine learning. The audience was thrilled to see how they could train a model with their own data and use it for classification tasks, such as recognizing objects or sounds. This hands-on demonstration helped solidify the concepts and showcased the power of machine learning in solving real-world problems.</p>
+<h3 id="menadd-brain-tumor-classification-with-tf" tabindex="-1"><strong>MENADD - Brain Tumor Classification with TF</strong> <a class="direct-link" href="#menadd-brain-tumor-classification-with-tf" aria-hidden="true">#</a></h3>
+<ul>
+<li>@GDGMENA
+<a href="https://www.youtube.com/embed/aj1Xj-WN8uo">Link to talk</a></li>
+</ul>
+<p>During the Brain Tumor Classification with TensorFlow workshop, participants were guided through the process of building a brain tumor classification model using Keras. The workshop covered dataset preprocessing, CNN architecture construction, transfer learning, and model training with various hyperparameters. Participants learned how to evaluate the model's performance using metrics such as accuracy, precision, recall, and F1-score. Additionally, Grad-CAM was introduced as a visualization technique to investigate the model's decision-making process. By the end of the workshop, attendees gained valuable hands-on experience in brain tumor classification, enabling them to apply these techniques to other medical imaging and classification tasks in their future endeavors.</p>
+<h3 id="menadd-land-cover-classification-using-multispectral-sentinel-2-satellite-imagery-google-earth-engine-and-tensorflow" tabindex="-1"><strong>MENADD - Land Cover Classification using Multispectral Sentinel-2 Satellite Imagery, Google Earth Engine, and TensorFlow</strong> <a class="direct-link" href="#menadd-land-cover-classification-using-multispectral-sentinel-2-satellite-imagery-google-earth-engine-and-tensorflow" aria-hidden="true">#</a></h3>
+<ul>
+<li>@GDGMENA
+<a href="https://www.youtube.com/embed/gh-YrFzr_80">Link to talk</a> | <a href="https://docs.google.com/presentation/d/e/2PACX-1vSz06m8GGkkWL_059z1VgiMQeaIlF6Ri11O9TzwMnKLISnoLG3NQXlAG6k6GFiwsF2WAUGPhNiJ67br/embed?start=false&amp;loop=false&amp;delayms=60000">Slides</a></li>
+</ul>
+<p>In my talk, I shared valuable insights and practical knowledge about remote sensing and machine learning. We started with an introduction to getting started with remote sensing, discussing the significance of remote sensing data and its diverse applications. I explained the process of creating a land cover dataset, covering data collection methods and preprocessing techniques for accurate results.        I then guided the audience through the process of training machine learning models using two different approaches. First, we explored training a pixel-based dataset, understanding the intricacies of handling individual pixels as data points and designing models that operate on this level. This approach is crucial for certain remote sensing tasks, and I highlighted its potential and limitations. Moving on, I demonstrated how to train a machine learning model on a patch-based dataset, with a particular focus on the EuroSat dataset. This approach allows us to leverage spatial context, considering groups of pixels as patches for classification tasks. The audience gained hands-on experience in working with patch-based data and understanding the advantages it brings to remote sensing applications.</p>
+<h3 id="30daysofml-mlready-wcv1-image-classification-with-dense-nn-tf" tabindex="-1"><strong>30DaysofML - #MLReady WCV1: Image Classification with Dense NN TF</strong> <a class="direct-link" href="#30daysofml-mlready-wcv1-image-classification-with-dense-nn-tf" aria-hidden="true">#</a></h3>
+<ul>
+<li>@TFUGAgadir x @GDSCUIZ
+<a href="https://www.youtube.com/embed/TSXpQYsb6ag">Link to talk</a></li>
+</ul>
+<p>In the 30DaysofML - #MLReady WCV1 workshop, I presented a comprehensive session on implementing a simple image classifier using TensorFlow Keras dense layers. The workshop aimed to equip participants with the necessary skills to delve into the realm of image classification with confidence. I introduced the concept of image classification and its significance in diverse machine learning applications. With hands-on exercises, attendees learned data preparation techniques, including loading and preprocessing image data, and gained practical experience in designing and building dense neural networks for image classification using TensorFlow Keras. By the end of the workshop, participants felt empowered and #MLReady, ready to apply their newfound knowledge to create image classifiers for their projects and beyond.</p>
+<h3 id="30daysofml-mlready-wts2-time-series-forecasting-with-tf" tabindex="-1"><strong>30DaysofML - #MLReady WTS2: Time Series Forecasting with TF</strong> <a class="direct-link" href="#30daysofml-mlready-wts2-time-series-forecasting-with-tf" aria-hidden="true">#</a></h3>
+<ul>
+<li>@TFUGAgadir x @GDSCUIZ
+<a href="https://www.youtube.com/embed/RU7OMJRYC8o">Link to talk</a></li>
+</ul>
+<h3 id="30daysofml-mlready-wts3-time-series-annomaly-detection-with-tf" tabindex="-1"><strong>30DaysofML - #MLReady WTS3: Time Series Annomaly Detection with TF</strong> <a class="direct-link" href="#30daysofml-mlready-wts3-time-series-annomaly-detection-with-tf" aria-hidden="true">#</a></h3>
+<ul>
+<li>@TFUGAgadir x @GDSCUIZ
+<a href="https://www.youtube.com/embed/RU7OMJRYC8o">Link to talk</a></li>
+</ul>
+<h3 id="30daysofml-mlready-nlp1-intro-to-nlp" tabindex="-1"><strong>30DaysofML - #MLReady NLP1: Intro to NLP</strong> <a class="direct-link" href="#30daysofml-mlready-nlp1-intro-to-nlp" aria-hidden="true">#</a></h3>
+<ul>
+<li>@TFUGAgadir x @GDSCUIZ
+<a href="https://www.youtube.com/embed/JIWlVm7_ElM">Link to talk</a> | <a href="https://docs.google.com/presentation/d/e/2PACX-1vSHz9z6Cy2nCM4pCUYtZWwQPS4Ereiovrc9_NcLqBqI88R-Tw0GdEerFQRztyMedE221c9DqaMcl9YI/embed?start=false&amp;loop=false&amp;delayms=60000">Slides</a></li>
+</ul>
+<h3 id="30daysofml-mlready-nlp2-word-embedding" tabindex="-1"><strong>30DaysofML - #MLReady NLP2: Word Embedding</strong> <a class="direct-link" href="#30daysofml-mlready-nlp2-word-embedding" aria-hidden="true">#</a></h3>
+<ul>
+<li>@TFUGAgadir x @GDSCUIZ
+<a href="https://www.youtube.com/embed/OmRVgB5zkpM">Link to talk</a> | <a href="https://docs.google.com/presentation/d/e/2PACX-1vSHz9z6Cy2nCM4pCUYtZWwQPS4Ereiovrc9_NcLqBqI88R-Tw0GdEerFQRztyMedE221c9DqaMcl9YI/embed?start=false&amp;loop=false&amp;delayms=60000">Slides</a></li>
+</ul>
+<h3 id="30daysofml-mlready-wnlp-1-and-wlnp-2-sentimental-analysis-with-tf" tabindex="-1"><strong>30DaysofML - #MLReady WNLP 1 &amp; WLNP 2 Sentimental Analysis with TF</strong> <a class="direct-link" href="#30daysofml-mlready-wnlp-1-and-wlnp-2-sentimental-analysis-with-tf" aria-hidden="true">#</a></h3>
+<ul>
+<li>@TFUGAgadir x @GDSCUIZ
+<a href="https://www.youtube.com/embed/jBSinHMfWNk">Link to talk</a></li>
+</ul>
+<h3 id="30daysofml-mlstart-intro-to-eda" tabindex="-1"><strong>30DaysofML - #MLStart Intro to EDA</strong> <a class="direct-link" href="#30daysofml-mlstart-intro-to-eda" aria-hidden="true">#</a></h3>
+<ul>
+<li>@TFUGAgadir x @GDSCUIZ
+<a href="https://www.youtube.com/embed/hnmzpzwj_bI">Link to talk</a> | <a href="https://docs.google.com/presentation/d/e/2PACX-1vSmg2qQ29BW_x8nIPD-me4ylKRlylgrXgFIMW8sde5juQyXMSc09qlrSnUy7_cfkRgKWNW49rXmvWum/embed?start=false&amp;loop=false&amp;delayms=60000">Slides</a></li>
+</ul>
+<h3 id="30daysofml-mlstart-ai-101" tabindex="-1"><strong>30DaysofML - #MLStart AI 101</strong> <a class="direct-link" href="#30daysofml-mlstart-ai-101" aria-hidden="true">#</a></h3>
+<ul>
+<li>@TFUGAgadir x @GDSCUIZ
+<a href="https://www.youtube.com/embed/pXxCt-RCpwM">Link to talk</a> | <a href="https://docs.google.com/presentation/d/e/2PACX-1vRM9acmNvADXTPY7sVOnS0aE1FQTn63V0yMZwVYm-Wdms2f0t2adm-qEOrMk9uvs0-Ln3XNKKLc3nz1/embed?start=false&amp;loop=false&amp;delayms=60000">Slides</a></li>
+</ul>
+<h3 id="30daysofml-init" tabindex="-1"><strong>30DaysofML init</strong> <a class="direct-link" href="#30daysofml-init" aria-hidden="true">#</a></h3>
+<ul>
+<li>@TFUGAgadir x @GDSCUIZ
+<a href="https://www.youtube.com/embed/rEmbxEKBHYQ">Link to talk</a> | <a href="https://docs.google.com/presentation/d/e/2PACX-1vTaUxH_Rla6Mk_-HhvQcAw_r-2Gv6fDAArPLKUn20Xl2LoZDo0RugEyiHrfDeQACJfKZp_wywbAv17K/embed?start=false&amp;loop=false&amp;delayms=60000">Slides</a></li>
+</ul>
+<h3 id="personal-branding-2" tabindex="-1"><strong>Personal Branding 2</strong> <a class="direct-link" href="#personal-branding-2" aria-hidden="true">#</a></h3>
+<ul>
+<li>@GDSCUIZ</li>
+</ul>
+<h3 id="personal-branding" tabindex="-1"><strong>Personal Branding</strong> <a class="direct-link" href="#personal-branding" aria-hidden="true">#</a></h3>
+<ul>
+<li>@GDSCUIZ</li>
+</ul>
+<h3 id="machine-learning-101" tabindex="-1"><strong>Machine Learning 101</strong> <a class="direct-link" href="#machine-learning-101" aria-hidden="true">#</a></h3>
+<ul>
+<li>@GDSCUIZ
+<a href="https://www.youtube.com/embed/yhv9DHgYZuA">Link to talk</a> | <a href="https://docs.google.com/presentation/d/e/2PACX-1vTkvPA-SgWxYLH7oBQ-iPegCX11p8yBXq46bHSwp6W3U3a0Lptp7hQIkULSxOjyS5FuNyqelqmpDXL6/embed?start=false&amp;loop=false&amp;delayms=60000">Slides</a></li>
+</ul>
+<h3 id="ai-101" tabindex="-1"><strong>AI 101</strong> <a class="direct-link" href="#ai-101" aria-hidden="true">#</a></h3>
+<ul>
+<li>@GDSCUIZ
+<a href="https://www.youtube.com/embed/vKNXsgCLWM4">Link to talk</a> | <a href="https://docs.google.com/presentation/d/e/2PACX-1vT5h0I-QjnkxwMSw2vMjQuWu6Yul2mqMpbTXpqdWsK2V11AOmz6PC7bTgi11HlYjll8jg_E9otMMjVl/embed?start=false&amp;loop=false&amp;delayms=60000">Slides</a></li>
+</ul>
+<h2 id="certificates" tabindex="-1">Certificates <a class="direct-link" href="#certificates" aria-hidden="true">#</a></h2>
+<ul>
+<li><strong>Google Data Analytics</strong></li>
+</ul>
+<ul>
+<li>Google</li>
+</ul>
+<p>Those who earn the Google Data Analytics Professional Certificate have completed eight courses, developed by Google, that include hands-on, practice-based assessments and are designed to prepare them for introductory-level roles in Data Analytics. They are competent in tools and platforms including spreadsheets, SQL, Tableau, and R. They know how to prepare, process, analyze, and share data for thoughtful action.</p>
+<ul>
+<li><strong>TensorFlow Developer Certificate</strong></li>
+</ul>
+<ul>
+<li><a href="http://TensorFlow.Org">TensorFlow.Org</a></li>
+</ul>
+<p>This certificate tests a developers foundational knowledge of integrating machine learning into tools and applications. The certificate program requires an understanding of building TensorFlow models using Computer Vision, Convolutional Neural Networks, Natural Language Processing, and real-world image data and strategies.</p>
+<ul>
+<li><strong>Deep Learning Researcher</strong></li>
+</ul>
+<ul>
+<li>Google</li>
+</ul>
+<p>This certificate in recognition of their skills identified as essential to the Deep Learning Researcher role.</p>
+<ul>
+<li><strong>Software Design and Architecture Specialization</strong></li>
+</ul>
+<ul>
+<li>University Of Alberta</li>
+</ul>
+<p>This certificate tests a developers foundational knowledge of integrating machine learning into tools and applications. The certificate program requires an understanding of building TensorFlow models using Computer Vision, Convolutional Neural Networks, Natural Language Processing, and real-world image data and strategies.</p>
+<ul>
+<li><strong>Software Product Management Specialization</strong></li>
+</ul>
+<ul>
+<li>Google</li>
+</ul>
+<p>This certificate tests a developers foundational knowledge of integrating machine learning into tools and applications. The certificate program requires an understanding of building TensorFlow models using Computer Vision, Convolutional Neural Networks, Natural Language Processing, and real-world image data and strategies.</p>
+<ul>
+<li><strong>Deep Learning Specialization</strong></li>
+</ul>
+<ul>
+<li><a href="http://Deeplearning.Ai">Deeplearning.Ai</a></li>
+</ul>
+<p>This certificate tests a developers foundational knowledge of integrating machine learning into tools and applications. The certificate program requires an understanding of building TensorFlow models using Computer Vision, Convolutional Neural Networks, Natural Language Processing, and real-world image data and strategies.</p>
+<h2 id="education" tabindex="-1">Education <a class="direct-link" href="#education" aria-hidden="true">#</a></h2>
+<ul>
+<li><strong>Master - Electrical and Computer Engineering</strong></li>
+</ul>
+<ul>
+<li>Henry M. Rowan College Of Engineering (January 2023 - Present)</li>
+</ul>
+<ul>
+<li><strong>Master of Research - Data Science</strong></li>
+</ul>
+<ul>
+<li>Faculty Of Sciences Agadir</li>
+</ul>
+<ul>
+<li><strong>Bachelor of Science in Mathematics and Computer Science - Software Engineering</strong></li>
+</ul>
+<ul>
+<li>Faculty Of Sciences Agadir</li>
+</ul>
+<ul>
+<li><strong>Associate Degree in Mathematics and Computer Science</strong></li>
+</ul>
+<ul>
+<li>Faculty Of Sciences Agadir</li>
+</ul>
+<h2 id="experiences" tabindex="-1">Experiences <a class="direct-link" href="#experiences" aria-hidden="true">#</a></h2>
+<ul>
+<li><strong>Research Fellow</strong></li>
+</ul>
+<ul>
+<li>Rowan University, Henry M. Rowan College Of Engineering (January 2023 - Present)</li>
+</ul>
+<ul>
+<li><strong>Mentor</strong></li>
+</ul>
+<ul>
+<li>Google Developers (July 2022 - July 2023)</li>
+</ul>
+<ul>
+<li><strong>Lead Organizer</strong></li>
+</ul>
+<ul>
+<li>TensorFlow User Group Agadir (Oct 2021 - January 2023)</li>
+</ul>
+<ul>
+<li><strong>Research Engineer</strong></li>
+</ul>
+<ul>
+<li>IRF-SIC (September 2022 - January 2023)</li>
+</ul>
+<ul>
+<li><strong>Lead/Founder</strong></li>
+</ul>
+<ul>
+<li>Google Developer Student Clubs (July 2021 - July 2022)</li>
+</ul>
+<ul>
+<li><strong>Deep Learning Researcher Intern</strong></li>
+</ul>
+<ul>
+<li>Rowan University, Henry M. Rowan College Of Engineering (Feb 2022 - July 2022)</li>
+</ul>
+<ul>
+<li><strong>Deep Learning Researcher Intern</strong></li>
+</ul>
+<ul>
+<li>IRF-SIC Laboratory (Feb 2022 - July 2022)</li>
+</ul>
+<ul>
+<li><strong>Lead/Founder</strong></li>
+</ul>
+<ul>
+<li>Computer Science Students Club (Oct 2019 - July 2021)</li>
+</ul>
+<ul>
+<li><strong>Web Developer</strong></li>
+</ul>
+<ul>
+<li>Freelancer (July 2021 - July 2022)</li>
+</ul>
+<p>Building Web applications for my freelance customers using different js stacks depending on the client's requirements.</p>
+<ul>
+<li><strong>Android Developer</strong></li>
+</ul>
+<ul>
+<li>Self-Publishing (July 2016 - July 2019)</li>
+</ul>
+<p>Developed an Android board game that reached +100.000 Downloads on Google Play afterward amongst other applications.</p>
+<h2 id="volunteering" tabindex="-1">Volunteering <a class="direct-link" href="#volunteering" aria-hidden="true">#</a></h2>
+<ul>
+<li><strong>Lead/Founder</strong></li>
+</ul>
+<ul>
+<li>TensorFlow User Group Agadir (Oct 2021 - January 2023)</li>
+</ul>
+<ul>
+<li><strong>Lead/Founder</strong></li>
+</ul>
+<ul>
+<li>Google Developer Student Clubs Ibn Zohr University (July 2021 - July 2022)</li>
+</ul>
+<ul>
+<li><strong>Trainer</strong></li>
+</ul>
+<ul>
+<li>AECFSA (Sep 2021 - June 2022)</li>
+</ul>
+<ul>
+<li><strong>Event Ambassador</strong></li>
+</ul>
+<ul>
+<li><a href="http://DeepLearning.Ai">DeepLearning.Ai</a> (Sep 2021 - Dec 2021)</li>
+</ul>
+<ul>
+<li><strong>Ambassador</strong></li>
+</ul>
+<ul>
+<li>AMLD Africa (Aug 2021 - Sep 2021)</li>
+</ul>
+<ul>
+<li><strong>Lead/Founder</strong></li>
+</ul>
+<ul>
+<li>Computer Science Students Club (Oct 2019 - July 2021)</li>
+</ul>
