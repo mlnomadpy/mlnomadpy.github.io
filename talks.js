@@ -45,6 +45,31 @@ async function loadTalks() {
             talksContainer.appendChild(groupDiv);
         });
 
+        // Add structured data for talks
+        const structuredData = {
+            "@context": "https://schema.org",
+            "@type": "ItemList",
+            "itemListElement": talks.map((talk, index) => ({
+                "@type": "ListItem",
+                "position": index + 1,
+                "item": {
+                    "@type": "CreativeWork",
+                    "name": talk.title,
+                    "description": talk.description || "",
+                    "url": talk.link || "",
+                    "thumbnailUrl": talk.thumbnail || "default-thumbnail.jpg",
+                    "creator": {
+                        "@type": "Person",
+                        "name": talk.speaker || "Unknown"
+                    }
+                }
+            }))
+        };
+        const script = document.createElement('script');
+        script.type = 'application/ld+json';
+        script.textContent = JSON.stringify(structuredData);
+        document.head.appendChild(script);
+
     } catch (error) {
         console.error('Error loading talks:', error);
         document.querySelector('.talks-container').innerHTML = '<p>Error loading talks content</p>';
