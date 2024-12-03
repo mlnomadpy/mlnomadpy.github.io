@@ -81,6 +81,21 @@
     transform-origin: bottom;
 }
 
+/* Add this rule to ensure the scroll bar is rounded */
+.talk-overlay::-webkit-scrollbar {
+    width: 12px;
+}
+
+.talk-overlay::-webkit-scrollbar-thumb {
+    background: var(--accent-color);
+    border-radius: 20px; /* Match the container's rounded edges */
+}
+
+.talk-overlay::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 15px; /* Match the container's rounded edges */
+}
+
 .close-btn {
     position: absolute;
     top: 15px;
