@@ -1,6 +1,6 @@
 async function loadTalks() {
     try {
-        const response = await fetch('_data/talks.json'); // Changed path
+        const response = await fetch('data/talks.json'); // Changed path
         const talks = await response.json(); // talks is now an array of objects
         
         // Group talks by type
