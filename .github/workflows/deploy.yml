@@ -1,0 +1,62 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: vue-app/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd vue-app
+          npm ci
+
+      - name: Run linter
+        run: |
+          cd vue-app
+          npm run lint
+
+      - name: Run tests
+        run: |
+          cd vue-app
+          npm test
+
+      - name: Build application
+        run: |
+          cd vue-app
+          npm run build
+
+      - name: Copy static files
+        run: |
+          cp robots.txt dist/ || echo "robots.txt not found"
+          cp sitemap.xml dist/ || echo "sitemap.xml not found"
+          cp CNAME dist/ || echo "CNAME not found"
+          cp favicon.ico dist/ || echo "favicon.ico not found"
+
+      - name: Deploy to GitHub Pages
+        if: github.ref == 'refs/heads/master'
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          publish_branch: gh-pages
