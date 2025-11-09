@@ -90,7 +90,7 @@ mlnomadpy.github.io/
 ├── .github/
 │   └── workflows/
 │       └── deploy-astro.yml   # CI/CD workflow for Astro
-├── astro-app/                  # Astro application (current)
+├── astro-app/                  # Astro application
 │   ├── public/                 # Static files
 │   │   └── favicon.ico
 │   ├── src/
@@ -110,7 +110,6 @@ mlnomadpy.github.io/
 │   ├── astro.config.mjs        # Astro configuration
 │   ├── tsconfig.json           # TypeScript configuration
 │   └── package.json            # Dependencies and scripts
-├── vue-app/                    # Legacy Vue.js app (archived)
 ├── robots.txt                  # Search engine crawling instructions
 ├── sitemap.xml                 # XML sitemap for SEO
 ├── CNAME                       # Custom domain configuration
@@ -163,7 +162,7 @@ Contributions are welcome! Please follow these guidelines:
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
 3. Make your changes
-4. Run tests and linting (`npm test && npm run lint`)
+4. Build and test locally (`npm run build && npm run preview`)
 5. Commit your changes (`git commit -m 'Add amazing feature'`)
 6. Push to the branch (`git push origin feature/amazing-feature`)
 7. Open a Pull Request
@@ -192,4 +191,3 @@ This site was migrated from Vue.js SPA to Astro SSG for better SEO and performan
 - **After**: Static site generation with Astro
 - **Benefits**: Better SEO, faster load times, improved Core Web Vitals
 - **Deployment**: Simplified deployment to GitHub Pages with static files
-- **Legacy Code**: The original Vue.js app is preserved in the `vue-app/` directory for reference

@@ -1,0 +1,26 @@
+{
+  "name": "mlnomadpy-portfolio",
+  "version": "3.0.0",
+  "description": "Personal portfolio and research website for Taha Bouhsine (MLNomadpy) - Built with Astro",
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro check && astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "keywords": [
+    "portfolio",
+    "astro",
+    "machine-learning",
+    "research",
+    "ssg"
+  ],
+  "author": "Taha Bouhsine",
+  "license": "MIT",
+  "devDependencies": {
+    "astro": "^5.15.4",
+    "@astrojs/check": "^0.9.5",
+    "typescript": "^5.7.3"
+  }
+}

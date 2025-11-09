@@ -1,0 +1,64 @@
+name: Deploy Astro to GitHub Pages
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: astro-app/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd astro-app
+          npm ci
+
+      - name: Build Astro site
+        run: |
+          cd astro-app
+          npm run build
+
+      - name: Copy static files
+        run: |
+          cd astro-app/dist
+          cp ../../robots.txt . || echo "robots.txt not found"
+          cp ../../sitemap.xml . || echo "sitemap.xml not found"
+          cp ../../CNAME . || echo "CNAME not found"
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./astro-app/dist
+
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

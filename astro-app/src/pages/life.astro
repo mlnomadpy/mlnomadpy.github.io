@@ -1,0 +1,197 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+
+const lifeEvents = [
+  {
+    id: 1,
+    date: '2024',
+    title: 'Google Developer Expert',
+    description: 'Recognized as Google Developer Expert in AI/ML',
+  },
+  {
+    id: 2,
+    date: '2023',
+    title: 'Founded MLNomads LLC',
+    description: 'Established company focusing on AI innovation and consulting',
+  },
+  {
+    id: 3,
+    date: '2022',
+    title: 'Published Research',
+    description: 'Published multiple papers in top-tier ML conferences',
+  },
+  {
+    id: 4,
+    date: '2021',
+    title: 'PhD Journey',
+    description: 'Started doctoral research in Machine Learning',
+  },
+];
+---
+
+<MainLayout
+  title="Life - Taha Bouhsine"
+  description="Timeline of important life events and milestones"
+  keywords="Career Timeline, Professional Journey, Milestones"
+>
+  <div class="life-view">
+    <section class="life-hero">
+      <div class="container">
+        <h1 class="page-title">Life Timeline</h1>
+        <p class="page-subtitle">Important Milestones and Events</p>
+      </div>
+    </section>
+
+    <section class="timeline-content">
+      <div class="container">
+        <div class="timeline">
+          {lifeEvents.map((event, index) => (
+            <div class:list={['timeline-item', index % 2 === 0 ? 'left' : 'right']}>
+              <div class="timeline-content">
+                <div class="timeline-date">{event.date}</div>
+                <h3>{event.title}</h3>
+                <p>{event.description}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  </div>
+</MainLayout>
+
+<style>
+.life-view {
+  min-height: 100vh;
+}
+
+.life-hero {
+  padding: 4rem 2rem;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+}
+
+.page-title {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.page-subtitle {
+  font-size: 1.3rem;
+  color: #999;
+}
+
+.timeline-content {
+  padding: 4rem 2rem;
+}
+
+.timeline {
+  max-width: 900px;
+  margin: 0 auto;
+  position: relative;
+  padding: 2rem 0;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  height: 100%;
+  background: rgba(102, 126, 234, 0.3);
+}
+
+.timeline-item {
+  margin-bottom: 3rem;
+  position: relative;
+  width: 50%;
+}
+
+.timeline-item.left {
+  padding-right: 3rem;
+  text-align: right;
+}
+
+.timeline-item.right {
+  margin-left: 50%;
+  padding-left: 3rem;
+  text-align: left;
+}
+
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  background: #667eea;
+  border-radius: 50%;
+  top: 0;
+}
+
+.timeline-item.left::before {
+  right: -8px;
+}
+
+.timeline-item.right::before {
+  left: -8px;
+}
+
+.timeline-content {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1.5rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.timeline-date {
+  color: #667eea;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  font-size: 1.1rem;
+}
+
+.timeline-content h3 {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+  color: #fff;
+}
+
+.timeline-content p {
+  color: #ccc;
+  line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+  .page-title {
+    font-size: 2rem;
+  }
+
+  .page-subtitle {
+    font-size: 1.1rem;
+  }
+
+  .timeline::before {
+    left: 0;
+  }
+
+  .timeline-item {
+    width: 100%;
+    padding-left: 3rem !important;
+    padding-right: 0 !important;
+    text-align: left !important;
+  }
+
+  .timeline-item.right {
+    margin-left: 0;
+  }
+
+  .timeline-item::before {
+    left: -8px !important;
+    right: auto !important;
+  }
+}
+</style>
