@@ -1,0 +1,78 @@
+---
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description: string;
+  keywords?: string;
+  hideHeader?: boolean;
+  hideFooter?: boolean;
+}
+
+const { 
+  title = 'Taha Bouhsine - ML Researcher & Google Developer Expert',
+  description = 'Machine Learning Researcher & Engineer, focusing on representation learning and interpretable AI models',
+  keywords = 'Machine Learning, AI Research, Google Developer Expert, Taha Bouhsine, MLNomadpy',
+  hideHeader = false,
+  hideFooter = false
+} = Astro.props;
+
+const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <meta name="generator" content={Astro.generator} />
+    
+    <!-- Primary Meta Tags -->
+    <title>{title}</title>
+    <meta name="title" content={title} />
+    <meta name="description" content={description} />
+    <meta name="keywords" content={keywords} />
+    <meta name="author" content="Taha Bouhsine" />
+    <link rel="canonical" href={canonicalURL} />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalURL} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:site_name" content="Taha Bouhsine - MLNomadpy" />
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content={canonicalURL} />
+    <meta property="twitter:title" content={title} />
+    <meta property="twitter:description" content={description} />
+    
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json" is:inline>
+      {
+        "@context": "https://schema.org",
+        "@type": "Person",
+        "name": "Taha Bouhsine",
+        "url": "https://mlnomadpy.github.io",
+        "jobTitle": "Machine Learning Researcher & Google Developer Expert",
+        "sameAs": [
+          "https://github.com/mlnomadpy",
+          "https://linkedin.com/in/Tahabsn"
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <div id="app">
+      {!hideHeader && <Header />}
+      <main class="main-content">
+        <slot />
+      </main>
+      {!hideFooter && <Footer />}
+    </div>
+  </body>
+</html>

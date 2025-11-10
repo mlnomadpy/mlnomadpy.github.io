@@ -1,0 +1,168 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const highlights = [
+  {
+    icon: '🔬',
+    title: 'Research',
+    description: 'Published papers on neural networks and machine learning',
+  },
+  {
+    icon: '🎤',
+    title: 'Speaking',
+    description: 'International talks and workshops on AI/ML',
+  },
+  {
+    icon: '💼',
+    title: 'Leadership',
+    description: 'CEO of MLNomads LLC, driving AI innovation',
+  },
+  {
+    icon: '🏆',
+    title: 'Recognition',
+    description: 'Google Developer Expert in AI/ML',
+  },
+];
+---
+
+<BaseLayout 
+  title="Taha Bouhsine - ML Researcher & Google Developer Expert"
+  description="Machine Learning Researcher & Engineer, focusing on representation learning and interpretable AI models"
+  keywords="Machine Learning, AI Research, Google Developer Expert, Taha Bouhsine, MLNomadpy"
+>
+  <div class="home-view">
+    <section class="hero-section">
+      <div class="hero-content fade-in-on-load">
+        <h1 class="hero-title">Taha Bouhsine</h1>
+        <p class="hero-subtitle">ML Researcher & Google Developer Expert</p>
+        <p class="hero-description">
+          Machine Learning Researcher & Engineer, focusing on representation learning and
+          interpretable AI models
+        </p>
+        <div class="hero-actions">
+          <a href="/about" class="btn btn-primary">Learn More</a>
+          <a href="/research" class="btn btn-secondary">View Research</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="highlights-section">
+      <div class="container">
+        <h2 class="section-title">Highlights</h2>
+        <div class="highlights-grid">
+          {highlights.map((highlight) => (
+            <div class="highlight-card">
+              <div class="highlight-icon">{highlight.icon}</div>
+              <h3>{highlight.title}</h3>
+              <p>{highlight.description}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+.home-view {
+  min-height: 100vh;
+}
+
+.hero-section {
+  min-height: 80vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+}
+
+.hero-content {
+  text-align: center;
+  max-width: 800px;
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.8s ease;
+}
+
+.hero-content.fade-in-on-load {
+  animation: fadeInUp 0.8s ease forwards;
+}
+
+@keyframes fadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hero-title {
+  font-size: 3.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-subtitle {
+  font-size: 1.5rem;
+  color: #999;
+  margin-bottom: 1rem;
+}
+
+.hero-description {
+  font-size: 1.1rem;
+  color: #ccc;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.highlights-section {
+  padding: 4rem 2rem;
+}
+
+.highlights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+}
+
+.highlight-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.highlight-card h3 {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+  color: #fff;
+}
+
+.highlight-card p {
+  color: #999;
+  line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+  .hero-title {
+    font-size: 2.5rem;
+  }
+
+  .hero-subtitle {
+    font-size: 1.2rem;
+  }
+
+  .hero-description {
+    font-size: 1rem;
+  }
+}
+</style>

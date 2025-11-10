@@ -1,0 +1,56 @@
+name: Build and Deploy Astro Site
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: astro-app/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd astro-app
+          npm ci
+
+      - name: Run linter
+        run: |
+          cd astro-app
+          npm run lint
+
+      - name: Run tests
+        run: |
+          cd astro-app
+          npm test
+
+      - name: Build application
+        run: |
+          cd astro-app
+          npm run build
+
+      - name: Deploy to GitHub Pages
+        if: github.ref == 'refs/heads/master'
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./astro-app/dist
+          publish_branch: gh-pages
+          cname: mlnomadpy.github.io

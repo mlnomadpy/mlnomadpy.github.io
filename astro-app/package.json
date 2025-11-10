@@ -1,0 +1,41 @@
+{
+  "name": "mlnomadpy-portfolio",
+  "version": "2.0.0",
+  "description": "Personal portfolio and research website for Taha Bouhsine (MLNomadpy) built with Astro.js",
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro check && astro build",
+    "preview": "astro preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint src --ext .astro,.ts,.tsx",
+    "lint:fix": "eslint src --ext .astro,.ts,.tsx --fix",
+    "format": "prettier --write \"src/**/*.{astro,ts,tsx,css}\"",
+    "astro": "astro"
+  },
+  "keywords": [
+    "portfolio",
+    "astro",
+    "machine-learning",
+    "research"
+  ],
+  "author": "Taha Bouhsine",
+  "license": "MIT",
+  "devDependencies": {
+    "@astrojs/check": "^0.9.5",
+    "@typescript-eslint/eslint-plugin": "^8.46.3",
+    "@typescript-eslint/parser": "^8.46.3",
+    "@vitest/ui": "^4.0.8",
+    "astro": "^5.15.4",
+    "eslint": "^9.39.1",
+    "eslint-plugin-astro": "^1.5.0",
+    "happy-dom": "^20.0.10",
+    "prettier": "^3.6.2",
+    "prettier-plugin-astro": "^0.14.1",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.8"
+  }
+}

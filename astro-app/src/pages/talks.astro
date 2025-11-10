@@ -1,0 +1,103 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const talks = [
+  {
+    id: 1,
+    title: 'The Future of Interpretable AI',
+    event: 'AI Summit 2024',
+    date: 'March 2024',
+    description:
+      'Exploring the latest advances in interpretable AI models and their applications in real-world scenarios.',
+  },
+  {
+    id: 2,
+    title: 'Deep Learning Best Practices',
+    event: 'ML Conference 2023',
+    date: 'November 2023',
+    description:
+      'A comprehensive workshop on best practices for building and deploying deep learning models.',
+  },
+  {
+    id: 3,
+    title: 'Neural Networks from Scratch',
+    event: 'Developer Meetup',
+    date: 'September 2023',
+    description:
+      'Hands-on session building neural networks from scratch to understand core concepts.',
+  },
+];
+---
+
+<BaseLayout 
+  title="Talks - Taha Bouhsine"
+  description="Talks, presentations, and workshops by Taha Bouhsine"
+  keywords="AI Talks, Machine Learning Presentations, Tech Workshops"
+>
+  <div class="talks-view">
+    <section class="talks-hero">
+      <div class="container">
+        <h1 class="page-title">Talks & Presentations</h1>
+        <p class="page-subtitle">Speaking Engagements and Workshops</p>
+      </div>
+    </section>
+
+    <section class="talks-content">
+      <div class="container">
+        <div class="talks-grid">
+          {talks.map((talk) => (
+            <article class="talk-card">
+              <div class="talk-date">{talk.date}</div>
+              <h3>{talk.title}</h3>
+              <p class="event">{talk.event}</p>
+              <p class="description">{talk.description}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+.talks-view {
+  min-height: 100vh;
+}
+
+.talks-hero {
+  padding: 4rem 2rem;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+}
+
+.talks-content {
+  padding: 4rem 2rem;
+}
+
+.talks-grid {
+  display: grid;
+  gap: 2rem;
+}
+
+.talk-date {
+  color: #667eea;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.talk-card h3 {
+  font-size: 1.5rem;
+  color: #fff;
+  margin-bottom: 0.5rem;
+}
+
+.event {
+  color: #999;
+  margin-bottom: 1rem;
+  font-weight: 500;
+}
+
+.description {
+  color: #ccc;
+  line-height: 1.6;
+}
+</style>

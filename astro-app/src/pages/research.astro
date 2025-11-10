@@ -1,0 +1,110 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const researchPapers = [
+  {
+    id: 1,
+    title: 'Advanced Neural Network Architectures for Representation Learning',
+    authors: 'Taha Bouhsine, et al.',
+    venue: 'Journal of Machine Learning Research, 2024',
+    description:
+      'Novel approaches to representation learning in deep neural networks with improved interpretability.',
+    link: '#',
+  },
+  {
+    id: 2,
+    title: 'Interpretable AI Models for Real-World Applications',
+    authors: 'Taha Bouhsine, et al.',
+    venue: 'NeurIPS 2023',
+    description:
+      'A framework for building interpretable AI models that maintain high performance while providing transparency.',
+    link: '#',
+  },
+];
+---
+
+<BaseLayout 
+  title="Research - Taha Bouhsine"
+  description="Research papers and academic contributions by Taha Bouhsine"
+  keywords="Machine Learning Research, AI Papers, Neural Networks, Deep Learning"
+>
+  <div class="research-view">
+    <section class="research-hero">
+      <div class="container">
+        <h1 class="page-title">Research</h1>
+        <p class="page-subtitle">Publications and Academic Contributions</p>
+      </div>
+    </section>
+
+    <section class="research-content">
+      <div class="container">
+        <div class="research-grid">
+          {researchPapers.map((paper) => (
+            <article class="research-card">
+              <h3>{paper.title}</h3>
+              <p class="authors">{paper.authors}</p>
+              <p class="venue">{paper.venue}</p>
+              <p class="description">{paper.description}</p>
+              <div class="card-actions">
+                {paper.link && (
+                  <a href={paper.link} target="_blank" rel="noopener noreferrer" class="btn-link">
+                    Read Paper
+                  </a>
+                )}
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+.research-view {
+  min-height: 100vh;
+}
+
+.research-hero {
+  padding: 4rem 2rem;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+}
+
+.research-content {
+  padding: 4rem 2rem;
+}
+
+.research-grid {
+  display: grid;
+  gap: 2rem;
+}
+
+.research-card h3 {
+  font-size: 1.5rem;
+  color: #fff;
+  margin-bottom: 1rem;
+}
+
+.authors {
+  color: #999;
+  font-style: italic;
+  margin-bottom: 0.5rem;
+}
+
+.venue {
+  color: #667eea;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.description {
+  color: #ccc;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+.card-actions {
+  display: flex;
+  gap: 1rem;
+}
+</style>
