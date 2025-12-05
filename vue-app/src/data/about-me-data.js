@@ -53,8 +53,7 @@ export const storyItems = [
     backgroundImage: "url('/imgs/bg-path.jpg'), linear-gradient(135deg, #654f2d 0%, #926a36 100%)",
     content: `<p>As I navigate life's uncertain terrain, I find myself drawn to experiences that challenge and inspire growth. I'm not seeking a predetermined destination but am driven by an intrinsic desire to learn, evolve, and make meaningful contributions to the world around me.</p>
     <p>Rather than chasing the elusive concept of happiness, I deliberately seek out what I fear most—recognizing that true growth and fulfillment emerge from confronting these fears directly, not avoiding them. This approach has transformed obstacles into opportunities for profound development.</p>
-    <p>I've come to understand that change represents the only true constant, and I embrace it wholeheartedly, recognizing the endless opportunities for learning and growth it presents. Throughout my journey, I continuously push beyond comfortable boundaries, constantly striving to improve and evolve.</p>
-    <p>This philosophical approach shapes my current research focus on Neural Matter Networks, contrastive learning methods, and transparent AI systems—each representing another manifestation of my core values. By venturing into uncharted territories, confronting difficult challenges in our field, and persevering through complexity, I hope to emerge with valuable contributions that benefit both science and society.</p>`,
+    <p>I've come to understand that change represents the only true constant, and I embrace it wholeheartedly, recognizing the endless opportunities for learning and growth it presents. Throughout my journey, I continuously push beyond comfortable boundaries, constantly striving to improve and evolve.</p>`,
     quote: "I seek out the things that I fear the most, for it is in confronting these fears that I find true growth."
   }
 ];
@@ -136,10 +135,34 @@ export const awardItems = [
 
 export const experienceItems = [
   {
+    company: 'Azetta.ai',
+    title: 'Research Scientist/Co-Founder',
+    location: 'San Francisco, CA',
+    period: 'September 2025—Present',
+    sections: [
+      {
+        title: 'R&D',
+        details: [
+          'Pioneering Physics-Inspired AI architectures for white-box intelligence',
+          'Developing deep learning models with physical constraints for inherent interpretability',
+          'Advancing the theoretical foundations of Neural-Matter Networks and safe AI'
+        ]
+      },
+      {
+        title: 'Products',
+        details: [
+          'CosmaDB: The physics-inspired vector database for infinite-scale high-dimensional data',
+          'OmniEm: Omnilingual embedding models for universal semantic understanding',
+          'Periodica: Continuous explainability and monitoring platform for AI observability'
+        ]
+      }
+    ]
+  },
+  {
     company: 'MLNomads L.L.C',
     title: 'Research Scientist/C.E.O',
-    location: 'MARLTON, NJ',
-    period: 'November 2024—Present',
+    location: 'San Francisco, CA',
+    period: 'November 2024—September 2025',
     sections: [
       {
         title: 'R&D',
@@ -221,35 +244,35 @@ export const profileData = {
   tagline: 'ML Researcher & Engineer | Google Developer Expert in AI/ML | CEO of MLNomads',
   quote: 'I build bridges between mathematical foundations of machine learning and their practical applications, between black-box neural networks and cosmos-inspired safe and interpretable AI models',
   socialLinks: [
-    { 
-      name: 'Google Scholar', 
-      url: 'https://scholar.google.com/', 
+    {
+      name: 'Google Scholar',
+      url: 'https://scholar.google.com/',
       icon: 'fas fa-graduation-cap',
-      external: true 
+      external: true
     },
-    { 
-      name: 'GitHub', 
-      url: 'https://github.com/mlnomadpy', 
+    {
+      name: 'GitHub',
+      url: 'https://github.com/mlnomadpy',
       icon: 'fab fa-github',
-      external: true 
+      external: true
     },
-    { 
-      name: 'LinkedIn', 
-      url: 'https://linkedin.com/in/Tahabsn', 
+    {
+      name: 'LinkedIn',
+      url: 'https://linkedin.com/in/Tahabsn',
       icon: 'fab fa-linkedin',
-      external: true 
+      external: true
     },
-    { 
-      name: 'Email', 
-      url: 'mailto:tahabhs14@gmail.com', 
+    {
+      name: 'Email',
+      url: 'mailto:tahabhs14@gmail.com',
       icon: 'fas fa-envelope',
-      external: false 
+      external: false
     },
-    { 
-      name: 'Personal Website', 
-      url: 'https://www.tahabouhsine.com', 
+    {
+      name: 'Personal Website',
+      url: 'https://www.tahabouhsine.com',
       icon: 'fas fa-globe',
-      external: true 
+      external: true
     }
   ]
 }; 
