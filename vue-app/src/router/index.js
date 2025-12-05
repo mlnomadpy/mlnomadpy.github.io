@@ -18,9 +18,21 @@ export const routes = [
     component: () => import('../views/ResearchView.vue')
   },
   {
+    path: '/research/:id',
+    name: 'ResearchDetails',
+    component: () => import('../views/ResearchDetailsView.vue'),
+    props: true
+  },
+  {
     path: '/talks',
     name: 'talks',
     component: () => import('../views/TalksView.vue')
+  },
+  {
+    path: '/talks/:id',
+    name: 'TalkDetails',
+    component: () => import('../views/TalkDetailsView.vue'),
+    props: true
   },
   {
     path: '/poetry',
@@ -28,9 +40,21 @@ export const routes = [
     component: () => import('../views/PoetryView.vue')
   },
   {
+    path: '/poetry/:id',
+    name: 'PoetryDetails',
+    component: () => import('../views/PoetryDetailsView.vue'),
+    props: true
+  },
+  {
     path: '/blogs',
     name: 'blogs',
     component: () => import('../views/BlogsView.vue')
+  },
+  {
+    path: '/blogs/:id',
+    name: 'BlogDetails',
+    component: () => import('../views/BlogDetailsView.vue'),
+    props: true
   },
   {
     path: '/life',

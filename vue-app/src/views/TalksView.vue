@@ -54,12 +54,6 @@
           </div>
         </template>
       </div>
-      
-      <TalkDetailsModal
-        v-if="selectedTalk"
-        :talk="selectedTalk"
-        @close="closeTalkDetails"
-      />
     </div>
   </div>
 </template>
@@ -67,14 +61,12 @@
 <script>
 import TalksToolbar from '@/components/talks/TalksToolbar.vue';
 import TalkCard from '@/components/talks/TalkCard.vue';
-import TalkDetailsModal from '@/components/talks/TalkDetailsModal.vue';
 
 export default {
   name: 'TalksView',
   components: {
     TalksToolbar,
-    TalkCard,
-    TalkDetailsModal
+    TalkCard
   },
   data() {
     return {
@@ -83,7 +75,6 @@ export default {
       topics: [],
       selectedTopic: 'All',
       searchQuery: '',
-      selectedTalk: null,
       isLoading: true,
       error: null,
       showFilters: false
@@ -125,10 +116,9 @@ export default {
       this.selectedTopic = 'All';
     },
     openTalkDetails(talk) {
-      this.selectedTalk = talk;
-    },
-    closeTalkDetails() {
-      this.selectedTalk = null;
+      // Generate a slug from the title for the URL
+      const talkSlug = talk.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+      this.$router.push({ name: 'TalkDetails', params: { id: talkSlug } });
     },
     processTagsFromData(talksData) {
       return talksData.map(talk => {

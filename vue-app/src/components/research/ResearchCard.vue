@@ -1,9 +1,9 @@
 <template>
   <div 
     class="research-card mobile-tap-highlight"
-    :class="{ 'expanded': expanded, 'resp-card': true }"
+    :class="{ 'resp-card': true }"
   >
-    <div class="research-header" @click="toggleExpanded">
+    <div class="research-header" @click="navigateToDetails">
       <div class="research-icon">
         <i :class="getCategoryIcon(item.category)"></i>
       </div>
@@ -23,33 +23,9 @@
       </div>
       
       <div class="expand-indicator">
-        <i :class="expanded ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
-        <span class="resp-text-sm">{{ expanded ? 'Less Details' : 'More Details' }}</span>
+        <i class="fas fa-arrow-right"></i>
+        <span class="resp-text-sm">View Details</span>
       </div>
-    </div>
-    
-    <div v-if="expanded" class="research-details smooth-scroll">
-      <div class="details-content">
-        <h4 class="resp-text-lg">Abstract</h4>
-        <p class="resp-text-md">{{ item.details }}</p>
-        
-        <div v-if="item.links && item.links.length" class="research-links">
-          <h4 class="resp-text-lg">Resources</h4>
-          <ul>
-            <li v-for="(link, index) in item.links" :key="index">
-              <a :href="link.url" target="_blank" class="resource-link touch-friendly resp-text-sm">
-                <i class="fas fa-external-link-alt"></i>
-                {{ link.text }}
-              </a>
-            </li>
-          </ul>
-        </div>
-      </div>
-      
-      <button class="close-btn touch-friendly resp-text-sm" @click.stop="toggleExpanded">
-        <i class="fas fa-times"></i>
-        Close
-      </button>
     </div>
   </div>
 </template>
@@ -63,17 +39,11 @@ export default {
       required: true
     }
   },
-  data() {
-    return {
-      expanded: false
-    }
-  },
   methods: {
-    toggleExpanded() {
-      this.expanded = !this.expanded;
-      this.$emit('toggle-expanded', {
-        id: this.item.id,
-        expanded: this.expanded
+    navigateToDetails() {
+      this.$router.push({
+        name: 'ResearchDetails',
+        params: { id: this.item.id }
       });
     },
     getCategoryIcon(category) {
@@ -121,10 +91,9 @@ export default {
   padding: 25px;
   position: relative;
   cursor: pointer;
-}
-
-.research-card.expanded .research-header {
-  border-bottom: 1px dashed rgba(244, 165, 96, 0.2);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .research-icon {
@@ -207,6 +176,7 @@ export default {
   font-size: 0.95rem;
   line-height: 1.7;
   margin-bottom: 20px;
+  flex-grow: 1;
 }
 
 .research-tags {
@@ -240,95 +210,12 @@ export default {
   font-size: 0.9rem;
   opacity: 0.8;
   transition: all 0.3s ease;
+  margin-top: auto;
 }
 
 .research-card:hover .expand-indicator {
   opacity: 1;
-}
-
-.research-details {
-  padding: 25px;
-  background: rgba(20, 20, 20, 0.3);
-  animation: slideDown 0.4s ease forwards;
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.details-content {
-  margin-bottom: 20px;
-}
-
-.research-details h4 {
-  color: var(--accent-color);
-  margin: 0 0 15px;
-  font-size: 1.1rem;
-  border-bottom: 1px solid rgba(244, 165, 96, 0.2);
-  padding-bottom: 8px;
-}
-
-.research-details p {
-  margin: 0 0 20px;
-  line-height: 1.8;
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 0.95rem;
-}
-
-.research-links ul {
-  list-style-type: none;
-  padding: 0;
-  margin: 15px 0;
-}
-
-.research-links li {
-  margin-bottom: 10px;
-}
-
-.resource-link {
-  color: var(--accent-color);
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  transition: all 0.3s ease;
-  padding: 8px 12px;
-  background: rgba(244, 165, 96, 0.05);
-  border-radius: 6px;
-}
-
-.resource-link:hover {
-  background: rgba(244, 165, 96, 0.15);
   transform: translateX(5px);
-}
-
-.close-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background: rgba(244, 165, 96, 0.1);
-  border: 1px solid rgba(244, 165, 96, 0.3);
-  color: var(--accent-color);
-  border-radius: 6px;
-  padding: 10px 15px;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-family: "Space Mono", monospace;
-  width: 100%;
-}
-
-.close-btn:hover {
-  background: var(--accent-color);
-  color: var(--primary-bg);
 }
 
 /* Enhanced Mobile Responsiveness */
@@ -389,30 +276,5 @@ export default {
   .expand-indicator {
     font-size: 0.8rem;
   }
-  
-  .research-details {
-    padding: 16px;
-  }
-  
-  .research-details h4 {
-    font-size: 1rem;
-    margin-bottom: 10px;
-  }
-  
-  .research-details p {
-    font-size: 0.85rem;
-    line-height: 1.6;
-    margin-bottom: 15px;
-  }
-  
-  .resource-link {
-    padding: 6px 10px;
-    font-size: 0.8rem;
-  }
-  
-  .close-btn {
-    padding: 8px 12px;
-    font-size: 0.8rem;
-  }
 }
-</style> 
+</style>

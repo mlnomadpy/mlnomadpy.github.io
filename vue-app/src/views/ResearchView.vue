@@ -49,7 +49,6 @@
             v-for="item in filteredResearch"
             :key="item.id"
             :item="item"
-            @toggle-expanded="handleExpandToggle"
           />
         </div>
         
@@ -81,7 +80,6 @@ export default {
       research: [],
       categories: [],
       selectedCategory: 'All',
-      expandedItems: [],
       searchQuery: '',
       showFilters: false
     }
@@ -118,17 +116,6 @@ export default {
     resetFilters() {
       this.searchQuery = '';
       this.selectedCategory = 'All';
-      this.expandedItems = [];
-    },
-    handleExpandToggle({ id, expanded }) {
-      if (expanded) {
-        this.expandedItems = [id];
-      } else {
-        const index = this.expandedItems.indexOf(id);
-        if (index !== -1) {
-          this.expandedItems.splice(index, 1);
-        }
-      }
     },
     async loadResearchData() {
       try {
@@ -305,4 +292,4 @@ export default {
     grid-template-columns: 1fr;
   }
 }
-</style> 
+</style>
