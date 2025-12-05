@@ -15,7 +15,7 @@
 
 <script>
 import poetryData from '@/data/poetry.json';
-import PoetryCard from '@/components/PoetryCard.vue';
+import PoetryCard from '@/components/poetry/PoetryCard.vue';
 
 export default {
   name: 'PoetryView',

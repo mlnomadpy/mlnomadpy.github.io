@@ -109,21 +109,21 @@ export default {
   padding: 10px 10px;
   position: relative;
   z-index: 1000;
-  background-color: var(--primary-bg, #412c0f);
+  background-color: var(--primary-bg);
   opacity: 0.95;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   transition: all 0.3s ease;
   flex-direction: column;
   width: 100%;
-  height: 70px; /* Fixed height */
+  height: 70px;
 }
 
 .mlnomadpy-navbar.scrolled {
   padding: 10px 5px;
   box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3);
-  background-color: rgba(65, 44, 15, 0.98);
+  background-color: var(--primary-bg-dark);
 }
 
 .mlnomadpy-navbar .navbar-container {
@@ -213,7 +213,7 @@ export default {
   left: 50%;
   width: 0;
   height: 2px;
-  background-color: rgb(244, 165, 96);
+  background-color: var(--accent-color);
   transition: width 0.3s ease, left 0.3s ease;
 }
 
@@ -291,7 +291,7 @@ export default {
 
 /* Style active links */
 .mlnomadpy-navbar .router-link-active.nav-item:not(.home) {
-  color: rgb(244, 165, 96) !important;
+  color: var(--accent-color) !important;
 }
 
 .mlnomadpy-navbar .router-link-active.nav-item:not(.home)::after {

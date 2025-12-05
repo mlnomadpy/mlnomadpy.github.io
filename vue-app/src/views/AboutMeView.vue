@@ -1,6 +1,6 @@
 <template>
   <div class="about-me view-container">
-    <div class="section-content scrollable-content">
+    <div class="section-content scrollable-content smooth-scroll">
       <h1>about me</h1>
       
       <div class="story-wrapper">
@@ -43,29 +43,7 @@
             <div class="tab-panel" v-show="activeTab === 'experience'">
               <timeline-list :items="experienceItems" type="experience">
                 <template v-slot:item="{ item }">
-                  <div class="experience-header">
-                    <div class="experience-date-location">
-                      <span class="experience-date">{{ item.period }}</span>
-                      <span class="experience-location">{{ item.location }}</span>
-                    </div>
-                    <div class="experience-title-company">
-                      <h3 class="experience-title">{{ item.title }}</h3>
-                      <div class="experience-company">{{ item.company }}</div>
-                    </div>
-                  </div>
-                  <div class="experience-content">
-                    <div v-if="item.sections && item.sections.length > 0" class="experience-sections">
-                      <div v-for="(section, sIndex) in item.sections" :key="sIndex" class="experience-section">
-                        <h4 class="section-title">{{ section.title }}:</h4>
-                        <ul class="section-details">
-                          <li v-for="(detail, dIndex) in section.details" :key="dIndex">{{ detail }}</li>
-                        </ul>
-                      </div>
-                    </div>
-                    <ul v-else class="experience-responsibilities">
-                      <li v-for="(detail, dIndex) in item.details" :key="dIndex">{{ detail }}</li>
-                    </ul>
-                  </div>
+                  <ExperienceItem :item="item" />
                 </template>
               </timeline-list>
             </div>
@@ -82,6 +60,8 @@ import TabNavigation from '@/components/about/TabNavigation.vue';
 import StoryTab from '@/components/about/StoryTab.vue';
 import TimelineList from '@/components/about/TimelineList.vue';
 import CardGrid from '@/components/about/CardGrid.vue';
+import ExperienceItem from '@/components/about/ExperienceItem.vue';
+import { useHead } from '@vueuse/head';
 import { 
   tabs, 
   storyItems, 
@@ -99,22 +79,23 @@ export default {
     TabNavigation,
     StoryTab,
     TimelineList,
-    CardGrid
+    CardGrid,
+    ExperienceItem
   },
-  metaInfo() {
-    return {
-      title: 'About Me',
+  setup() {
+    useHead({
+      title: 'About Me | Taha Bouhsine',
       meta: [
-        { vmid: 'description', name: 'description', content: 'ML Researcher & Google Developer Expert in AI/ML. Building bridges between mathematical foundations of machine learning and their practical applications, between black-box neural networks and cosmos-inspired safe and interpretable AI models.' },
-        { vmid: 'og:title', property: 'og:title', content: 'About Taha Bouhsine | ML Researcher & Google Developer Expert' },
-        { vmid: 'og:description', property: 'og:description', content: 'Learn about Taha Bouhsine, ML Researcher & Google Developer Expert in AI/ML, CEO of MLNomads, focused on interpretable AI models and safe AI systems.' },
-        { vmid: 'twitter:title', property: 'twitter:title', content: 'About Taha Bouhsine | ML Researcher & Google Developer Expert' },
-        { vmid: 'twitter:description', property: 'twitter:description', content: 'Learn about Taha Bouhsine, ML Researcher & Google Developer Expert in AI/ML, CEO of MLNomads, focused on interpretable AI models and safe AI systems.' }
+        { name: 'description', content: 'ML Researcher & Google Developer Expert in AI/ML. Building bridges between mathematical foundations of machine learning and their practical applications, between black-box neural networks and cosmos-inspired safe and interpretable AI models.' },
+        { property: 'og:title', content: 'About Taha Bouhsine | ML Researcher & Google Developer Expert' },
+        { property: 'og:description', content: 'Learn about Taha Bouhsine, ML Researcher & Google Developer Expert in AI/ML, CEO of MLNomads, focused on interpretable AI models and safe AI systems.' },
+        { property: 'twitter:title', content: 'About Taha Bouhsine | ML Researcher & Google Developer Expert' },
+        { property: 'twitter:description', content: 'Learn about Taha Bouhsine, ML Researcher & Google Developer Expert in AI/ML, CEO of MLNomads, focused on interpretable AI models and safe AI systems.' }
       ],
       link: [
         { rel: 'canonical', href: 'https://mlnomadpy.github.io/about' }
       ]
-    }
+    });
   },
   data() {
     return {
@@ -155,6 +136,7 @@ export default {
 
 /* Import existing styles */
 @import '@/assets/aboutme.css';
+@import '@/components/research/responsive-utils.css';
 
 /* Page title styling */
 .section-content h1 {
@@ -234,151 +216,7 @@ export default {
   display: none; /* Chrome, Safari, Opera */
 }
 
-/* Experience specific styling overrides */
-.experience-header {
-  padding: 1.5rem;
-  background: rgba(30, 30, 30, 0.5);
-  border-bottom: 1px solid rgba(244, 165, 96, 0.1);
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-}
-
-.experience-date-location {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  font-size: 0.9rem;
-}
-
-.experience-date {
-  color: var(--accent-color, rgb(244, 165, 96));
-  font-weight: 600;
-  padding: 0.3rem 0.8rem;
-  background: rgba(244, 165, 96, 0.1);
-  border-radius: 20px;
-  display: inline-block;
-}
-
-.experience-location {
-  color: #aaa;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-}
-
-.experience-location::before {
-  content: "\f3c5"; /* Font Awesome map marker icon */
-  font-family: "Font Awesome 5 Free";
-  font-weight: 900;
-  font-size: 0.8rem;
-  color: rgba(244, 165, 96, 0.7);
-}
-
-.experience-title-company {
-  margin-top: 0.5rem;
-}
-
-.experience-title {
-  font-size: 1.3rem;
-  font-weight: 600;
-  color: #fff;
-  margin-bottom: 0.3rem;
-}
-
-.experience-company {
-  color: var(--accent-color, rgb(244, 165, 96));
-  font-weight: 500;
-  font-size: 1.1rem;
-  opacity: 0.9;
-}
-
-.experience-content {
-  padding: 1.5rem;
-}
-
-.experience-sections {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.experience-section {
-  background: rgba(20, 20, 20, 0.3);
-  padding: 1.2rem;
-  border-radius: 8px;
-  border-left: 3px solid rgba(244, 165, 96, 0.5);
-}
-
-.section-title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: var(--accent-color, rgb(244, 165, 96));
-  margin-bottom: 0.8rem;
-}
-
-.experience-responsibilities {
-  list-style-type: none;
-  padding-left: 0.5rem;
-  margin: 0;
-}
-
-.experience-responsibilities li {
-  position: relative;
-  padding-left: 1.5rem;
-  margin-bottom: 0.8rem;
-  line-height: 1.6;
-}
-
-.experience-responsibilities li::before {
-  content: "\f105"; /* Font Awesome angle-right icon */
-  font-family: "Font Awesome 5 Free";
-  font-weight: 900;
-  position: absolute;
-  left: 0;
-  color: rgba(244, 165, 96, 0.7);
-}
-
 @media (min-width: 768px) {
-  .experience-header {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-  }
-  
-  .experience-date-location {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.8rem;
-    width: 25%;
-  }
-  
-  .experience-title-company {
-    width: 75%;
-    margin-top: 0;
-  }
-  
-  .experience-title {
-    font-size: 1.5rem;
-  }
-  
-  .experience-company {
-    font-size: 1.2rem;
-  }
-  
-  .experience-sections {
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 1.5rem;
-  }
-  
-  .experience-section {
-    flex: 1;
-    min-width: 280px;
-  }
-  
   .tab-content {
     padding: 30px;
   }
@@ -461,22 +299,11 @@ export default {
   
   :deep(.tab-button.active i) {
     transform: translateY(-2px) !important;
+    color: var(--accent-color) !important;
   }
   
   .tab-content {
     padding: 15px 10px;
-  }
-  
-  .experience-header {
-    padding: 1.2rem 1rem;
-  }
-  
-  .experience-content {
-    padding: 1.2rem 1rem;
-  }
-  
-  .experience-section {
-    padding: 1rem;
   }
 }
 
@@ -500,18 +327,6 @@ export default {
     padding: 12px 8px;
   }
   
-  .experience-header {
-    padding: 1rem 0.8rem;
-  }
-  
-  .experience-content {
-    padding: 1rem 0.8rem;
-  }
-  
-  .experience-section {
-    padding: 0.8rem;
-  }
-  
   :deep(.tab-button) {
     width: 45px !important;
     height: 45px !important;
@@ -526,4 +341,4 @@ export default {
     font-size: 1.1rem !important;
   }
 }
-</style> 
+</style>

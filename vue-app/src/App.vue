@@ -2,47 +2,52 @@
   <div id="app">
     <MainNavbar />
     <main>
-      <router-view />
+      <router-view v-slot="{ Component }">
+        <transition name="fade" mode="out-in">
+          <component :is="Component" />
+        </transition>
+      </router-view>
     </main>
   </div>
 </template>
 
 <script>
 import MainNavbar from '@/components/Navbar.vue'
+import { useHead } from '@vueuse/head'
 
 export default {
   name: 'App',
   components: {
     MainNavbar
   },
-  metaInfo() {
-    return {
+  setup() {
+    useHead({
       title: 'Taha Bouhsine | ML Researcher & Google Developer Expert',
       titleTemplate: '%s | MLNomadpy',
       meta: [
-        { vmid: 'description', name: 'description', content: 'Machine Learning Researcher & Engineer, Google Developer Expert in AI/ML, and CEO of MLNomads focusing on representation learning and interpretable AI models.' },
-        { vmid: 'keywords', name: 'keywords', content: 'Machine Learning, Artificial Intelligence, AI Research, Taha Bouhsine, Google Developer Expert, MLNomads, Neural Networks, Interpretable AI' },
-        { vmid: 'author', name: 'author', content: 'Taha Bouhsine' },
+        { name: 'description', content: 'Machine Learning Researcher & Engineer, Google Developer Expert in AI/ML, and CEO of MLNomads focusing on representation learning and interpretable AI models.' },
+        { name: 'keywords', content: 'Machine Learning, Artificial Intelligence, AI Research, Taha Bouhsine, Google Developer Expert, MLNomads, Neural Networks, Interpretable AI' },
+        { name: 'author', content: 'Taha Bouhsine' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1.0, maximum-scale=5.0' },
         
         // Open Graph
-        { vmid: 'og:title', property: 'og:title', content: 'Taha Bouhsine | ML Researcher & Google Developer Expert' },
-        { vmid: 'og:site_name', property: 'og:site_name', content: 'MLNomadpy' },
-        { vmid: 'og:description', property: 'og:description', content: 'Machine Learning Researcher & Engineer, Google Developer Expert in AI/ML, and CEO of MLNomads focusing on representation learning and interpretable AI models.' },
-        { vmid: 'og:image', property: 'og:image', content: 'https://i.imgur.com/ScjU4Xr.png' },
-        { vmid: 'og:url', property: 'og:url', content: 'https://mlnomadpy.github.io/' },
-        { vmid: 'og:type', property: 'og:type', content: 'website' },
+        { property: 'og:title', content: 'Taha Bouhsine | ML Researcher & Google Developer Expert' },
+        { property: 'og:site_name', content: 'MLNomadpy' },
+        { property: 'og:description', content: 'Machine Learning Researcher & Engineer, Google Developer Expert in AI/ML, and CEO of MLNomads focusing on representation learning and interpretable AI models.' },
+        { property: 'og:image', content: 'https://i.imgur.com/ScjU4Xr.png' },
+        { property: 'og:url', content: 'https://mlnomadpy.github.io/' },
+        { property: 'og:type', content: 'website' },
         
         // Twitter Card
-        { vmid: 'twitter:title', property: 'twitter:title', content: 'Taha Bouhsine | ML Researcher & Google Developer Expert' },
-        { vmid: 'twitter:description', property: 'twitter:description', content: 'Machine Learning Researcher & Engineer, Google Developer Expert in AI/ML, and CEO of MLNomads.' },
-        { vmid: 'twitter:image', property: 'twitter:image', content: 'https://i.imgur.com/ScjU4Xr.png' },
-        { vmid: 'twitter:card', property: 'twitter:card', content: 'summary_large_image' }
+        { property: 'twitter:title', content: 'Taha Bouhsine | ML Researcher & Google Developer Expert' },
+        { property: 'twitter:description', content: 'Machine Learning Researcher & Engineer, Google Developer Expert in AI/ML, and CEO of MLNomads.' },
+        { property: 'twitter:image', content: 'https://i.imgur.com/ScjU4Xr.png' },
+        { property: 'twitter:card', content: 'summary_large_image' }
       ],
       link: [
         { rel: 'canonical', href: 'https://mlnomadpy.github.io/' }
       ]
-    }
+    })
   },
   mounted() {
     // Track page views with a simple analytics approach
@@ -336,5 +341,16 @@ p, li, span, a, button, input, textarea, select, label {
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
   /* Already dark themed, but could add additional customizations */
+}
+
+/* Page Transition */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style> 

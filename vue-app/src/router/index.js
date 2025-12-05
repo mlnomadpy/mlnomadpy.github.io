@@ -1,7 +1,7 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 
-const routes = [
+export const routes = [
   {
     path: '/',
     name: 'home',
@@ -38,10 +38,3 @@ const routes = [
     component: () => import('../views/LifeView.vue')
   }
 ]
-
-const router = createRouter({
-  history: createWebHashHistory(),
-  routes
-})
-
-export default router 

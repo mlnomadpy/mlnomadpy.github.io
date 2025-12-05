@@ -22,9 +22,10 @@
         <a v-for="link in socialLinks" :key="link.name" 
            :href="link.url" 
            :target="link.external ? '_blank' : undefined" 
+           :rel="link.external ? 'noopener noreferrer' : undefined"
            :aria-label="link.name" 
            :title="link.name">
-          <i :class="link.icon"></i>
+          <i :class="link.icon" aria-hidden="true"></i>
         </a>
       </div>
     </div>
@@ -336,4 +337,4 @@ export default {
     font-size: 0.95rem;
   }
 }
-</style> 
+</style>

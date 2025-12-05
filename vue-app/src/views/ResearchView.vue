@@ -1,26 +1,47 @@
 <template>
   <div class="research view-container">
     <div class="section-content scrollable-content smooth-scroll">
-      <h1 class="resp-heading">research</h1>
+      <h1 class="resp-heading">Research</h1>
       
       <div class="research-wrapper">
-        <div class="research-filter-section">
-          <SearchBar
-            v-model="searchQuery"
-            placeholder="Search research papers..."
-            @clear="clearSearch"
-          />
-          
-          <CategoryFilter
-            v-model="selectedCategory"
-            :categories="categories"
-          />
+        <!-- Compact Toolbar -->
+        <div class="research-toolbar">
+          <div class="search-group">
+            <SearchBar
+              v-model="searchQuery"
+              placeholder="Search papers..."
+              @clear="clearSearch"
+              class="flex-grow"
+            />
+            <button 
+              class="filter-toggle-btn" 
+              :class="{ active: showFilters }"
+              @click="showFilters = !showFilters"
+              title="Toggle Filters"
+            >
+              <i class="fas fa-filter"></i>
+              <span class="desktop-only">Filters</span>
+            </button>
+          </div>
 
-          <ResearchStats
-            :total-count="research.length"
-            :category-count="categories.length"
-            :display-count="filteredResearch.length"
-          />
+          <!-- Collapsible Filter Section -->
+          <transition name="expand">
+            <div v-if="showFilters" class="filter-panel glass-panel">
+              <div class="filter-header">
+                <h3>Categories</h3>
+                <button v-if="selectedCategory !== 'All'" @click="selectedCategory = 'All'" class="clear-filters-btn">
+                  Clear
+                </button>
+              </div>
+              <CategoryFilter
+                v-model="selectedCategory"
+                :categories="categories"
+              />
+              <div class="stats-summary">
+                Showing {{ filteredResearch.length }} of {{ research.length }} publications
+              </div>
+            </div>
+          </transition>
         </div>
         
         <div v-if="filteredResearch.length" class="research-grid">
@@ -44,7 +65,6 @@
 <script>
 import SearchBar from '@/components/research/SearchBar.vue';
 import CategoryFilter from '@/components/research/CategoryFilter.vue';
-import ResearchStats from '@/components/research/ResearchStats.vue';
 import ResearchCard from '@/components/research/ResearchCard.vue';
 import NoResults from '@/components/research/NoResults.vue';
 
@@ -53,7 +73,6 @@ export default {
   components: {
     SearchBar,
     CategoryFilter,
-    ResearchStats,
     ResearchCard,
     NoResults
   },
@@ -64,7 +83,7 @@ export default {
       selectedCategory: 'All',
       expandedItems: [],
       searchQuery: '',
-      filteredResults: []
+      showFilters: false
     }
   },
   computed: {
@@ -103,7 +122,6 @@ export default {
     },
     handleExpandToggle({ id, expanded }) {
       if (expanded) {
-        // Close any other expanded items first (accordion-like behavior)
         this.expandedItems = [id];
       } else {
         const index = this.expandedItems.indexOf(id);
@@ -114,11 +132,8 @@ export default {
     },
     async loadResearchData() {
       try {
-        // In a real app, you'd import the JSON directly or use fetch
-        const researchData = require('@/data/research.json');
-        this.research = researchData;
-        
-        // Extract unique categories
+        const researchData = await import('@/data/research.json');
+        this.research = researchData.default || researchData;
         const categoriesSet = new Set(this.research.map(item => item.category));
         this.categories = Array.from(categoriesSet);
       } catch (error) {
@@ -157,167 +172,137 @@ export default {
 
 .section-content h1 {
   text-align: center;
-  margin-bottom: 40px;
-  padding-bottom: 20px;
-  position: relative;
+  margin-bottom: 30px;
   font-size: 2.5rem;
-}
-
-.section-content h1::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100px;
-  height: 3px;
-  background: var(--accent-color);
-  transition: width 0.3s ease;
-}
-
-.section-content h1:hover::after {
-  width: 150px;
+  color: var(--primary-text);
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
 .research-wrapper {
   max-width: 1200px;
   margin: 0 auto;
   width: 100%;
-  padding: 30px;
-  position: relative;
-  font-family: "Space Mono", monospace;
-  background: linear-gradient(135deg, rgba(65, 44, 15, 0.6), rgba(65, 44, 15, 0.9));
-  border-radius: 16px;
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
-  overflow: hidden;
-  border: 1px solid rgba(244, 165, 96, 0.1);
+  padding: 20px;
 }
 
-.research-wrapper::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: radial-gradient(circle at 90% 10%, rgba(244, 165, 96, 0.05), transparent 40%);
-  pointer-events: none;
-}
-
-.research-filter-section {
-  display: flex;
-  flex-direction: column;
-  gap: 25px;
+/* Toolbar Styles */
+.research-toolbar {
   margin-bottom: 30px;
+  position: relative;
+  z-index: 10;
 }
 
+.search-group {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+
+.flex-grow {
+  flex: 1;
+}
+
+.filter-toggle-btn {
+  padding: 12px 20px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--primary-text);
+  border-radius: 30px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  font-family: var(--font-heading);
+  height: 50px; /* Match search bar height */
+}
+
+.filter-toggle-btn:hover, .filter-toggle-btn.active {
+  background: var(--accent-color);
+  color: var(--primary-bg);
+  border-color: var(--accent-color);
+}
+
+/* Filter Panel */
+.filter-panel {
+  margin-top: 15px;
+  padding: 20px;
+  background: rgba(30, 30, 30, 0.8);
+  border-radius: 16px;
+  border: 1px solid var(--glass-border);
+}
+
+.filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.filter-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--accent-color);
+}
+
+.clear-filters-btn {
+  background: none;
+  border: none;
+  color: var(--secondary-text);
+  cursor: pointer;
+  font-size: 0.9rem;
+  text-decoration: underline;
+}
+
+.clear-filters-btn:hover {
+  color: var(--primary-text);
+}
+
+.stats-summary {
+  margin-top: 15px;
+  text-align: right;
+  font-size: 0.9rem;
+  color: var(--secondary-text);
+  font-family: var(--font-mono);
+}
+
+/* Grid */
 .research-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 30px;
-  margin-top: 30px;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 25px;
 }
 
-@media (min-width: 768px) {
-  .research-filter-section {
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
-  
-  :deep(.research-search) {
-    flex: 0 0 100%;
-  }
-  
-  :deep(.filter-section) {
-    flex: 1;
-  }
-  
-  :deep(.research-stats) {
-    flex: 1;
-    justify-content: flex-end;
-  }
+/* Transitions */
+.expand-enter-active, .expand-leave-active {
+  transition: all 0.3s ease;
+  max-height: 500px;
+  opacity: 1;
+  overflow: hidden;
 }
 
-@media (max-width: 767px) {
-  .scrollable-content {
-    padding: 10px 6px;
-  }
-  
-  .section-content h1 {
-    font-size: 2rem;
-    margin-bottom: 1.5rem;
-  }
-  
-  .research-wrapper {
-    width: calc(100% - 4px);
-    margin: 0 2px;
-    padding: 20px 15px;
-  }
-  
-  .research-filter-section {
-    padding: 15px 10px;
-    gap: 15px;
-  }
-  
-  .research-grid {
-    gap: 1.2rem;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    margin-top: 20px;
-  }
+.expand-enter-from, .expand-leave-to {
+  max-height: 0;
+  opacity: 0;
+  margin-top: 0;
+  padding-top: 0;
+  padding-bottom: 0;
 }
 
-@media (max-width: 576px) {
-  .research-wrapper {
-    padding: 15px 10px;
+/* Responsive */
+@media (max-width: 768px) {
+  .desktop-only {
+    display: none;
+  }
+  
+  .filter-toggle-btn {
+    padding: 12px;
+    width: 50px;
+    justify-content: center;
   }
   
   .research-grid {
     grid-template-columns: 1fr;
-    gap: 20px;
-  }
-  
-  .section-content h1 {
-    font-size: 1.8rem;
-    margin-bottom: 1.2rem;
-    padding-bottom: 15px;
-  }
-  
-  .section-content h1::after {
-    width: 80px;
-    height: 2px;
-  }
-  
-  .section-content h1:hover::after {
-    width: 120px;
-  }
-}
-
-@media (max-width: 480px) {
-  .scrollable-content {
-    padding: 8px 4px;
-  }
-  
-  .research-wrapper {
-    width: 100%;
-    margin: 0;
-    padding: 15px 8px;
-    border-radius: 12px;
-  }
-  
-  .research-filter-section {
-    padding: 12px 8px;
-    gap: 12px;
-  }
-  
-  .research-grid {
-    gap: 15px;
-    margin-top: 15px;
-  }
-  
-  .section-content h1 {
-    font-size: 1.6rem;
-    margin-bottom: 1rem;
-    padding-bottom: 12px;
   }
 }
 </style> 

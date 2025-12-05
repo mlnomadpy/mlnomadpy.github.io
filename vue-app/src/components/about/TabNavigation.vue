@@ -1,13 +1,18 @@
 <template>
-  <div class="tabs-navigation">
+  <div class="tabs-navigation" role="tablist" aria-label="About Me Sections">
     <button 
       v-for="tab in tabs" 
       :key="tab.id"
       class="tab-button" 
       :class="{ 'active': activeTab === tab.id }"
       @click="$emit('tab-change', tab.id)"
+      role="tab"
+      :aria-selected="activeTab === tab.id"
+      :aria-controls="`panel-${tab.id}`"
+      :id="`tab-${tab.id}`"
+      :tabindex="activeTab === tab.id ? 0 : -1"
     >
-      <i :class="tab.icon"></i>
+      <i :class="tab.icon" aria-hidden="true"></i>
       <span>{{ tab.label }}</span>
     </button>
   </div>
@@ -115,4 +120,4 @@ export default {
     font-size: 0.95rem;
   }
 }
-</style> 
+</style>
