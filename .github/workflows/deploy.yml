@@ -26,6 +26,12 @@ jobs:
         run: npm run build
         working-directory: vue-app
 
+      - name: Copy CNAME and Create .nojekyll
+        run: |
+          cp ../CNAME dist/CNAME
+          touch dist/.nojekyll
+        working-directory: vue-app
+
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@v4
         with:
