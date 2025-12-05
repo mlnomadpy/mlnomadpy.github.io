@@ -1,102 +1,256 @@
 <div class="section-content">
   <h1>about me</h1>
-  <!-- Content goes here -->
-  <div class="content-container">
-    <div class="content collapsed">
-      <h2>Who am I?</h2>
-      <div>
-        <p>Jake of all trades, Master of Data Science.</p>
-        <p>
-          I have always been fascinated by the beauty and power of computers,
-          and I have always wanted to understand it, be part of it, and
-          innovate. To pursue this interest, I taught myself the basics of
-          computer science using online courses and books. Since English is not
-          my first language, the road was a bit rough at first, but I persevered
-          and eventually obtained my high school degree in mathematics. I then
-          went on to earn a Bachelor of Science in Mathematics and Computer
-          Science from the University of Ibn Zohr, Faculty of Science in Agadir.
-          Most recently, on July 4, 2022, I obtained a Master of Research Degree
-          in Data Science and Artificial Intelligence applied to Computer
-          Vision, Signal Processing, and Natural Language Processing. As of
-          today, I became a Research Fellow in Rowan University.
-        </p>
+  <!-- Note: For the interactive story to display properly, you'll need to add these images:
+       imgs/bg-origins.jpg
+       imgs/bg-philosophy.jpg
+       imgs/bg-reflection.jpg
+       imgs/bg-journey.jpg
+       imgs/bg-path.jpg
+       Or the system will fall back to gradient backgrounds.
+  -->
+  <div class="story-wrapper">
+    <div class="profile-section">
+      <div class="profile-image">
+        <img src="imgs/profile-photo.jpg" alt="Taha Bouhsine" onerror="this.src='https://i.imgur.com/TwYAtdu.png'" class="hover-effect">
+      </div>
+      <div class="profile-details">
+        <h2 class="profile-name">Taha Bouhsine</h2>
+        <h3 class="profile-title">ⵉⵙⴽⴰⵏⵎⴰⴳⴰⵔ</h3>
+        <p class="profile-tagline">ML Researcher & Engineer | Google Developer Expert in AI/ML | CEO of MLNomads</p>
+        <div class="social-links">
+          <a href="https://scholar.google.com/" target="_blank" aria-label="Google Scholar"><i class="fas fa-graduation-cap"></i></a>
+          <a href="https://github.com/mlnomadpy" target="_blank" aria-label="GitHub"><i class="fab fa-github"></i></a>
+          <a href="https://linkedin.com/in/Tahabsn" target="_blank" aria-label="LinkedIn"><i class="fab fa-linkedin"></i></a>
+          <a href="mailto:tahabhs14@gmail.com" aria-label="Email"><i class="fas fa-envelope"></i></a>
+          <a href="https://www.tahabouhsine.com" target="_blank" aria-label="Personal Website"><i class="fas fa-globe"></i></a>
+        </div>
       </div>
     </div>
-    <div class="content collapsed">
-      <h2>My Philosophy in a Nutshell?</h2>
-      <div>
-        <p>
-          From a young age, I found myself faced with the daunting task of
-          making decisions without guidance. I relied on my intuition,
-          dedication, and determination to overcome the obstacles in my path. I
-          will not deny that I have faced many failures, but I have learned from
-          them and ensured that I do not repeat the same mistakes. In the
-          process of navigating these challenges, I have developed a passion for
-          knowledge and a love of learning that has shaped my current character
-          and contributed to my humble achievements. For me, it is not the
-          unknown that I fear, but the loss of my desire to seek knowledge. I am
-          a lifelong learner, driven by an insatiable thirst for education that
-          cannot be quenched. It is this love of learning that sustains me, and
-          I will continue to pursue it for as long as I live. I am grateful for
-          the hardships that have shaped me, for they have helped me to
-          cultivate a deep appreciation for the beauty and complexity of the
-          world.
-        </p>
-      </div>
+
+    <div class="bio-summary">
+      <blockquote>
+        "I build bridges between mathematical foundations of machine learning and their practical applications, between opaque neural networks and interpretable models."
+      </blockquote>
     </div>
-    <div class="content collapsed">
-      <h2>Did I tell you.. that I am also a writer</h2>
-      <div>
-        <p>
-          When we are unable to access quality mentorship, quality mental health
-          education, to better understand how to heal and self-reflect, we must
-          turn to alternative methods of self-care. One such method is writing,
-          which allows us to express and explore our emotions, thoughts, and
-          experiences. By putting our innermost thoughts on paper, we can
-          process and make sense of them in a way that may not be possible
-          through verbal communication alone. Through the act of writing, we may
-          also begin to see patterns and themes emerge in our experiences. This
-          can provide us with valuable insights into how certain events and
-          circumstances have affected us, and may help us to understand
-          ourselves better. Ultimately, writing can be a powerful tool for
-          self-discovery and growth.
-        </p>
+    
+    <div class="expandable-sections">
+      <!-- Story Section (Interactive Timeline) -->
+      <div class="expandable-section" id="story-section">
+        <div class="section-header">
+          <h2>My Story <span class="toggle-icon"><i class="fas fa-chevron-down"></i></span></h2>
+          <p class="section-preview">A journey from Morocco to becoming a GDE and ML researcher. Click to explore my path...</p>
+        </div>
+        
+        <div class="section-content hidden">
+          <div class="story-timeline-container">
+            <!-- Interactive timeline navigation -->
+            <div class="timeline-navigation">
+              <div class="timeline-nav-item active" data-story="origins">
+                <div class="nav-indicator"><span>01</span></div>
+                <div class="nav-label">Origins</div>
+              </div>
+              <div class="timeline-nav-item" data-story="philosophy">
+                <div class="nav-indicator"><span>02</span></div>
+                <div class="nav-label">Philosophy</div>
+              </div>
+              <div class="timeline-nav-item" data-story="reflection">
+                <div class="nav-indicator"><span>03</span></div>
+                <div class="nav-label">Reflection</div>
+              </div>
+              <div class="timeline-nav-item" data-story="journey">
+                <div class="nav-indicator"><span>04</span></div>
+                <div class="nav-label">Journey</div>
+              </div>
+              <div class="timeline-nav-item" data-story="path">
+                <div class="nav-indicator"><span>05</span></div>
+                <div class="nav-label">Path</div>
+              </div>
+              <div class="timeline-progress-bar">
+                <div class="timeline-progress"></div>
+              </div>
+            </div>
+            
+            <!-- Interactive story panels -->
+            <div class="story-viewport">
+              <div class="story-scene active" id="story-origins">
+                <div class="scene-background" style="background-image: linear-gradient(135deg, #412c0f 0%, #5a421c 100%)">
+                  <div class="scene-overlay"></div>
+                </div>
+                <div class="scene-content">
+                  <h3>Who am I?</h3>
+                  <div class="scene-text">
+                    <p><span class="first-letter">J</span>ake* of all trades, Master of Data Science. I have always been fascinated by the beauty and power of computers, and I have always wanted to understand it, be part of it, and innovate. My journey as a researcher, engineer, and nomad has taken me across different realms of knowledge, driven by an insatiable curiosity about how machines can learn and how we can make them more intelligible to humans.</p>
+                    <p>I'm the founder and CEO of MLNomads, recognized as a Google Developer Expert in AI/ML, but beyond these titles lies a person constantly navigating the complex landscapes of technology, identity, and purpose. At the core, I'm a builder of bridges between the mathematical foundations of machine learning and their practical applications, between opaque neural networks and interpretable models, between what AI is today and what it could be tomorrow.</p>
+                  </div>
+                  <div class="scene-quote">
+                    "Beyond titles lies a person navigating the complex landscapes of technology, identity, and purpose."
+                  </div>
+                </div>
+              </div>
+              
+              <div class="story-scene" id="story-philosophy">
+                <div class="scene-background" style="background-image: linear-gradient(135deg, #4a3517 0%, #6b4b22 100%)">
+                  <div class="scene-overlay"></div>
+                </div>
+                <div class="scene-content">
+                  <h3>My Philosophy in a Nutshell</h3>
+                  <div class="scene-text">
+                    <p><span class="first-letter">F</span>rom a young age, I found myself faced with the daunting task of making decisions without guidance. I relied on my intuition, dedication, and determination to overcome the obstacles in my path. I will not deny that I have faced many failures, but I have learned from them and ensured that I do not repeat the same mistakes.</p>
+                    <p>In the process of navigating these challenges, I have developed a passion for knowledge and a love of learning that has shaped my current character and contributed to my humble achievements. For me, it is not the unknown that I fear, but the loss of my desire to seek knowledge.</p>
+                    <p>I am a lifelong learner, driven by an insatiable thirst for education that cannot be quenched. It is this love of learning that sustains me, and I will continue to pursue it for as long as I live. I am grateful for the hardships that have shaped me, for they have helped me to cultivate a deep appreciation for the beauty and complexity of the world.</p>
+                  </div>
+                  <div class="scene-quote">
+                    "For me, it is not the unknown that I fear, but the loss of my desire to seek knowledge."
+                  </div>
+                </div>
+              </div>
+              
+              <div class="story-scene" id="story-reflection">
+                <div class="scene-background" style="background-image: linear-gradient(135deg, #533e1e 0%, #785529 100%)">
+                  <div class="scene-overlay"></div>
+                </div>
+                <div class="scene-content">
+                  <h3>On Writing and Self-Reflection</h3>
+                  <div class="scene-text">
+                    <p><span class="first-letter">W</span>hen we are unable to access quality mentorship, quality mental health education, to better understand how to heal and self-reflect, we must turn to alternative methods of self-care. One such method is writing, which allows us to express and explore our emotions, thoughts, and experiences.</p>
+                    <p>By putting our innermost thoughts on paper, we can process and make sense of them in a way that may not be possible through verbal communication alone. Through the act of writing, we may also begin to see patterns and themes emerge in our experiences. This can provide us with valuable insights into how certain events and circumstances have affected us, and may help us to understand ourselves better.</p>
+                    <p>Ultimately, writing can be a powerful tool for self-discovery and growth—a window to our own minds and a bridge to understanding others. The same principles guide my approach to research: document, reflect, refine, and share.</p>
+                  </div>
+                  <div class="scene-quote">
+                    "Writing is a window to our own minds and a bridge to understanding others."
+                  </div>
+                </div>
+              </div>
+              
+              <div class="story-scene" id="story-journey">
+                <div class="scene-background" style="background-image: linear-gradient(135deg, #5c4726 0%, #856030 100%)">
+                  <div class="scene-overlay"></div>
+                </div>
+                <div class="scene-content">
+                  <h3>How Did I Get Here?</h3>
+                  <div class="scene-text">
+                    <p><span class="first-letter">O</span>ne day, I found myself alone and bereft of the people and things that had once been important to me. As I looked around, all I had left was my own mind and the knowledge and skills I had cultivated.</p>
+                    <p>In the face of loss and adversity, I clung to the belief that I could shape my own destiny, using my complaints about the world as fuel for my curiosity and driving me to take action rather than simply holding onto empty ideals.</p>
+                    <p>Despite the challenges I faced, I remained true to my identity and my heritage as I embarked on a journey to fulfill my dream of becoming a research scientist from Tamazgha, using computer science to make the world a better place. Each algorithm I write, each model I train, each paper I publish is another step on this path—not just to advance the field, but to represent my roots and inspire others like me to pursue their dreams regardless of where they started.</p>
+                  </div>
+                  <div class="scene-quote">
+                    "Each algorithm I write is another step on this path—not just to advance the field, but to represent my roots."
+                  </div>
+                </div>
+              </div>
+              
+              <div class="story-scene" id="story-path">
+                <div class="scene-background" style="background-image: linear-gradient(135deg, #654f2d 0%, #926a36 100%)">
+                  <div class="scene-overlay"></div>
+                </div>
+                <div class="scene-content">
+                  <h3>Where Are You Headed? —Iskanmagar</h3>
+                  <div class="scene-text">
+                    <p><span class="first-letter">A</span>s I navigate the uncertain path of life, I find myself drawn to experiences that challenge and inspire me. I am not seeking a specific destination, but rather, I am driven by a desire to learn, grow, and make a positive impact on the world around me.</p>
+                    <p>I do not chase after happiness, for I know that it is fleeting and elusive. Instead, I seek out the things that I fear the most, for it is in confronting these fears that I find true growth and fulfillment.</p>
+                    <p>I understand that change is the only constant, and I embrace it willingly, knowing that it offers endless opportunities for learning and development. As I journey through life, I will continue to push myself to new heights, ever seeking to improve and evolve.</p>
+                    <p>This is the path that I have chosen, and I will follow it wherever it may lead. My current focus on developing Neural Matter Networks, refining contrastive learning methods, and creating more transparent AI systems is simply another manifestation of this philosophy—pushing into the unknown, confronting the difficult challenges of our field, and hopefully emerging with something valuable to share.</p>
+                  </div>
+                  <div class="scene-quote">
+                    "I seek out the things that I fear the most, for it is in confronting these fears that I find true growth."
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Story controls -->
+            <div class="story-controls">
+              <button class="story-nav-btn prev-btn"><i class="fas fa-chevron-left"></i></button>
+              <div class="story-page-indicator">
+                <span class="current-page">1</span>/<span class="total-pages">5</span>
+              </div>
+              <button class="story-nav-btn next-btn"><i class="fas fa-chevron-right"></i></button>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
-    <div class="content collapsed">
-      <h2>But...How did you get here?</h2>
-      <div>
-        <p>
-          One day, I found myself alone and bereft of the people and things that
-          had once been important to me. As I looked around, all I had left was
-          my own mind and the knowledge and skills I had cultivated. In the face
-          of loss and adversity, I clung to the belief that I could shape my own
-          destiny, using my complaints about the world as fuel for my curiosity
-          and driving me to take action rather than simply holding onto empty
-          ideals. Despite the challenges I faced, I remained true to my identity
-          and my heritage as I embarked on a journey to fulfill my dream of
-          becoming a research scientist from Tamazgha, using computer science to
-          make the world a better place.
-        </p>
+      
+      <!-- Education Section (Hover Cards) -->
+      <div class="expandable-section" id="education-section">
+        <div class="section-header">
+          <h2>Education <span class="toggle-icon"><i class="fas fa-chevron-down"></i></span></h2>
+          <p class="section-preview">MS in ECE (Rowan), MS in Data Science & BS in Math/CS (Ibnou Zohr)...</p>
+        </div>
+        
+        <div class="section-content hidden">
+          <div class="education-timeline">
+            <div class="education-item">
+              <div class="education-date">2022 - 2024</div>
+              <div class="education-content">
+                <h3>Master of Science in Electrical and Computer Engineering</h3>
+                <p class="institution">Henry M. Rowan College of Engineering, Rowan University</p>
+                <p class="graduation-date">Expected December 2024</p>
+              </div>
+            </div>
+            
+            <div class="education-item">
+              <div class="education-date">2020 - 2022</div>
+              <div class="education-content">
+                <h3>Master of Science in Data Science</h3>
+                <p class="institution">Faculty of Science Agadir, Ibnou Zohr University</p>
+                <p class="graduation-date">July 2022</p>
+              </div>
+            </div>
+            
+            <div class="education-item">
+              <div class="education-date">2017 - 2020</div>
+              <div class="education-content">
+                <h3>Bachelor of Science in Mathematics and Computer Science</h3>
+                <p class="institution">Faculty of Science Agadir, Ibnou Zohr University</p>
+                <p class="graduation-date">September 2020</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
-    <div class="content collapsed">
-      <h2>Where are you headed? --Iskanmagar</h2>
-      <div>
-        <p>
-          As I navigate the uncertain path of life, I find myself drawn to
-          experiences that challenge and inspire me. I am not seeking a specific
-          destination, but rather, I am driven by a desire to learn, grow, and
-          make a positive impact on the world around me. I do not chase after
-          happiness, for I know that it is fleeting and elusive. Instead, I seek
-          out the things that I fear the most, for it is in confronting these
-          fears that I find true growth and fulfillment. I understand that
-          change is the only constant, and I embrace it willingly, knowing that
-          it offers endless opportunities for learning and development. As I
-          journey through life, I will continue to push myself to new heights,
-          ever seeking to improve and evolve. This is the path that I have
-          chosen, and I will follow it wherever it may lead.
-        </p>
+      
+      <!-- Awards Section (Expandable Cards) -->
+      <div class="expandable-section" id="awards-section">
+        <div class="section-header">
+          <h2>Scholarships and Awards <span class="toggle-icon"><i class="fas fa-chevron-down"></i></span></h2>
+          <p class="section-preview">Google Developer Expert, Rowan Research Fellowship, Google Scholarships...</p>
+        </div>
+        
+        <div class="section-content hidden">
+          <div class="awards-list">
+            <div class="award-item">
+              <div class="award-icon"><i class="fas fa-award"></i></div>
+              <div class="award-content">
+                <h3>AI/ML Google Developer Expert</h3>
+                <p>Recognition for expertise and contributions to the AI/ML community</p>
+              </div>
+            </div>
+            
+            <div class="award-item">
+              <div class="award-icon"><i class="fas fa-medal"></i></div>
+              <div class="award-content">
+                <h3>Rowan Research Fellowship Award</h3>
+                <p>Award for research excellence at Rowan University</p>
+              </div>
+            </div>
+            
+            <div class="award-item">
+              <div class="award-icon"><i class="fab fa-google"></i></div>
+              <div class="award-content">
+                <h3>Google Scholarship: Professional Certificate</h3>
+                <p>Recognition of professional development in Google technologies</p>
+              </div>
+            </div>
+            
+            <div class="award-item">
+              <div class="award-icon"><i class="fab fa-tensorflow"></i></div>
+              <div class="award-content">
+                <h3>Google Scholarship: TensorFlow Certificate</h3>
+                <p>Recognition of TensorFlow expertise and contributions</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>

@@ -1,0 +1,315 @@
+/* Research Section Styles */
+.research-container {
+  padding: 20px 0;
+}
+
+/* Filter buttons */
+.research-filters {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 30px;
+  gap: 10px;
+}
+
+.filter-btn {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--primary-text);
+  border: 1px solid rgba(244, 165, 96, 0.3);
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.9rem;
+}
+
+.filter-btn:hover {
+  background-color: rgba(244, 165, 96, 0.2);
+  border-color: var(--accent-color);
+}
+
+.filter-btn.active {
+  background-color: var(--accent-color);
+  color: var(--primary-bg);
+  border-color: var(--accent-color);
+}
+
+/* Research grid layout */
+.research-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 25px;
+  padding-top: 10px;
+}
+
+/* Research card styling */
+.research-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border: 1px solid rgba(244, 165, 96, 0.1);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.research-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+  border-color: rgba(244, 165, 96, 0.5);
+}
+
+.research-image {
+  height: 180px;
+  overflow: hidden;
+}
+
+.research-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.research-card:hover .research-image img {
+  transform: scale(1.05);
+}
+
+.research-content {
+  padding: 20px;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.research-card h3 {
+  margin-top: 0;
+  color: var(--accent-color);
+  font-size: 1.2rem;
+  margin-bottom: 5px;
+}
+
+.research-date {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.9rem;
+  margin-bottom: 15px;
+  font-style: italic;
+}
+
+.research-content p {
+  margin-bottom: 15px;
+  flex-grow: 1;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.research-actions {
+  margin-top: auto;
+  display: flex;
+  gap: 10px;
+}
+
+.research-btn {
+  display: inline-block;
+  padding: 8px 12px;
+  background: rgba(244, 165, 96, 0.2);
+  color: var(--accent-color);
+  text-decoration: none;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(244, 165, 96, 0.3);
+  text-align: center;
+  flex: 1;
+}
+
+.research-btn:hover {
+  background-color: var(--accent-color);
+  color: var(--primary-bg);
+}
+
+/* Modal styles */
+.research-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 1100;
+  overflow-y: auto;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.modal-content {
+  background: var(--primary-bg);
+  max-width: 900px;
+  margin: 50px auto;
+  border-radius: 8px;
+  position: relative;
+  padding: 30px;
+  border: 1px solid var(--accent-color);
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.research-modal.active .modal-content {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.close-modal {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--accent-color);
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background 0.3s ease;
+}
+
+.close-modal:hover {
+  background: rgba(244, 165, 96, 0.2);
+}
+
+.modal-body {
+  margin-top: 10px;
+}
+
+.modal-body h2 {
+  margin-top: 0;
+  color: var(--accent-color);
+  font-size: 1.8rem;
+  border-bottom: 2px solid rgba(244, 165, 96, 0.3);
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+}
+
+.modal-image {
+  width: 100%;
+  max-height: 350px;
+  overflow: hidden;
+  border-radius: 6px;
+  margin-bottom: 20px;
+}
+
+.modal-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.modal-info {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 15px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  border-left: 3px solid var(--accent-color);
+}
+
+.modal-info p {
+  margin: 5px 0;
+}
+
+.modal-description h3 {
+  color: var(--accent-color);
+  margin: 25px 0 10px 0;
+  font-size: 1.3rem;
+}
+
+.modal-description ul {
+  padding-left: 20px;
+}
+
+.modal-description li {
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .research-grid {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  }
+  
+  .modal-content {
+    padding: 20px;
+    margin: 70px auto 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .research-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .modal-content {
+    padding: 15px;
+  }
+  
+  .research-filters {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .filter-btn {
+    width: 80%;
+  }
+}
+
+/* Animation for filtered items */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.research-card.show {
+  animation: fadeIn 0.5s forwards;
+}
+
+.research-card.hide {
+  display: none;
+}
+
+/* Loading indicator */
+.loading-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(244, 165, 96, 0.3);
+  border-radius: 50%;
+  border-top-color: var(--accent-color);
+  animation: spin 1s ease-in-out infinite;
+  margin-bottom: 15px;
+}
+
+.error-message {
+  text-align: center;
+  padding: 40px 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  margin: 20px 0;
+  border-left: 4px solid #ff6b6b;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

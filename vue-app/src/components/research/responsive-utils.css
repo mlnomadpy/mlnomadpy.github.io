@@ -1,0 +1,107 @@
+/* Responsive Utility Classes for Research Components */
+
+/* Touch Target Size Improvements */
+.touch-friendly {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Font Size Utilities */
+@media (max-width: 576px) {
+  .resp-text-sm {
+    font-size: 0.85rem !important;
+  }
+  
+  .resp-text-md {
+    font-size: 1rem !important;
+  }
+  
+  .resp-text-lg {
+    font-size: 1.2rem !important;
+  }
+  
+  .resp-heading {
+    font-size: 1.5rem !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .resp-text-sm {
+    font-size: 0.75rem !important;
+  }
+  
+  .resp-text-md {
+    font-size: 0.9rem !important;
+  }
+  
+  .resp-text-lg {
+    font-size: 1.1rem !important;
+  }
+  
+  .resp-heading {
+    font-size: 1.3rem !important;
+  }
+}
+
+/* Spacing Utilities */
+@media (max-width: 576px) {
+  .resp-p-sm {
+    padding: 8px !important;
+  }
+  
+  .resp-p-md {
+    padding: 12px !important;
+  }
+  
+  .resp-m-sm {
+    margin: 8px !important;
+  }
+  
+  .resp-m-md {
+    margin: 12px !important;
+  }
+  
+  .resp-gap-sm {
+    gap: 8px !important;
+  }
+}
+
+/* Card Improvements */
+@media (max-width: 576px) {
+  .resp-card {
+    border-radius: 10px !important;
+  }
+}
+
+/* Responsive Display */
+@media (max-width: 480px) {
+  .hide-xs {
+    display: none !important;
+  }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+  .hide-sm {
+    display: none !important;
+  }
+}
+
+/* Responsive Flex Direction */
+@media (max-width: 576px) {
+  .resp-flex-column {
+    flex-direction: column !important;
+  }
+}
+
+/* Improved touch scrolling */
+.smooth-scroll {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Better tap highlights for mobile */
+@media (max-width: 768px) {
+  .mobile-tap-highlight {
+    -webkit-tap-highlight-color: rgba(244, 165, 96, 0.2);
+  }
+} 

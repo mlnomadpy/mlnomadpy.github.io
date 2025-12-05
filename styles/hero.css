@@ -2,7 +2,7 @@
   position: fixed;
   width: 100%;
   height: 100vh;
-  z-index: -1; /* Keep hero always in background */
+  z-index: 0;
   opacity: 1;
   transition: opacity 0.3s ease;
 }
@@ -57,23 +57,91 @@
   color: #fff;
 }
 
+.social-icons {
+  margin-top: 20px;
+  text-align: center;
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+}
+
+.social-icons.animated {
+  animation: fadeIn 1s ease-out forwards;
+}
+
+.social-icons:hover {
+  opacity: 1;
+}
+
+.social-icon-link {
+  margin: 0 10px;
+  color: white;
+  font-size: 24px;
+  transition: transform 0.3s ease, color 0.3s ease;
+  display: inline-block;
+}
+
+.social-icon-link:hover {
+  transform: translateY(-5px);
+  color: var(--accent-color);
+}
+
 .join-btn {
   display: block;
-  width: 100px;
+  width: 120px;
   margin: 20px auto;
   padding: 10px;
-  background-color: rgba(2, 2, 2, 0.273); /* Make background transparent */
+  background-color: rgba(2, 2, 2, 0.3);
   color: rgb(255, 255, 255);
-  border: 2px solid white; /* White border */
-  border-radius: 0; /* Sharp corners */
+  border: 2px solid white;
+  border-radius: 0;
   text-align: center;
   text-decoration: none;
   font-weight: bold;
-  cursor: pointer; /* Changes cursor to indicate button is clickable */
-  transition: background-color 0.3s ease; /* Smooth transition for hover effect */
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.join-btn:before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: var(--accent-color);
+  z-index: -1;
+  transition: left 0.3s ease;
 }
 
 .join-btn:hover {
-  background-color: rgb(244, 165, 96); /* Button background on hover */
-  color: #41230f; /* Text color on hover to match the body background */
+  color: var(--primary-bg);
+  border-color: var(--accent-color);
+}
+
+.join-btn:hover:before {
+  left: 0;
+}
+
+.join-btn.pulse {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(244, 165, 96, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(244, 165, 96, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(244, 165, 96, 0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }

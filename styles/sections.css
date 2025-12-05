@@ -7,62 +7,64 @@
   left: 0;
   width: 100%;
   transform: translateX(100%);
-  transition: transform 0.5s ease, visibility 0.5s ease; /* Add visibility to transition */
-  z-index: 50; /* Higher base z-index */
+  transition: transform 0.5s ease, visibility 0.5s ease;
+  z-index: 50;
   pointer-events: none;
   visibility: hidden;
-  display: none; /* Hide by default */
-  background-color: var(--primary-bg); /* Ensure solid background */
+  display: none;
+  background-color: var(--primary-bg);
+  overflow-y: auto;
 }
 
 .section.active {
   transform: translateX(0);
   pointer-events: auto;
   visibility: visible;
-  display: block; /* Show when active */
-  z-index: 900; /* Much higher z-index when active */
+  display: block;
+  z-index: 900;
 }
 
-/* Ensure main content stays behind sections */
-.hero-sec {
-  z-index: 1;
+.section.fade-in {
+  opacity: 0;
+  animation-duration: 0.5s;
+  animation-fill-mode: forwards;
 }
 
-/* Keep navbar above sections */
-.navbar {
-  z-index: 1000;
+.section.active.fade-in {
+  animation-name: fadeInSection;
+  opacity: 1;
 }
 
-.section h1 {
-  font-size: 2.5rem;
-  text-align: center;
-  margin-bottom: 40px;
-  padding-bottom: 20px;
-  position: relative;
-  border-right: none;
-  animation: none;
-}
-
-.section h1::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100px;
-  height: 3px;
-  background: var(--accent-color);
+@keyframes fadeInSection {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .section-content {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
-  height: calc(100vh - 180px); /* Adjust height to account for padding and header */
+  height: calc(100vh - 180px);
   overflow-y: auto;
-  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS devices */
+  -webkit-overflow-scrolling: touch;
+  animation-duration: 0.8s;
+  animation-fill-mode: both;
 }
 
+.active .section-content {
+  animation-name: slideUp;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
 
 #aboutme {
   background-color: rgba(65, 44, 15, 0.938);

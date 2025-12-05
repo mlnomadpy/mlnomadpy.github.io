@@ -10,6 +10,7 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="styles/main.css" />
+    <link rel="stylesheet" href="styles/preloader.css" />
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link
@@ -52,7 +53,16 @@
     </script>
   </head>
   <body>
+    <div class="preloader">
+      <div class="loader"></div>
+    </div>
+    
     <div class="navbar">
+      <div class="hamburger" id="hamburger-menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
       <a href="#aboutme" class="nav-link" data-section="aboutme">
         <i class="fas fa-user"></i>
         <span class="nav-text">about me</span>
@@ -69,9 +79,9 @@
         <i class="fas fa-home"></i>
       </a>
 
-      <a href="#blog" class="nav-link" data-section="blogs">
-        <i class="fas fa-blog"></i>
-        <span class="nav-text">blogs</span>
+      <a href="#experiences" class="nav-link" data-section="experiences">
+        <i class="fas fa-briefcase"></i>
+        <span class="nav-text">experiences</span>
       </a>
       <a href="#talks" class="nav-link" data-section="talks">
         <i class="fas fa-microphone"></i>
@@ -91,33 +101,33 @@
         <div class="circle-text">
           <h1>ⵟⴰⵀⴰ ⴱⵓⵃⵙⵉⵏ</h1>
           <sub>ⵉⵙⴽⴰⵏⵎⴰⴳⴰⵔ</sub>
-          <div class="social-icons">
-            <a href="https://twitter.com/Tahabsn" target="_blank"
-              ><i class="fab fa-twitter"></i
-            ></a>
-            <a href="https://instagram.com/tahabsn" target="_blank"
-              ><i class="fab fa-instagram"></i
-            ></a>
-            <a href="https://linkedin.com/in/tahabsn" target="_blank"
-              ><i class="fab fa-linkedin-in"></i
-            ></a>
+          <div class="social-icons animated">
+            <a href="https://twitter.com/Tahabsn" target="_blank" class="social-icon-link">
+              <i class="fab fa-twitter"></i>
+            </a>
+            <a href="https://instagram.com/tahabsn" target="_blank" class="social-icon-link">
+              <i class="fab fa-instagram"></i>
+            </a>
+            <a href="https://linkedin.com/in/tahabsn" target="_blank" class="social-icon-link">
+              <i class="fab fa-linkedin-in"></i>
+            </a>
           </div>
-          <a href="#" class="join-btn" onclick="VideoEffects.applyRandomEffect()"
-            >don't click!</a
-          >
+          <a href="#" class="join-btn pulse" onclick="VideoEffects.applyRandomEffect()">
+            don't click!
+          </a>
         </div>
       </div>
     </div>
 
-    <div class="about-me section" id="aboutme">
+    <div class="about-me section fade-in" id="aboutme">
       <!-- injecting content from aboutme.html -->
     </div>
 
-    <div class="life section" id="life"></div>
+    <div class="life section fade-in" id="life"></div>
 
-    <div class="poetry section" id="poetry"></div>
+    <div class="poetry section fade-in" id="poetry"></div>
 
-    <div class="blogs section" id="blogs"></div>
+    <div class="experiences section fade-in" id="experiences"></div>
 
     <div class="talks section" id="talks">
       <div class="section-content">
@@ -131,7 +141,9 @@
       </div>
     </div>
 
-    <div class="research section" id="research"></div>
+    <div class="research section fade-in" id="research">
+      <!-- Content will be loaded from research.html -->
+    </div>
 
     <script type="module">
         import Portfolio from './js/app.js';
@@ -141,7 +153,21 @@
         window.VideoEffects = VideoEffects;
         // Initialize the application
         Portfolio.init();
+
+        // Add preloader functionality
+        window.addEventListener('load', () => {
+            const preloader = document.querySelector('.preloader');
+            preloader.classList.add('preloader-finish');
+        });
+        
+        // Hamburger menu functionality
+        document.getElementById('hamburger-menu').addEventListener('click', () => {
+            document.querySelector('.navbar').classList.toggle('responsive');
+        });
     </script>
     <script src="talks.js"></script>
+    <script src="js/research.js"></script>
+    <script src="js/experiences.js"></script>
+    <script src="js/aboutme.js"></script>
   </body>
 </html>

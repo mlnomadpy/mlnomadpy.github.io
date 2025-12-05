@@ -1,0 +1,160 @@
+/* Mobile-specific optimizations */
+
+/* Better touch targets for mobile */
+@media (max-width: 768px) {
+  /* Increase touch target sizes for better mobile UX */
+  button, 
+  .btn,
+  .nav-link,
+  .clickable,
+  input[type="button"],
+  input[type="submit"] {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 10px 12px;
+  }
+  
+  /* Add more spacing between interactive elements */
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  /* Larger form elements for easier interaction */
+  input, select, textarea {
+    font-size: 16px; /* Prevents iOS zoom on focus */
+    padding: 12px;
+    border-radius: 8px;
+    height: auto;
+  }
+  
+  /* Fix for iOS overscrolling background */
+  html {
+    background-color: var(--primary-bg);
+    overflow-x: hidden;
+    position: relative;
+  }
+  
+  /* Prevent content shift when opening modals */
+  body.modal-open {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+  }
+  
+  /* Mobile-friendly table styles */
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Improve readability for small screens */
+  p, li {
+    font-size: 1rem;
+    line-height: 1.6;
+    letter-spacing: 0.01em;
+  }
+  
+  /* Handle long URLs and text */
+  * {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-word;
+    hyphens: auto;
+  }
+}
+
+/* Small mobile devices */
+@media (max-width: 480px) {
+  /* Further optimization for very small screens */
+  h1 {
+    font-size: 1.8rem;
+    margin-bottom: 0.8rem;
+  }
+  
+  h2 {
+    font-size: 1.5rem;
+    margin-bottom: 0.7rem;
+  }
+  
+  h3 {
+    font-size: 1.3rem;
+    margin-bottom: 0.6rem;
+  }
+  
+  /* Reduce padding for main containers */
+  .container {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+  
+  /* Stack elements that should be stacked on very small screens */
+  .xs-stack {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  
+  /* Hide decorative elements on very small screens */
+  .decorative-only {
+    display: none !important;
+  }
+}
+
+/* Landscape orientation for mobile devices */
+@media (max-height: 500px) and (orientation: landscape) {
+  /* Optimize elements for landscape mobile view */
+  .navbar {
+    padding: 5px !important;
+  }
+  
+  /* Reduce vertical spacing */
+  .section {
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
+  }
+  
+  /* Adjust heights for landscape */
+  .fullscreen {
+    height: auto !important;
+    min-height: 100vh;
+  }
+}
+
+/* iOS specific fixes */
+@supports (-webkit-touch-callout: none) {
+  /* Fix for iOS 100vh issue */
+  .fullscreen, 
+  .full-height {
+    height: -webkit-fill-available;
+  }
+  
+  /* Fix for iOS momentum scrolling */
+  .scroll-container {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Android specific fixes */
+@supports not (-webkit-touch-callout: none) {
+  /* Android-specific adjustments if needed */
+}
+
+/* Dark mode optimization for OLED screens */
+@media (prefers-color-scheme: dark) {
+  body.oled-dark-mode {
+    background-color: #000;
+    color: #eee;
+  }
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+} 

@@ -1,0 +1,156 @@
+{
+  "categories": [
+    { "id": "all", "name": "All" },
+    { "id": "industry", "name": "Industry" },
+    { "id": "research", "name": "Research" },
+    { "id": "teaching", "name": "Teaching" }
+  ],
+  "experiences": [
+    {
+      "role": "Research Scientist/C.E.O",
+      "company": "MLNomads L.L.C",
+      "location": "MARLTON, NJ",
+      "startDate": "November 2024",
+      "endDate": "Present",
+      "category": "industry",
+      "logo": "https://i.imgur.com/TwYAtdu.png",
+      "tags": ["Leadership", "AI Research", "White Box ML"],
+      "description": "Founder and CEO of MLNomads, leading research and development in white box neural networks and other cutting-edge AI technologies.",
+      "achievements": [
+        "Pre-Training next generation of white box neural networks architecture using Neural-Matter Networks",
+        "Pre-training and Fine-Tuning deep learning models using SimO2 and AFCL frameworks",
+        "Building Security pipelines to Audit the model weights to detect potential vulnerabilities",
+        "Building bashnota: Next generation platform for building and training AI System for modern non-linear workflow (Jupyter Notebooks Alternative)",
+        "Developing AtomicVDB: a state-of-the art Vector Database built on top of jax",
+        "Creating LocalAgents.ts: a typescript library for building LLM agents on your browser"
+      ],
+      "technologies": ["JAX", "Flax", "PyTorch", "TensorFlow", "TypeScript", "CUDA", "Python"]
+    },
+    {
+      "role": "Lecturer / Adjunct Faculty",
+      "company": "Rowan University - College of Science and Mathematics",
+      "location": "Glassboro, NJ",
+      "startDate": "September 2023",
+      "endDate": "December 2024",
+      "category": "teaching",
+      "logo": "https://i.imgur.com/K5uO8BZ.png",
+      "tags": ["Education", "Cyber Security", "300-level course"],
+      "description": "Teaching 300-level course on Cyber Security to Computer Science students.",
+      "achievements": [
+        "Developed curriculum and teaching materials for advanced cybersecurity course",
+        "Designed hands-on lab exercises to provide practical experience with security concepts",
+        "Mentored students on security-focused research projects",
+        "Collaborated with department faculty on curriculum development"
+      ],
+      "technologies": ["Network Security", "Cryptography", "Penetration Testing", "Security Analysis"]
+    },
+    {
+      "role": "Machine Learning Graduate Research Assistant",
+      "company": "Henry M.Rowan College of Engineering / Federal Aviation Administration",
+      "location": "Glassboro, NJ",
+      "startDate": "January 2023",
+      "endDate": "December 2024",
+      "category": "research",
+      "logo": "https://i.imgur.com/K5uO8BZ.png",
+      "tags": ["Multimodal Deep Learning", "Computer Vision", "Research"],
+      "description": "Conducted research on multimodal deep learning systems for atmospheric visibility estimation in collaboration with the US Federal Aviation Administration.",
+      "achievements": [
+        "Developed a cutting-edge multimodal system for in-flight atmospheric visibility estimation",
+        "Utilized X-Plane to create a comprehensive dataset for in-flight visibility estimation",
+        "Implemented and evaluated various deep learning architectures for visibility prediction",
+        "Published research findings in aviation and computer vision conferences"
+      ],
+      "technologies": ["TensorFlow", "Computer Vision", "Multimodal Learning", "X-Plane", "Python"]
+    },
+    {
+      "role": "Machine Learning Engineer Intern",
+      "company": "Henry M.Rowan College of Engineering / Federal Aviation Administration",
+      "location": "Glassboro, NJ",
+      "startDate": "February 2022",
+      "endDate": "July 2022",
+      "category": "research",
+      "logo": "https://i.imgur.com/K5uO8BZ.png",
+      "tags": ["Computer Vision", "Atmospheric Visibility"],
+      "description": "Developed an atmospheric visibility estimation system using RGB image-based approaches for aviation safety applications.",
+      "achievements": [
+        "Led the project from problem framing and in-depth research to dataset curation",
+        "Implemented and trained computer vision models for visibility estimation",
+        "Conducted thorough performance evaluations and optimizations",
+        "Successfully demonstrated the system to FAA stakeholders"
+      ],
+      "technologies": ["Computer Vision", "TensorFlow", "Keras", "Python", "Data Analysis"]
+    },
+    {
+      "role": "Satellite Imagery Machine Learning Engineer Intern",
+      "company": "IRF-SIC Laboratory",
+      "location": "Agadir, Morocco",
+      "startDate": "February 2022",
+      "endDate": "July 2022",
+      "category": "research",
+      "logo": "https://i.imgur.com/TwYAtdu.png",
+      "tags": ["Remote Sensing", "Satellite Imagery", "Conservation"],
+      "description": "Developed AI systems for environmental monitoring using satellite imagery, focusing on the conservation of Argania forests.",
+      "achievements": [
+        "Responsible for problem framing, model structuring, and implementation",
+        "Developed an AI-based system for change detection in Argania forests using satellite imagery",
+        "Processed and analyzed multi-temporal satellite data for environmental monitoring",
+        "Created visualization tools for presenting findings to stakeholders"
+      ],
+      "technologies": ["Remote Sensing", "GIS", "Python", "TensorFlow", "Image Processing"]
+    },
+    {
+      "role": "AI/ML Google Developer Expert",
+      "company": "Google Developer Experts",
+      "location": "Remote",
+      "startDate": "June 2024",
+      "endDate": "Present",
+      "category": "industry",
+      "logo": "https://i.imgur.com/QdBctmh.png",
+      "tags": ["Technical Leadership", "Community Building", "ML Expertise"],
+      "description": "Recognized by Google as a technical expert and thought leader in Machine Learning and Artificial Intelligence.",
+      "achievements": [
+        "Selected as part of Google's expert network for demonstrated ML/AI expertise",
+        "Provide technical guidance and mentorship to the developer community",
+        "Create educational content and resources for ML practitioners",
+        "Speak at conferences and events representing the Google Developers community"
+      ],
+      "technologies": ["TensorFlow", "JAX", "Machine Learning", "AI Systems", "Community Leadership"]
+    },
+    {
+      "role": "Founder/Lead Community Organizer",
+      "company": "MLNomads",
+      "location": "Global (Remote)",
+      "startDate": "August 2023",
+      "endDate": "Present",
+      "category": "industry",
+      "logo": "https://i.imgur.com/TwYAtdu.png",
+      "tags": ["Community Building", "ML Education", "Leadership"],
+      "description": "Founded and lead a global community focused on machine learning education, research and implementation.",
+      "achievements": [
+        "Built a community of ML practitioners, researchers, and enthusiasts",
+        "Organized virtual events, workshops, and knowledge-sharing sessions",
+        "Created educational resources and mentorship opportunities",
+        "Established partnerships with other technical communities and organizations"
+      ],
+      "technologies": ["Community Management", "Event Planning", "Technical Content Creation", "Mentorship"]
+    },
+    {
+      "role": "Freelancer / Consultant",
+      "company": "Self-employed",
+      "location": "Global (Remote)",
+      "startDate": "July 2016",
+      "endDate": "Present",
+      "category": "industry",
+      "logo": "https://i.imgur.com/TwYAtdu.png",
+      "tags": ["Software Development", "AI Engineering", "Web Development"],
+      "description": "Providing consulting and development services in software engineering, web development, Android development, and AI engineering.",
+      "achievements": [
+        "Developed custom software solutions for clients across various industries",
+        "Created full-stack web applications using modern frameworks and technologies",
+        "Built Android applications with focus on user experience and performance",
+        "Implemented AI/ML solutions for business process optimization and automation"
+      ],
+      "technologies": ["Python", "JavaScript", "Java", "Kotlin", "React", "Node.js", "TensorFlow", "Android SDK"]
+    }
+  ]
+}
