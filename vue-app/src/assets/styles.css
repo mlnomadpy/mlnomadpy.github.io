@@ -1,11 +1,25 @@
 /* Add import for new font in head section of HTML */
+@import url("https://fonts.googleapis.com/css?family=Orbitron&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Space+Mono&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+
+:root {
+  --font-heading: 'Orbitron', sans-serif;
+  --font-body: 'Space Mono', monospace;
+  --primary-bg: #0a0a0a;
+  --primary-text: #ffffff;
+  --secondary-text: #cccccc;
+  --accent-color: #f4a560;
+  --accent-color-hover: #e08e45;
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+}
 
 body {
   background-color: var(--primary-bg);
   color: var(--primary-text);
-  font-family: var(--font-heading);
+  font-family: var(--font-body);
   margin: 0;
 }
 
