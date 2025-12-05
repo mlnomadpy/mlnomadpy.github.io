@@ -12,49 +12,45 @@ export const storyItems = [
     title: 'Origins',
     heading: 'Who am I?',
     backgroundImage: "url('/imgs/bg-origins.jpg'), linear-gradient(135deg, #412c0f 0%, #5a421c 100%)",
-    content: `<p>Jake* of all trades, Master of Data Science. I've always been captivated by the beauty and transformative power of computing, driven to understand its inner workings, become part of its evolution, and contribute meaningful innovations. My journey as a researcher, engineer, and nomad has taken me across diverse realms of knowledge, fueled by an insatiable curiosity about machine learning and the quest to make artificial intelligence more transparent and interpretable.</p>
-    <p>As founder and CEO of MLNomads and recognized Google Developer Expert in AI/ML, I've earned various titles. Yet beyond these labels exists someone navigating the complex intersections of technology, identity, and purpose. At my core, I build bridges—connecting mathematical foundations of machine learning with practical applications, linking opaque neural networks with interpretable models, and bridging the gap between what AI is today and what it could become tomorrow.</p>`,
-    quote: "Beyond titles lies a person navigating the complex landscapes of technology, identity, and purpose."
+    content: `<p>I didn't start with a roadmap; I started with curiosity. Growing up in Tamazgha, the world outside felt vast and full of secrets I was desperate to uncover. My journey wasn't about following a set path, but about asking "why" and "how"—a relentless need to peel back the layers of the ordinary to find the wonder underneath.</p>
+    <p>Today, people might define me by my work, but at my core, I am still that curious kid, a "Nomad" navigating the landscapes of life. I am driven not by a need to conquer, but by a need to understand—to build bridges between where I came from and where I am going, and to find meaning in the spaces between.</p>`,
+    quote: "The titles are just waypoints. The real journey is the relentless pursuit of understanding."
   },
   {
     id: 'philosophy',
     title: 'Philosophy',
-    heading: 'My Philosophy in a Nutshell',
+    heading: 'My Philosophy',
     backgroundImage: "url('/imgs/bg-philosophy.jpg'), linear-gradient(135deg, #4a3517 0%, #6b4b22 100%)",
-    content: `<p>From a young age, I found myself making critical decisions without guidance, relying solely on intuition, dedication, and determination to overcome obstacles in my path. I've encountered numerous failures along the way but transformed each one into a learning opportunity, ensuring I never repeat the same mistakes twice.</p>
-    <p>Through navigating these challenges, I've cultivated a profound passion for knowledge and learning that has shaped my character and contributed to my modest achievements. For me, the true fear isn't facing the unknown—it's losing the desire to seek knowledge in the first place.</p>
-    <p>I am, above all, a lifelong learner with an unquenchable thirst for education. This love of learning sustains me and will continue to guide my journey for as long as I live. I'm grateful for every hardship that has shaped my path, as each challenge has deepened my appreciation for the world's beauty and complexity, reinforcing my commitment to continuous growth and understanding.</p>`,
-    quote: "For me, it is not the unknown that I fear, but the loss of my desire to seek knowledge."
+    content: `<p>I learned early on that if you wait for a guide, you might never leave the starting line. Navigating life without a clear map meant I had to build my own compass. Failures weren't setbacks; they were lessons—essential steps in the long walk of personal growth. I made a pact with myself: never fear the stumble, only the refusal to get back up.</p>
+    <p>My philosophy is simple: remain perpetually curious. The moment we think we know enough is the moment we stop growing. I don't fear the unknown; I fear the stagnation of comfort. This hunger for knowledge isn't about status or achievement; it's the fuel that sustains my spirit and gives meaning to the struggle.</p>`,
+    quote: "I don't fear the unknown. I fear the loss of the hunger to seek the unknown."
   },
   {
     id: 'reflection',
     title: 'Reflection',
-    heading: 'On Writing and Self-Reflection',
+    heading: 'The Quiet Spaces',
     backgroundImage: "url('/imgs/bg-reflection.jpg'), linear-gradient(135deg, #533e1e 0%, #785529 100%)",
-    content: `<p>When quality mentorship and mental health education are inaccessible, we must discover alternative methods of self-care and growth. Writing has become my most powerful tool—a way to express and explore emotions, thoughts, and experiences with remarkable clarity.</p>
-    <p>By committing thoughts to paper, we process and make sense of complex emotions in ways that verbal communication alone cannot achieve. Through consistent writing practice, patterns and themes emerge from our experiences, offering valuable insights into how events have shaped us and illuminating paths toward deeper self-understanding.</p>
-    <p>Ultimately, writing serves as both a window to our inner world and a bridge to understanding others. This same philosophy guides my research approach: document meticulously, reflect honestly, refine continuously, and share generously. Through this process, both personal growth and scientific advancement become possible.</p>`,
-    quote: "Writing is a window to our own minds and a bridge to understanding others."
+    content: `<p>In moments of isolation, when the noise of the world faded, I found my strongest ally in writing. It became more than just a habit; it was a sanctuary. By forcing my thoughts onto paper, I could take the vague, overwhelming anxieties of life and give them shape, understanding them rather than running from them.</p>
+    <p>This introspection is how I ground myself. It bridges the gap between what I feel and what I understand, allowing me to transform raw emotion into clarity and purpose. Writing is the act of listening to one's own life, ensuring that no lesson is lost to the chaos of the everyday.</p>`,
+    quote: "Writing is how I listen to my own life and compile my experiences into wisdom."
   },
   {
     id: 'journey',
     title: 'Journey',
-    heading: 'How Did I Get Here?',
+    heading: 'The Crossroads',
     backgroundImage: "url('/imgs/bg-journey.jpg'), linear-gradient(135deg, #5c4726 0%, #856030 100%)",
-    content: `<p>I found myself at a crossroads—alone and separated from the people and things that once anchored my life. In that moment of stark clarity, I realized all I truly possessed were my mind, accumulated knowledge, and cultivated skills.</p>
-    <p>Facing this loss and adversity, I embraced the belief that I could actively shape my destiny. Rather than settling for passive complaints about the world's imperfections, I channeled that dissatisfaction into curiosity and action, refusing to cling to empty ideals without backing them with concrete efforts.</p>
-    <p>Throughout these challenges, I've remained faithful to my identity and heritage while pursuing my dream of becoming a research scientist from Tamazgha, using computer science as a force for positive change. Each algorithm I develop, model I train, and paper I publish represents another step on this journey—not merely advancing the field, but honoring my roots and inspiring others from similar backgrounds to pursue their ambitions regardless of their starting point.</p>`,
-    quote: "Each algorithm I write is another step on this path—not just to advance the field, but to represent my roots."
+    content: `<p>There was a defining moment where I stood at a crossroads—separated from everything familiar, with nothing but my own resolve. It was terrifying, but it was also the moment I truly became free. I realized that while I couldn't control the circumstances around me, I had absolute dominion over my response.</p>
+    <p>I channeled that energy into moving forward. Every step I took wasn't just a motion—it was an assertion of existence. My journey from the mountains of North Africa to where I stand today is a testament to the power of resilience. I carry my roots with me, proving that where we start does not dictate where we end, and that ambition, when coupled with action, can bridge any divide.</p>`,
+    quote: "Every step is a proof that where you start doesn't dictate where you end."
   },
   {
     id: 'path',
     title: 'Path',
-    heading: 'Where Are You Headed? —Iskanmagar',
+    heading: 'Where to Next? —Iskanmagar',
     backgroundImage: "url('/imgs/bg-path.jpg'), linear-gradient(135deg, #654f2d 0%, #926a36 100%)",
-    content: `<p>As I navigate life's uncertain terrain, I find myself drawn to experiences that challenge and inspire growth. I'm not seeking a predetermined destination but am driven by an intrinsic desire to learn, evolve, and make meaningful contributions to the world around me.</p>
-    <p>Rather than chasing the elusive concept of happiness, I deliberately seek out what I fear most—recognizing that true growth and fulfillment emerge from confronting these fears directly, not avoiding them. This approach has transformed obstacles into opportunities for profound development.</p>
-    <p>I've come to understand that change represents the only true constant, and I embrace it wholeheartedly, recognizing the endless opportunities for learning and growth it presents. Throughout my journey, I continuously push beyond comfortable boundaries, constantly striving to improve and evolve.</p>`,
-    quote: "I seek out the things that I fear the most, for it is in confronting these fears that I find true growth."
+    content: `<p>I don't have a fixed coordinate for the destination. The spirit of "Iskanmagar" guides me—the belief that the path itself is the destination. I find myself drawn not to the easy comforts, but to the challenges that scare me. I've learned that fear is often just a compass pointing towards where I need to grow next.</p>
+    <p>I'm not chasing a static state of happiness, but a dynamic state of evolution. The goal is to keep moving, to keep learning, and to ensure that with every step, I'm staying true to the curiosity that started it all. As long as there are questions left to answer, my journey continues.</p>`,
+    quote: "I embrace the fear, for it is the only reliable compass pointing toward growth."
   }
 ];
 
@@ -275,4 +271,4 @@ export const profileData = {
       external: true
     }
   ]
-}; 
+};
