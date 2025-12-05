@@ -8,9 +8,9 @@ import './assets/styles/responsive.css'
 import './assets/styles/mobile.css'
 
 export const createApp = ViteSSG(
-    App,
-    { routes, base: import.meta.env.BASE_URL },
-    ({ app, router, routes, isClient, initialState }) => {
-        // install plugins etc.
-    }
+  App,
+  { routes, base: import.meta.env.BASE_URL },
+  ({ app, router, routes, isClient, initialState }) => {
+    // install plugins etc.
+  }
 )

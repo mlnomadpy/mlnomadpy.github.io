@@ -1,0 +1,138 @@
+<template>
+  <footer class="footer">
+    <div class="footer-container">
+      <div class="footer-content">
+        <div class="footer-section">
+          <h3>Taha Bouhsine</h3>
+          <p>ML Researcher & Google Developer Expert</p>
+        </div>
+
+        <div class="footer-section">
+          <h4>Quick Links</h4>
+          <ul>
+            <li v-for="link in footerLinks" :key="link.path">
+              <router-link :to="link.path">{{ link.name }}</router-link>
+            </li>
+          </ul>
+        </div>
+
+        <div class="footer-section">
+          <h4>Connect</h4>
+          <div class="social-links">
+            <a
+              v-for="social in socialLinks"
+              :key="social.name"
+              :href="social.url"
+              target="_blank"
+              rel="noopener noreferrer"
+              :aria-label="`Visit ${social.name} profile`"
+            >
+              {{ social.name }}
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; {{ currentYear }} Taha Bouhsine. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+</template>
+
+<script setup>
+import { computed } from 'vue'
+
+const currentYear = computed(() => new Date().getFullYear())
+
+const footerLinks = [
+  { name: 'Home', path: '/' },
+  { name: 'About', path: '/about' },
+  { name: 'Research', path: '/research' },
+  { name: 'Talks', path: '/talks' },
+]
+
+const socialLinks = [
+  { name: 'GitHub', url: 'https://github.com/mlnomadpy' },
+  { name: 'LinkedIn', url: 'https://linkedin.com/in/Tahabsn' },
+  { name: 'Scholar', url: 'https://scholar.google.com/citations?user=SCHOLARID' },
+]
+</script>
+
+<style scoped>
+.footer {
+  background: rgba(10, 10, 10, 0.95);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 3rem 0 1rem;
+  margin-top: 4rem;
+}
+
+.footer-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.footer-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.footer-section h3 {
+  margin-bottom: 0.5rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.footer-section h4 {
+  margin-bottom: 1rem;
+  color: #fff;
+  font-size: 1.1rem;
+}
+
+.footer-section p {
+  color: #999;
+  line-height: 1.6;
+}
+
+.footer-section ul {
+  list-style: none;
+}
+
+.footer-section ul li {
+  margin-bottom: 0.5rem;
+}
+
+.footer-section a {
+  color: #999;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.footer-section a:hover {
+  color: #667eea;
+}
+
+.social-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.footer-bottom {
+  text-align: center;
+  padding-top: 2rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  color: #666;
+}
+
+@media (max-width: 768px) {
+  .footer-content {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
