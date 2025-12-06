@@ -1,5 +1,5 @@
 import { ViteSSG } from 'vite-ssg'
-import { createWebHashHistory, createMemoryHistory } from 'vue-router'
+import { createWebHistory, createMemoryHistory } from 'vue-router'
 import App from './App.vue'
 import { routes } from './router'
 import '@fortawesome/fontawesome-free/css/all.css'
@@ -13,7 +13,9 @@ if (typeof window !== 'undefined') {
   window.Buffer = Buffer;
 }
 
-const history = import.meta.env.SSR ? createMemoryHistory() : createWebHashHistory()
+const history = import.meta.env.SSR
+  ? createMemoryHistory(import.meta.env.BASE_URL)
+  : createWebHistory(import.meta.env.BASE_URL)
 
 export const createApp = ViteSSG(
   App,

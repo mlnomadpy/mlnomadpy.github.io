@@ -1,4 +1,5 @@
-import { createRouter, createWebHashHistory } from 'vue-router'
+// Routes definition
+// Router instance is created in main.js using ViteSSG
 import HomeView from '../views/HomeView.vue'
 
 export const routes = [
