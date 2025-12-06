@@ -5,6 +5,11 @@
     role="navigation"
     aria-label="Main navigation"
   >
+    <!-- Dynamic Section Title -->
+    <div class="section-title-bar" v-if="pageTitle">
+      <span class="current-title">{{ pageTitle }}</span>
+    </div>
+
     <div class="navbar-container">
       <!-- Navigation links wrapper -->
       <div id="nav-links" class="nav-links">
@@ -76,6 +81,29 @@ export default {
       scrollProgress: 0
     }
   },
+  computed: {
+    pageTitle() {
+      const routeName = this.$route.name;
+      const path = this.$route.path;
+      
+      // Map route names to display titles
+      const titleMap = {
+        'aboutme': 'About Me',
+        'research': 'Research',
+        'ResearchDetails': 'Research',
+        'talks': 'Talks',
+        'TalkDetails': 'Talks',
+        'poetry': 'Poetry',
+        'PoetryDetails': 'Poetry',
+        'blogs': 'Blogs',
+        'BlogDetails': 'Blogs',
+        'life': 'Life',
+        'home': 'Home'
+      };
+      
+      return titleMap[routeName] || '';
+    }
+  },
   methods: {
     closeMenuIfOpen() {
       // Method kept for compatibility but no longer needed
@@ -115,9 +143,81 @@ export default {
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   transition: all 0.3s ease;
-  flex-direction: column;
+  flex-direction: column; /* Keep column for stacking context, but adjust internal layout */
   width: 100%;
-  height: 70px;
+  height: 70px; /* Restore unified height */
+}
+
+/* Title Bar - Desktop: Absolute Left */
+.section-title-bar {
+  position: absolute;
+  left: 30px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: auto;
+  text-align: left;
+  margin: 0;
+  z-index: 1002;
+  pointer-events: none;
+  opacity: 0;
+  animation: fadeIn 0.5s 0.2s forwards; /* Slight delay */
+  display: flex;
+  align-items: center;
+}
+
+.current-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1rem; /* Smaller, subtler */
+  color: var(--accent-color, rgb(244, 165, 96));
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-weight: 700;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  white-space: nowrap;
+  background: rgba(0,0,0,0.3); /* Legibility bg */
+  padding: 4px 10px;
+  border-radius: 4px;
+  border-left: 2px solid var(--accent-color);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (max-width: 1100px) {
+  /* On medium screens, title might overlap icons. Move to top or hide? 
+     Let's move to top center nicely overlapping or just stack tightly */
+  
+  .mlnomadpy-navbar {
+     height: auto;
+     min-height: 70px;
+     padding-top: 25px; /* Make space for title on top */
+  }
+
+  .section-title-bar {
+    position: absolute;
+    left: 50%;
+    top: 5px;
+    transform: translateX(-50%);
+    width: auto;
+    text-align: center;
+  }
+  
+  .current-title {
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid var(--accent-color);
+  }
+}
+
+@media (max-width: 480px) {
+   .mlnomadpy-navbar {
+      height: auto;
+      min-height: 80px; /* Needs slightly more for touch targets + title */
+   }
 }
 
 .mlnomadpy-navbar.scrolled {
@@ -352,7 +452,7 @@ export default {
 /* Mobile responsive styling */
 @media (max-width: 992px) {
   .mlnomadpy-navbar {
-    padding: 12px 5px;
+    padding: 30px 5px 10px; /* Top padding reserved for title */
   }
   
   .mlnomadpy-navbar a.nav-item {
@@ -384,7 +484,7 @@ export default {
 
 @media (max-width: 768px) {
   .mlnomadpy-navbar {
-    padding: 10px 5px;
+    padding: 30px 5px 10px;
   }
   
   /* Adjust icon size and margins */
@@ -422,7 +522,7 @@ export default {
 
 @media (max-width: 480px) {
   .mlnomadpy-navbar {
-    padding: 8px 2px;
+    padding: 30px 2px 8px;
   }
   
   .mlnomadpy-navbar .nav-icon {

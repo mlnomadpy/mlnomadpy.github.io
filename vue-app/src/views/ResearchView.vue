@@ -1,10 +1,10 @@
 <template>
   <div class="research view-container">
     <div class="section-content scrollable-content smooth-scroll">
-      <h1 class="resp-heading">Research</h1>
+      <!-- Removed Header as requested to save space -->
       
       <div class="research-wrapper">
-        <!-- Compact Toolbar -->
+        <!-- Toolbar -->
         <div class="research-toolbar">
           <div class="search-group">
             <SearchBar
@@ -13,6 +13,18 @@
               @clear="clearSearch"
               class="flex-grow"
             />
+            
+            <!-- View Toggle -->
+            <button 
+              class="filter-toggle-btn"
+              @click="toggleViewMode"
+              :title="viewMode === 'list' ? 'Switch to Grid View' : 'Switch to List View'"
+            >
+              <i :class="viewMode === 'list' ? 'fas fa-th-large' : 'fas fa-list'"></i>
+              <span class="desktop-only">{{ viewMode === 'list' ? 'Grid' : 'List' }}</span>
+            </button>
+
+            <!-- Filter Toggle -->
             <button 
               class="filter-toggle-btn" 
               :class="{ active: showFilters }"
@@ -44,20 +56,57 @@
           </transition>
         </div>
         
-        <div v-if="filteredResearch.length" class="research-grid">
-          <ResearchCard
-            v-for="item in filteredResearch"
-            :key="item.id"
-            :item="item"
+        <!-- Content Area -->
+        <transition name="fade" mode="out-in">
+          <!-- Compact List View -->
+          <div v-if="viewMode === 'list' && paginatedResearch.length" key="list">
+             <CompactList
+               title=""
+               :items="compactListItems"
+               @item-click="openDetail"
+             />
+          </div>
+
+          <!-- Grid View -->
+          <div v-else-if="paginatedResearch.length" class="research-grid" key="grid">
+            <ResearchCard
+              v-for="item in paginatedResearch"
+              :key="item.id"
+              :item="item"
+            />
+          </div>
+          
+          <!-- No Results -->
+          <NoResults 
+            v-else
+            key="no-results"
+            @reset="resetFilters"
           />
+        </transition>
+
+          <!-- Pagination Controls -->
+          <div v-if="filteredResearch.length > itemsPerPage" class="pagination-controls">
+            <button 
+              class="page-btn" 
+              :disabled="currentPage === 1" 
+              @click="changePage(currentPage - 1)"
+            >
+              <i class="fas fa-chevron-left"></i> Previous
+            </button>
+            <span class="page-info">
+              Page {{ currentPage }} of {{ totalPages }}
+            </span>
+            <button 
+              class="page-btn" 
+              :disabled="currentPage === totalPages" 
+              @click="changePage(currentPage + 1)"
+            >
+              Next <i class="fas fa-chevron-right"></i>
+            </button>
+          </div>
         </div>
-        
-        <NoResults 
-          v-else
-          @reset="resetFilters"
-        />
       </div>
-    </div>
+    
   </div>
 </template>
 
@@ -66,6 +115,7 @@ import SearchBar from '@/components/research/SearchBar.vue';
 import CategoryFilter from '@/components/research/CategoryFilter.vue';
 import ResearchCard from '@/components/research/ResearchCard.vue';
 import NoResults from '@/components/research/NoResults.vue';
+import CompactList from '@/components/about/CompactList.vue';
 
 export default {
   name: 'ResearchView',
@@ -73,7 +123,8 @@ export default {
     SearchBar,
     CategoryFilter,
     ResearchCard,
-    NoResults
+    NoResults,
+    CompactList
   },
   data() {
     return {
@@ -81,7 +132,19 @@ export default {
       categories: [],
       selectedCategory: 'All',
       searchQuery: '',
-      showFilters: false
+      showFilters: false,
+      viewMode: 'list', // Default to list
+      currentPage: 1,
+      itemsPerPage: 10
+    }
+  },
+  watch: {
+    // Reset to page 1 when filters change
+    searchQuery() {
+      this.currentPage = 1;
+    },
+    selectedCategory() {
+      this.currentPage = 1;
     }
   },
   computed: {
@@ -107,6 +170,24 @@ export default {
         
         return matchesCategory && matchesSearch;
       });
+    },
+    totalPages() {
+      return Math.ceil(this.filteredResearch.length / this.itemsPerPage);
+    },
+    paginatedResearch() {
+      const start = (this.currentPage - 1) * this.itemsPerPage;
+      const end = start + this.itemsPerPage;
+      return this.filteredResearch.slice(start, end);
+    },
+    compactListItems() {
+      return this.paginatedResearch.map(item => ({
+        ...item,
+        // Map fields for CompactList
+        period: item.year,
+        subtitle: item.category,
+        location: item.status, // e.g., "Independent Research"
+        description: item.details || item.summary // For modal
+      }));
     }
   },
   methods: {
@@ -116,6 +197,20 @@ export default {
     resetFilters() {
       this.searchQuery = '';
       this.selectedCategory = 'All';
+    },
+    toggleViewMode() {
+      this.viewMode = this.viewMode === 'list' ? 'grid' : 'list';
+    },
+    openDetail(item) {
+      this.$router.push({ name: 'ResearchDetails', params: { id: item.id } });
+    },
+    changePage(page) {
+      if (page >= 1 && page <= this.totalPages) {
+        this.currentPage = page;
+        // Scroll to top of list
+        const wrapper = this.$el.querySelector('.scrollable-content');
+        if (wrapper) wrapper.scrollTo({ top: 0, behavior: 'smooth' });
+      }
     },
     async loadResearchData() {
       try {
@@ -150,33 +245,48 @@ export default {
   overflow-y: auto;
   overflow-x: hidden;
   padding: 20px;
+  /* Custom Scrollbar Styles to match About Me */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(244, 165, 96, 0.3) transparent;
+}
+
+.scrollable-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollable-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollable-content::-webkit-scrollbar-thumb {
+  background-color: rgba(244, 165, 96, 0.3);
+  border-radius: 20px;
 }
 
 .research {
-  padding: 20px;
-  min-height: 100vh;
-}
-
-.section-content h1 {
-  text-align: center;
-  margin-bottom: 30px;
-  font-size: 2.5rem;
-  color: var(--primary-text);
-  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  padding: 0; /* Remove padding that might cause overflow */
+  /* min-height: 100vh; REMOVED to fix scroll issue */
+  height: 100%;
 }
 
 .research-wrapper {
   max-width: 1200px;
   margin: 0 auto;
   width: 100%;
-  padding: 20px;
+  padding: 20px 20px 80px; /* Add bottom padding for scroll space */
 }
 
 /* Toolbar Styles */
 .research-toolbar {
-  margin-bottom: 30px;
+  margin-bottom: 20px;
   position: relative;
   z-index: 10;
+  position: sticky; /* Sticky toolbar */
+  top: 0;
+  background: rgba(18, 18, 18, 0.8); /* Background to hide content behind */
+  backdrop-filter: blur(10px);
+  padding: 10px 0;
+  margin-top: -10px; /* Offset to stick at top */
 }
 
 .search-group {
@@ -214,9 +324,10 @@ export default {
 .filter-panel {
   margin-top: 15px;
   padding: 20px;
-  background: rgba(30, 30, 30, 0.8);
+  background: rgba(30, 30, 30, 0.95);
   border-radius: 16px;
   border: 1px solid var(--glass-border);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
 }
 
 .filter-header {
@@ -251,6 +362,46 @@ export default {
   font-size: 0.9rem;
   color: var(--secondary-text);
   font-family: var(--font-mono);
+}
+
+/* Pagination Controls */
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.page-btn {
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.page-btn:hover:not(:disabled) {
+  background: var(--accent-color);
+  color: #000;
+  transform: translateY(-2px);
+}
+
+.page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.page-info {
+  color: #aaa;
+  font-size: 0.95rem;
 }
 
 /* Grid */

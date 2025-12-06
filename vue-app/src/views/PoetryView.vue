@@ -1,7 +1,6 @@
 <template>
   <div class="poetry view-container">
     <div class="section-content scrollable-content">
-      <h1>poetry</h1>
       <div class="poetry-container">
         <PoetryCard 
           v-for="poem in poems" 
@@ -44,6 +43,22 @@ export default {
   overflow-y: auto;
   overflow-x: hidden;
   padding: 20px;
+  /* Custom Scrollbar Styles to match About Me */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(244, 165, 96, 0.3) transparent;
+}
+
+.scrollable-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollable-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollable-content::-webkit-scrollbar-thumb {
+  background-color: rgba(244, 165, 96, 0.3);
+  border-radius: 20px;
 }
 
 .poetry-container {
@@ -52,35 +67,12 @@ export default {
   gap: 2rem;
   max-width: 900px;
   margin: 0 auto;
-}
-
-h1 {
-  text-align: center;
-  margin-bottom: 2rem;
-  font-size: 2.5rem;
-  color: var(--text-color, #fff);
-  position: relative;
-  padding-bottom: 1rem;
-}
-
-h1::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100px;
-  height: 3px;
-  background-color: rgb(244, 165, 96);
+  padding-bottom: 40px;
 }
 
 @media (max-width: 768px) {
   .scrollable-content {
     padding: 1rem;
-  }
-  
-  h1 {
-    font-size: 2rem;
   }
 }
 </style> 

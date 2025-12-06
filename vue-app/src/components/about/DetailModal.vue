@@ -44,19 +44,34 @@
             </div>
           </div>
           
-          <!-- Skills if any -->
-          <div v-if="item.skills" class="skills-section">
-            <h4>Skills</h4>
+          <!-- Skills / Tags -->
+          <div v-if="item.skills || (item.tags && item.tags.length)" class="skills-section">
+            <h4>{{ item.skills ? 'Skills' : 'Tags' }}</h4>
             <div class="skills-tags">
-              <span class="skill-tag">{{ item.skills }}</span>
+              <span v-if="item.skills" class="skill-tag">{{ item.skills }}</span>
+              <span v-for="tag in item.tags" :key="tag" class="skill-tag">{{ tag }}</span>
             </div>
           </div>
 
-          <!-- Links/Actions if needed (future proofing) -->
-          <div v-if="item.url || item.link" class="modal-actions">
-            <a :href="item.url || item.link" target="_blank" rel="noopener noreferrer" class="action-btn">
+          <!-- Links/Actions -->
+          <div v-if="item.links || item.url || item.link" class="modal-actions">
+            <!-- Single Link -->
+            <a v-if="item.url || item.link" :href="item.url || item.link" target="_blank" rel="noopener noreferrer" class="action-btn">
               Visit Link <i class="fas fa-external-link-alt"></i>
             </a>
+            <!-- Array of Links -->
+            <template v-if="item.links">
+              <a 
+                v-for="(linkItem, lIndex) in item.links" 
+                :key="lIndex"
+                :href="linkItem.url" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                class="action-btn"
+              >
+                {{ linkItem.text }} <i class="fas fa-external-link-alt"></i>
+              </a>
+            </template>
           </div>
         </div>
       </div>
@@ -242,6 +257,12 @@ h4 {
   border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
+.skills-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 .skill-tag {
   background: rgba(244, 165, 96, 0.1);
   color: var(--accent-color, rgb(244, 165, 96));
@@ -249,6 +270,36 @@ h4 {
   border-radius: 20px;
   font-size: 0.9rem;
   display: inline-block;
+}
+
+.modal-actions {
+  margin-top: 2rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 10px 20px;
+  border-radius: 25px;
+  background: var(--accent-color, rgb(244, 165, 96));
+  color: #1e1e1e;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(244, 165, 96, 0.3);
+}
+
+.action-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(244, 165, 96, 0.4);
+  background: #fff;
 }
 
 /* Scrollbar */
