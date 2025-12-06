@@ -79,13 +79,18 @@ export const educationItems = [
 export const certificates = [
   {
     title: "TensorFlow Developer Certificate",
+    subtitle: "TensorFlow.org",
+    period: "December 2021",
     skills: "Deep Learning / TensorFlow / MLOps",
     issuer: "TensorFlow.org",
     date: "December 2021",
-    icon: "fab fa-tensorflow"
+    icon: "fab fa-tensorflow",
+    link: "https://www.credential.net/truncated-url-placeholder"
   },
   {
     title: "Software Design and Architecture",
+    subtitle: "University of Alberta",
+    period: "October 2020",
     skills: "Software Architecture / Design Patterns / UML",
     issuer: "University of Alberta",
     date: "October 2020",
@@ -93,6 +98,8 @@ export const certificates = [
   },
   {
     title: "Software Product Management Specialization",
+    subtitle: "University of Alberta",
+    period: "August 2020",
     skills: "Scrum / Agile / Product Management",
     issuer: "University of Alberta",
     date: "August 2020",
@@ -100,6 +107,8 @@ export const certificates = [
   },
   {
     title: "Deep Learning Specialization",
+    subtitle: "deeplearning.ai",
+    period: "July 2020",
     skills: "Python / TensorFlow / Deep Learning",
     issuer: "deeplearning.ai",
     date: "July 2020",
@@ -110,21 +119,30 @@ export const certificates = [
 export const awardItems = [
   {
     title: 'AI/ML Google Developer Expert',
+    subtitle: 'Google Developers',
+    period: '2023 - Present',
     description: 'Recognition for expertise and contributions to the AI/ML community',
-    icon: 'fas fa-award'
+    icon: 'fas fa-award',
+    link: 'https://g.dev/tahabouhsine'
   },
   {
     title: 'Rowan Research Fellowship Award',
+    subtitle: 'Rowan University',
+    period: '2023',
     description: 'Award for research excellence at Rowan University',
     icon: 'fas fa-medal'
   },
   {
     title: 'Google Scholarship: Professional Certificate',
+    subtitle: 'Google',
+    period: '2019',
     description: 'Recognition of professional development in Google technologies',
     icon: 'fab fa-google'
   },
   {
     title: 'Google Scholarship: TensorFlow Certificate',
+    subtitle: 'Google',
+    period: '2020',
     description: 'Recognition of TensorFlow expertise and contributions',
     icon: 'fab fa-tensorflow'
   }

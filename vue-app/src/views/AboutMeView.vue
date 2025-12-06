@@ -97,7 +97,35 @@
             
             <!-- Awards Tab Panel -->
             <div v-else-if="activeTab === 'awards'" class="tab-panel" key="awards">
-              <timeline-list title="Honors & Awards" icon="fas fa-trophy" :items="awardItems" />
+              <transition name="fade" mode="out-in">
+                <compact-list 
+                  v-if="viewMode === 'list'"
+                  title="Honors & Awards" 
+                  icon="fas fa-trophy" 
+                  :items="awardItems"
+                  @item-click="openDetail"
+                >
+                  <template #controls>
+                    <button class="view-toggle-btn" @click="toggleViewMode" title="Switch to Timeline View">
+                      <i class="fas fa-stream"></i> Timeline
+                    </button>
+                  </template>
+                </compact-list>
+                <timeline-list 
+                  v-else
+                  title="Honors & Awards" 
+                  icon="fas fa-trophy" 
+                  :items="awardItems" 
+                >
+                  <template #before-list>
+                    <div class="list-controls-bar">
+                      <button class="view-toggle-btn active" @click="toggleViewMode" title="Switch to List View">
+                        <i class="fas fa-list"></i> Compact List
+                      </button>
+                    </div>
+                  </template>
+                </timeline-list>
+              </transition>
             </div>
             
             <!-- Skills Tab Panel -->
@@ -107,7 +135,36 @@
             
             <!-- Certificates Tab Panel -->
             <div v-else-if="activeTab === 'certifications'" class="tab-panel" key="certifications">
-              <card-grid title="Certifications" icon="fas fa-certificate" :items="certificates" type="certification" />
+              <transition name="fade" mode="out-in">
+                <compact-list 
+                  v-if="viewMode === 'list'"
+                  title="Certifications" 
+                  icon="fas fa-certificate" 
+                  :items="certificates"
+                  @item-click="openDetail"
+                >
+                  <template #controls>
+                    <button class="view-toggle-btn" @click="toggleViewMode" title="Switch to Grid View">
+                      <i class="fas fa-th-large"></i> Grid
+                    </button>
+                  </template>
+                </compact-list>
+                <card-grid 
+                  v-else
+                  title="Certifications" 
+                  icon="fas fa-certificate" 
+                  :items="certificates" 
+                  type="certification" 
+                >
+                  <template #before-grid>
+                    <div class="list-controls-bar">
+                      <button class="view-toggle-btn active" @click="toggleViewMode" title="Switch to List View">
+                        <i class="fas fa-list"></i> Compact List
+                      </button>
+                    </div>
+                  </template>
+                </card-grid>
+              </transition>
             </div>
           </transition>
           </div>
@@ -301,6 +358,9 @@ export default {
 
 .tab-panel {
   /* animation handled by transition wrapper */
+  height: 100%; /* Ensure full height for children like StoryTab */
+  display: flex;
+  flex-direction: column;
 }
 
 .identity-panel {
