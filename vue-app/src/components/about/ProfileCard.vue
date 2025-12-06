@@ -111,7 +111,7 @@ export default {
 /* Profile card styling */
 .profile-card {
   width: 100%;
-  height: 100%;
+  min-height: 100%; /* Allow growth */
   /* Remove component-level background/shadow/border as parent handles it */
   background: transparent; 
   box-shadow: none;
@@ -122,7 +122,7 @@ export default {
   display: flex;
   flex-direction: column;
   position: relative;
-  overflow: hidden;
+  /* overflow: hidden;  <-- Removed to allow scrolling if content overflows */
 }
 
 /* Image Section */

@@ -148,22 +148,48 @@ img, video, canvas {
   height: auto;
 }
 
-/* Scrollbar styling - only shown for elements with overflow if needed */
+/* Global Scrollbar Styling */
 ::-webkit-scrollbar {
-  width: 12px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgb(244, 165, 96);
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #b08a68;
+  width: 8px; /* Slightly wider for better usability */
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
-  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(244, 165, 96, 0.5); /* Accent color with transparency */
+  border-radius: 4px;
+  transition: background 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(244, 165, 96, 0.8);
+}
+
+/* Specific class for inner scroll containers to ensure application */
+.custom-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(244, 165, 96, 0.5) rgba(0, 0, 0, 0.1);
+}
+
+.custom-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scroll::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.custom-scroll::-webkit-scrollbar-thumb {
+  background-color: rgba(244, 165, 96, 0.5);
+  border-radius: 4px;
+}
+
+.custom-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(244, 165, 96, 0.8);
 }
 
 /* Accessibility improvements */

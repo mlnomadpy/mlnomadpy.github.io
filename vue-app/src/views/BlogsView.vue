@@ -1,6 +1,6 @@
 <template>
   <div class="blogs view-container">
-    <div class="section-content scrollable-content smooth-scroll">
+    <div class="section-content scrollable-content smooth-scroll custom-scroll">
       <h1 class="resp-heading">Blogs</h1>
       
       <div class="blogs-wrapper">
