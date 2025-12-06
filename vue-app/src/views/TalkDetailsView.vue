@@ -86,77 +86,97 @@
   </div>
 </template>
 
+<script setup>
+import { ref, computed, watch, onMounted } from 'vue';
+import { useHead } from '@vueuse/head';
+import { useRoute } from 'vue-router';
+
+const props = defineProps(['id']);
+const route = useRoute();
+
+const talk = ref(null);
+const loading = ref(true);
+const error = ref(null);
+
+// Computeds
+const hasResources = computed(() => {
+  const t = talk.value;
+  return t && (t.slides || t.kaggle_notebook || t.github_gist || (t.link && !t.link.includes('youtube')));
+});
+
+const hasDescription = computed(() => {
+  const t = talk.value;
+  if (!t || !t.description) return false;
+  const desc = t.description.trim();
+  return desc !== '' && desc !== '.' && desc !== 'TBD' && desc !== '<p>.</p>';
+});
+
+// SEO
+const pageTitle = computed(() => talk.value ? talk.value.title : 'Talk Details');
+const pageDescription = computed(() => talk.value ? `Talk at ${talk.value.organization}: ${talk.value.title}` : 'Presentation details');
+const pageImage = computed(() => talk.value ? talk.value.thumbnail : null);
+
+useHead({
+  title: pageTitle,
+  meta: [
+    { name: 'description', content: pageDescription },
+    { property: 'og:title', content: pageTitle },
+    { property: 'og:description', content: pageDescription },
+    { property: 'og:image', content: pageImage },
+  ]
+});
+
+// Watch
+watch(() => props.id, (newId) => {
+  if (newId) loadTalk();
+}, { immediate: true });
+
+async function loadTalk() {
+  loading.value = true;
+  error.value = null;
+  console.log('Loading talk with ID:', props.id);
+  try {
+    // Import data dynamically
+    const talksData = await import('@/data/talks.json');
+    const talks = talksData.default || talksData;
+    
+    // Match by title slug
+    const slug = props.id;
+    const foundTalk = talks.find(t => {
+      const tSlug = t.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+      return tSlug === slug;
+    });
+
+    console.log('Found talk:', foundTalk);
+
+    if (foundTalk) {
+      talk.value = foundTalk;
+    } else {
+      error.value = 'Talk not found';
+      console.warn('Talk not found for slug:', slug);
+    }
+  } catch (err) {
+    console.error('Error loading talk:', err);
+    error.value = 'Failed to load talk details';
+  } finally {
+    loading.value = false;
+  }
+}
+
+function extractGistUrl(gistHtml) {
+  // Extract URL from gist embed script tag
+  if (!gistHtml) return '#';
+  const match = gistHtml.match(/src=['"]([^'"]+)['"]/);
+  if (match) {
+    return match[1].replace('.js', '');
+  }
+  return '#';
+}
+</script>
+
 <script>
 export default {
-  name: 'TalkDetailsView',
-  props: ['id'],
-  data() {
-    return {
-      talk: null,
-      loading: true,
-      error: null
-    }
-  },
-  computed: {
-    hasResources() {
-      return this.talk && (this.talk.slides || this.talk.kaggle_notebook || this.talk.github_gist || (this.talk.link && !this.talk.link.includes('youtube')));
-    },
-    hasDescription() {
-      if (!this.talk || !this.talk.description) return false;
-      const desc = this.talk.description.trim();
-      return desc !== '' && desc !== '.' && desc !== 'TBD' && desc !== '<p>.</p>';
-    }
-  },
-  watch: {
-    id: {
-      immediate: true,
-      handler() {
-        this.loadTalk();
-      }
-    }
-  },
-  methods: {
-    extractGistUrl(gistHtml) {
-      // Extract URL from gist embed script tag
-      if (!gistHtml) return '#';
-      const match = gistHtml.match(/src=['"]([^'"]+)['"]/);
-      if (match) {
-        return match[1].replace('.js', '');
-      }
-      return '#';
-    },
-    async loadTalk() {
-      this.loading = true;
-      this.error = null;
-      console.log('Loading talk with ID:', this.id);
-      try {
-        // Import data dynamically
-        const talksData = await import('@/data/talks.json');
-        const talks = talksData.default || talksData;
-        
-        // Match by title slug
-        const slug = this.id;
-        const foundTalk = talks.find(t => {
-          const tSlug = t.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
-          return tSlug === slug;
-        });
-
-        console.log('Found talk:', foundTalk);
-
-        if (foundTalk) {
-          this.talk = foundTalk;
-        } else {
-          this.error = 'Talk not found';
-          console.warn('Talk not found for slug:', slug);
-        }
-      } catch (err) {
-        console.error('Error loading talk:', err);
-        this.error = 'Failed to load talk details';
-      } finally {
-        this.loading = false;
-      }
-    }
-  }
+  name: 'TalkDetailsView'
 }
 </script>
 

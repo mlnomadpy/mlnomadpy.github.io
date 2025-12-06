@@ -177,12 +177,26 @@
 <script>
 import TalkCard from '@/components/talks/TalkCard.vue';
 import CompactList from '@/components/about/CompactList.vue';
+import { useHead } from '@vueuse/head';
 
 export default {
   name: 'TalksView',
   components: {
     TalkCard,
     CompactList
+  },
+  setup() {
+    useHead({
+      title: 'Talks & Presentations',
+      meta: [
+        { 
+          name: 'description', 
+          content: 'Watch conference talks and presentations by Taha Bouhsine on AI, Machine Learning, and Technical Leadership.' 
+        },
+        { property: 'og:title', content: 'Talks & Presentations | Taha Bouhsine' },
+        { property: 'og:description', content: 'Watch talks on AI, ML, and Leadership.' }
+      ]
+    })
   },
   data() {
     return {

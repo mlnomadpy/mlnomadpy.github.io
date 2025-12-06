@@ -116,6 +116,7 @@ import CategoryFilter from '@/components/research/CategoryFilter.vue';
 import ResearchCard from '@/components/research/ResearchCard.vue';
 import NoResults from '@/components/research/NoResults.vue';
 import CompactList from '@/components/about/CompactList.vue';
+import { useHead } from '@vueuse/head';
 
 export default {
   name: 'ResearchView',
@@ -125,6 +126,19 @@ export default {
     ResearchCard,
     NoResults,
     CompactList
+  },
+  setup() {
+    useHead({
+      title: 'Research Publications',
+      meta: [
+        { 
+          name: 'description', 
+          content: 'Explore Taha Bouhsine\'s research publications in Machine Learning, Deep Learning, Computer Vision, and AI Safety.' 
+        },
+        { property: 'og:title', content: 'Research Publications | Taha Bouhsine' },
+        { property: 'og:description', content: 'Explore research publications in ML and AI.' }
+      ]
+    })
   },
   data() {
     return {

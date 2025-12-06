@@ -76,83 +76,101 @@
   </div>
 </template>
 
+<script setup>
+import { ref, watch, onMounted, computed } from 'vue';
+import { useHead } from '@vueuse/head';
+import { useRoute } from 'vue-router';
+
+const props = defineProps(['id']);
+const route = useRoute();
+
+const item = ref(null);
+const loading = ref(true);
+const error = ref(null);
+
+// Computeds for SEO
+const pageTitle = computed(() => item.value ? item.value.title : 'Research Details');
+const pageDescription = computed(() => item.value ? item.value.summary : 'Detailed view of research publication.');
+
+useHead({
+  title: pageTitle,
+  meta: [
+    { name: 'description', content: pageDescription },
+    { property: 'og:title', content: pageTitle },
+    { property: 'og:description', content: pageDescription },
+  ]
+});
+
+// Watch id change
+watch(() => props.id, (newId) => {
+  if (newId) loadResearch();
+}, { immediate: true });
+
+async function loadResearch() {
+  loading.value = true;
+  error.value = null;
+  try {
+    const researchData = await import('@/data/research.json');
+    const research = researchData.default || researchData;
+    
+    const foundItem = research.find(r => r.id === props.id);
+
+    if (foundItem) {
+      item.value = foundItem;
+    } else {
+      error.value = 'Research item not found';
+    }
+  } catch (err) {
+    console.error('Error loading research:', err);
+    error.value = 'Failed to load research details';
+  } finally {
+    loading.value = false;
+  }
+}
+
+// Helpers
+function formatDetails(text) {
+  if (!text) return '';
+  return text.replace(/\n/g, '<br>');
+}
+
+function getCategoryIcon(category) {
+  const icons = {
+    'Machine Learning': 'fas fa-brain',
+    'Deep Learning': 'fas fa-network-wired',
+    'Computer Vision': 'fas fa-eye',
+    'Natural Language Processing': 'fas fa-language',
+    'Reinforcement Learning': 'fas fa-robot',
+    'Data Science': 'fas fa-chart-line',
+    'Explainable AI': 'fas fa-lightbulb',
+    'Neural Networks': 'fas fa-project-diagram',
+    'Signal Processing': 'fas fa-wave-square'
+  };
+  return icons[category] || 'fas fa-microscope';
+}
+
+function getLinkIcon(text) {
+  const lower = text.toLowerCase();
+  if (lower.includes('github') || lower.includes('repo') || lower.includes('code')) return 'fab fa-github';
+  if (lower.includes('arxiv') || lower.includes('paper') || lower.includes('preprint')) return 'fas fa-file-alt';
+  if (lower.includes('demo') || lower.includes('interactive')) return 'fas fa-play-circle';
+  if (lower.includes('video') || lower.includes('youtube')) return 'fab fa-youtube';
+  if (lower.includes('slide') || lower.includes('presentation')) return 'fas fa-file-powerpoint';
+  return 'fas fa-external-link-alt';
+}
+
+function getLinkClass(text) {
+  const lower = text.toLowerCase();
+  if (lower.includes('github') || lower.includes('repo')) return 'github';
+  if (lower.includes('arxiv') || lower.includes('paper')) return 'paper';
+  if (lower.includes('demo')) return 'demo';
+  return 'external';
+}
+</script>
+
 <script>
 export default {
-  name: 'ResearchDetailsView',
-  props: ['id'],
-  data() {
-    return {
-      item: null,
-      loading: true,
-      error: null
-    }
-  },
-  watch: {
-    id: {
-      immediate: true,
-      handler() {
-        this.loadResearch();
-      }
-    }
-  },
-  methods: {
-    async loadResearch() {
-      this.loading = true;
-      this.error = null;
-      try {
-        const researchData = await import('@/data/research.json');
-        const research = researchData.default || researchData;
-        
-        const foundItem = research.find(r => r.id === this.id);
-
-        if (foundItem) {
-          this.item = foundItem;
-        } else {
-          this.error = 'Research item not found';
-        }
-      } catch (err) {
-        console.error('Error loading research:', err);
-        this.error = 'Failed to load research details';
-      } finally {
-        this.loading = false;
-      }
-    },
-    formatDetails(text) {
-      if (!text) return '';
-      // Simple formatting: convert newlines to <br> if needed, or wrap in paragraphs
-      return text.replace(/\n/g, '<br>');
-    },
-    getCategoryIcon(category) {
-      const icons = {
-        'Machine Learning': 'fas fa-brain',
-        'Deep Learning': 'fas fa-network-wired',
-        'Computer Vision': 'fas fa-eye',
-        'Natural Language Processing': 'fas fa-language',
-        'Reinforcement Learning': 'fas fa-robot',
-        'Data Science': 'fas fa-chart-line',
-        'Explainable AI': 'fas fa-lightbulb',
-        'Neural Networks': 'fas fa-project-diagram',
-        'Signal Processing': 'fas fa-wave-square'
-      };
-      return icons[category] || 'fas fa-microscope';
-    },
-    getLinkIcon(text) {
-      const lower = text.toLowerCase();
-      if (lower.includes('github') || lower.includes('repo') || lower.includes('code')) return 'fab fa-github';
-      if (lower.includes('arxiv') || lower.includes('paper') || lower.includes('preprint')) return 'fas fa-file-alt';
-      if (lower.includes('demo') || lower.includes('interactive')) return 'fas fa-play-circle';
-      if (lower.includes('video') || lower.includes('youtube')) return 'fab fa-youtube';
-      if (lower.includes('slide') || lower.includes('presentation')) return 'fas fa-file-powerpoint';
-      return 'fas fa-external-link-alt';
-    },
-    getLinkClass(text) {
-      const lower = text.toLowerCase();
-      if (lower.includes('github') || lower.includes('repo')) return 'github';
-      if (lower.includes('arxiv') || lower.includes('paper')) return 'paper';
-      if (lower.includes('demo')) return 'demo';
-      return 'external';
-    }
-  }
+  name: 'ResearchDetailsView'
 }
 </script>
 
