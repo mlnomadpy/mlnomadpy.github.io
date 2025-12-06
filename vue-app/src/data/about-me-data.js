@@ -1,4 +1,5 @@
 export const tabs = [
+  { id: 'identity', label: 'Identity', icon: 'fas fa-id-card' },
   { id: 'story', label: 'My Story', icon: 'fas fa-book-open' },
   { id: 'education', label: 'Education', icon: 'fas fa-graduation-cap' },
   { id: 'certifications', label: 'Certifications', icon: 'fas fa-certificate' },
@@ -19,7 +20,7 @@ export const storyItems = [
   {
     id: 'philosophy',
     title: 'Philosophy',
-    heading: 'My Philosophy',
+    heading: 'My Philosophy in a Nutshell',
     backgroundImage: "url('/imgs/bg-philosophy.jpg'), linear-gradient(135deg, #4a3517 0%, #6b4b22 100%)",
     content: `<p>I learned early on that if you wait for a guide, you might never leave the starting line. Navigating life without a clear map meant I had to build my own compass. Failures weren't setbacks; they were lessons—essential steps in the long walk of personal growth. I made a pact with myself: never fear the stumble, only the refusal to get back up.</p>
     <p>My philosophy is simple: remain perpetually curious. The moment we think we know enough is the moment we stop growing. I don't fear the unknown; I fear the stagnation of comfort. This hunger for knowledge isn't about status or achievement; it's the fuel that sustains my spirit and gives meaning to the struggle.</p>`,
@@ -28,7 +29,7 @@ export const storyItems = [
   {
     id: 'reflection',
     title: 'Reflection',
-    heading: 'The Quiet Spaces',
+    heading: 'The Engineering of the Soul',
     backgroundImage: "url('/imgs/bg-reflection.jpg'), linear-gradient(135deg, #533e1e 0%, #785529 100%)",
     content: `<p>In moments of isolation, when the noise of the world faded, I found my strongest ally in writing. It became more than just a habit; it was a sanctuary. By forcing my thoughts onto paper, I could take the vague, overwhelming anxieties of life and give them shape, understanding them rather than running from them.</p>
     <p>This introspection is how I ground myself. It bridges the gap between what I feel and what I understand, allowing me to transform raw emotion into clarity and purpose. Writing is the act of listening to one's own life, ensuring that no lesson is lost to the chaos of the everyday.</p>`,
@@ -75,7 +76,7 @@ export const educationItems = [
   }
 ];
 
-export const certificationItems = [
+export const certificates = [
   {
     title: "TensorFlow Developer Certificate",
     skills: "Deep Learning / TensorFlow / MLOps",
@@ -234,15 +235,53 @@ export const experienceItems = [
   }
 ];
 
+export const skillGroups = [
+  {
+    title: 'Machine Learning & AI',
+    icon: 'fas fa-brain',
+    skills: [
+      'Deep Learning (TensorFlow, PyTorch)',
+      'Computer Vision',
+      'NLP (Transformers, LLMs)',
+      'MLOps',
+      'Generative AI'
+    ]
+  },
+  {
+    title: 'Software Engineering',
+    icon: 'fas fa-laptop-code',
+    skills: [
+      'Python',
+      'JavaScript/TypeScript',
+      'Vue.js',
+      'React',
+      'Node.js',
+      'Docker',
+      'Kubernetes'
+    ]
+  },
+  {
+    title: 'Research',
+    icon: 'fas fa-search',
+    skills: [
+      'Technical Writing',
+      'Experiment Design',
+      'Data Analysis',
+      'Algorithm Development',
+      'Mathematical Modeling'
+    ]
+  }
+];
+
 export const profileData = {
   name: 'Taha Bouhsine',
   nativeTitle: 'ⵉⵙⴽⴰⵏⵎⴰⴳⴰⵔ',
-  tagline: 'ML Researcher & Engineer | Google Developer Expert in AI/ML | CEO of MLNomads',
+  tagline: 'ML Researcher & Engineer | Google Developer Expert in AI/ML | Azetta.ai Co-Founder',
   quote: 'I build bridges between mathematical foundations of machine learning and their practical applications, between black-box neural networks and cosmos-inspired safe and interpretable AI models',
   socialLinks: [
     {
       name: 'Google Scholar',
-      url: 'https://scholar.google.com/',
+      url: 'https://scholar.google.com/citations?user=IsBjb3EAAAAJ&hl=en&oi=ao',
       icon: 'fas fa-graduation-cap',
       external: true
     },
@@ -260,7 +299,7 @@ export const profileData = {
     },
     {
       name: 'Email',
-      url: 'mailto:tahabhs14@gmail.com',
+      url: 'mailto:contact@tahabouhsine.com',
       icon: 'fas fa-envelope',
       external: false
     },

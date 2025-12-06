@@ -1,5 +1,9 @@
 <template>
   <div class="timeline-list">
+    <div v-if="title" class="list-section-header">
+      <i v-if="icon" :class="icon"></i>
+      <h2>{{ title }}</h2>
+    </div>
     <slot name="before-list"></slot>
     
     <div class="timeline-items">
@@ -50,6 +54,14 @@ export default {
       type: String,
       default: 'default',
       validator: value => ['default', 'education', 'experience', 'certification'].includes(value)
+    },
+    title: {
+      type: String,
+      default: ''
+    },
+    icon: {
+      type: String,
+      default: ''
     }
   },
   computed: {
@@ -268,4 +280,37 @@ export default {
     margin-bottom: 0.8rem;
   }
 }
-</style> 
+
+/* Header Styles */
+.list-section-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid rgba(244, 165, 96, 0.2);
+}
+
+.list-section-header i {
+  font-size: 1.8rem;
+  color: var(--accent-color, rgb(244, 165, 96));
+}
+
+.list-section-header h2 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+  text-transform: capitalize;
+}
+
+@media (max-width: 768px) {
+  .list-section-header h2 {
+    font-size: 1.5rem;
+  }
+  
+  .list-section-header i {
+    font-size: 1.5rem;
+  }
+}
+</style>

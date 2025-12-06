@@ -35,20 +35,31 @@ export default {
 </script>
 
 <style scoped>
+/* ... */
 .tabs-navigation {
   display: flex;
-  background: rgba(20, 20, 20, 0.3);
-  border-bottom: 1px solid rgba(244, 165, 96, 0.1);
+  /* Background and border handled by parent container for sticky effect */
+  background: transparent;
+  border-bottom: none;
   width: 100%;
+  overflow-x: auto; /* Allow scrolling if needed on small screens even on desktop if resized */
+  scrollbar-width: none;
+}
+
+.tabs-navigation::-webkit-scrollbar {
+  display: none;
 }
 
 .tab-button {
   flex: 1;
   background: none;
   border: none;
-  padding: 15px 20px;
+  padding: 12px 20px;
   color: #ddd;
-  font-size: 1rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -56,20 +67,28 @@ export default {
   gap: 10px;
   position: relative;
   transition: all 0.3s ease;
+  white-space: nowrap;
 }
 
 .tab-button i {
   font-size: 1.1rem;
+  opacity: 0.7;
+  transition: all 0.3s ease;
 }
 
 .tab-button:hover {
   color: var(--accent-color, rgb(244, 165, 96));
-  background: rgba(244, 165, 96, 0.05);
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .tab-button.active {
   color: var(--accent-color, rgb(244, 165, 96));
-  background: rgba(244, 165, 96, 0.1);
+  background: rgba(244, 165, 96, 0.05);
+}
+
+.tab-button.active i {
+  opacity: 1;
+  transform: translateY(-2px);
 }
 
 .tab-button.active::after {
@@ -80,44 +99,76 @@ export default {
   width: 100%;
   height: 3px;
   background: var(--accent-color, rgb(244, 165, 96));
+  box-shadow: 0 -2px 10px rgba(244, 165, 96, 0.5);
+}
+
+@media (max-width: 1024px) {
+  .tab-button {
+    padding: 15px;
+    font-size: 0.85rem;
+  }
 }
 
 @media (max-width: 767px) {
   .tabs-navigation {
-    flex-wrap: wrap;
-    overflow-x: auto;
-    width: 100%;
-    padding: 5px;
-    gap: 4px;
+    justify-content: center; /* Center since they should fit now */
+    padding: 0.5rem;
+    gap: 0.5rem;
   }
   
   .tab-button {
-    flex: 1 1 auto;
-    padding: 10px 8px;
-    font-size: 0.95rem;
-    min-width: 100px;
+    flex: 0 0 auto;
+    width: 50px; /* Fixed width for icon only */
+    padding: 10px;
+    border-radius: 25px;
+    background: rgba(255, 255, 255, 0.05);
+    transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+    justify-content: center;
+    overflow: hidden;
   }
   
-  .tab-button i {
-    font-size: 1rem;
+  .tab-button span {
+    display: none;
+    opacity: 0;
+    font-size: 0.85rem;
+  }
+  
+  .tab-button.active {
+    width: auto;
+    padding-left: 1.2rem;
+    padding-right: 1.2rem;
+    background: rgba(244, 165, 96, 0.15);
+    color: var(--accent-color, rgb(244, 165, 96));
+  }
+  
+  .tab-button.active span {
+    display: inline-block;
+    opacity: 1;
+    margin-left: 8px;
+    animation: fadeInLabel 0.3s ease forwards 0.2s;
+  }
+  
+  /* Remove the bottom border indicator from desktop style for cleaner pill look on mobile */
+  .tab-button.active::after {
+    display: none;
   }
 }
 
+@keyframes fadeInLabel {
+  from { opacity: 0; transform: translateX(5px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
 @media (max-width: 480px) {
-  .tabs-navigation {
-    padding: 4px;
-    gap: 2px;
-  }
-  
   .tab-button {
-    padding: 8px 6px;
-    font-size: 0.9rem;
-    min-width: 80px;
-    gap: 6px;
+    width: 44px;
+    height: 44px;
+    padding: 0;
   }
   
-  .tab-button i {
-    font-size: 0.95rem;
+  .tab-button.active {
+    width: auto;
+    padding: 0 16px;
   }
 }
 </style>

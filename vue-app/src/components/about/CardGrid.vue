@@ -1,5 +1,9 @@
 <template>
   <div class="card-grid" :class="gridClass">
+    <div v-if="title" class="grid-section-header">
+      <i v-if="icon" :class="icon"></i>
+      <h2>{{ title }}</h2>
+    </div>
     <slot name="before-grid"></slot>
     
     <div class="card-items">
@@ -44,7 +48,15 @@ export default {
     type: {
       type: String,
       default: 'default',
-      validator: value => ['default', 'certification', 'award'].includes(value)
+      validator: value => ['default', 'certification', 'award', 'skill'].includes(value)
+    },
+    title: {
+      type: String,
+      default: ''
+    },
+    icon: {
+      type: String,
+      default: ''
     }
   },
   computed: {
@@ -237,4 +249,37 @@ export default {
     gap: 0.3rem;
   }
 }
-</style> 
+
+/* Header Styles */
+.grid-section-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid rgba(244, 165, 96, 0.2);
+}
+
+.grid-section-header i {
+  font-size: 1.8rem;
+  color: var(--accent-color, rgb(244, 165, 96));
+}
+
+.grid-section-header h2 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+  text-transform: capitalize;
+}
+
+@media (max-width: 768px) {
+  .grid-section-header h2 {
+    font-size: 1.5rem;
+  }
+  
+  .grid-section-header i {
+    font-size: 1.5rem;
+  }
+}
+</style>

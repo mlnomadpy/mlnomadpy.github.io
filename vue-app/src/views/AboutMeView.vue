@@ -1,15 +1,12 @@
 <template>
   <div class="about-me view-container">
     <div class="section-content scrollable-content smooth-scroll">
-      <h1>about me</h1>
+
       
-      <div class="story-wrapper">
-        <!-- Profile Card Component -->
-        <profile-card v-bind="profileData" />
-        
-        <!-- Content Sections - Tabbed Navigation -->
-        <div class="content-tabs">
-          <div class="tab-navigation-wrapper">
+      <div class="unified-card">
+        <!-- Main Content Section (Now containing everything including Identity) -->
+        <main class="content-section">
+          <div class="tabs-container">
             <tab-navigation 
               :activeTab="activeTab"
               :tabs="tabs"
@@ -17,40 +14,113 @@
             />
           </div>
           
-          <!-- Tab Content Panels -->
-          <div class="tab-content">
+          <div class="tab-content-area">
+          <transition name="fade-slide" mode="out-in">
+            <!-- Identity Tab Panel -->
+            <div v-if="activeTab === 'identity'" class="tab-panel identity-panel" key="identity">
+              <profile-card v-bind="profileData" />
+            </div>
+
             <!-- Story Tab Panel -->
-            <div class="tab-panel" v-show="activeTab === 'story'">
+            <div v-else-if="activeTab === 'story'" class="tab-panel" key="story">
               <story-tab :storyItems="storyItems" />
             </div>
             
             <!-- Education Tab Panel -->
-            <div class="tab-panel" v-show="activeTab === 'education'">
-              <timeline-list :items="educationItems" type="education" />
-            </div>
-            
-            <!-- Certifications Tab Panel -->
-            <div class="tab-panel" v-show="activeTab === 'certifications'">
-              <card-grid :items="certificationItems" type="certification" />
-            </div>
-            
-            <!-- Awards Tab Panel -->
-            <div class="tab-panel" v-show="activeTab === 'awards'">
-              <card-grid :items="awardItems" type="award" />
+            <div v-else-if="activeTab === 'education'" class="tab-panel" key="education">
+              <transition name="fade" mode="out-in">
+                <compact-list 
+                  v-if="viewMode === 'list'"
+                  title="Education" 
+                  icon="fas fa-graduation-cap" 
+                  :items="educationItems"
+                  @item-click="openDetail"
+                >
+                  <template #controls>
+                    <button class="view-toggle-btn" @click="toggleViewMode" title="Switch to Timeline View">
+                      <i class="fas fa-stream"></i> Timeline
+                    </button>
+                  </template>
+                </compact-list>
+                <timeline-list 
+                  v-else
+                  title="Education" 
+                  icon="fas fa-graduation-cap" 
+                  :items="educationItems" 
+                >
+                  <template #before-list>
+                    <div class="list-controls-bar">
+                      <button class="view-toggle-btn active" @click="toggleViewMode" title="Switch to List View">
+                        <i class="fas fa-list"></i> Compact List
+                      </button>
+                    </div>
+                  </template>
+                </timeline-list>
+              </transition>
             </div>
             
             <!-- Experience Tab Panel -->
-            <div class="tab-panel" v-show="activeTab === 'experience'">
-              <timeline-list :items="experienceItems" type="experience">
-                <template v-slot:item="{ item }">
-                  <ExperienceItem :item="item" />
-                </template>
-              </timeline-list>
+            <div v-else-if="activeTab === 'experience'" class="tab-panel" key="experience">
+              <transition name="fade" mode="out-in">
+                <compact-list 
+                  v-if="viewMode === 'list'"
+                  title="Experience" 
+                  icon="fas fa-briefcase" 
+                  :items="experienceItems"
+                  @item-click="openDetail"
+                >
+                  <template #controls>
+                    <button class="view-toggle-btn" @click="toggleViewMode" title="Switch to Timeline View">
+                      <i class="fas fa-stream"></i> Timeline
+                    </button>
+                  </template>
+                </compact-list>
+                <timeline-list 
+                  v-else
+                  title="Experience" 
+                  icon="fas fa-briefcase" 
+                  :items="experienceItems"
+                >
+                  <template #before-list>
+                    <div class="list-controls-bar">
+                      <button class="view-toggle-btn active" @click="toggleViewMode" title="Switch to List View">
+                        <i class="fas fa-list"></i> Compact List
+                      </button>
+                    </div>
+                  </template>
+                  <template v-slot:item="{ item }">
+                    <ExperienceItem :item="item" />
+                  </template>
+                </timeline-list>
+              </transition>
             </div>
+            
+            <!-- Awards Tab Panel -->
+            <div v-else-if="activeTab === 'awards'" class="tab-panel" key="awards">
+              <timeline-list title="Honors & Awards" icon="fas fa-trophy" :items="awardItems" />
+            </div>
+            
+            <!-- Skills Tab Panel -->
+            <div v-else-if="activeTab === 'skills'" class="tab-panel" key="skills">
+              <card-grid title="Skills & Technologies" icon="fas fa-code" :items="skillGroups" type="skill" />
+            </div>
+            
+            <!-- Certificates Tab Panel -->
+            <div v-else-if="activeTab === 'certifications'" class="tab-panel" key="certifications">
+              <card-grid title="Certifications" icon="fas fa-certificate" :items="certificates" type="certification" />
+            </div>
+          </transition>
           </div>
-        </div>
+        </main>
       </div>
     </div>
+
+    <!-- Detail Modal -->
+    <detail-modal 
+      v-if="selectedItem" 
+      :item="selectedItem" 
+      @close="closeDetail" 
+    />
   </div>
 </template>
 
@@ -59,18 +129,23 @@ import ProfileCard from '@/components/about/ProfileCard.vue';
 import TabNavigation from '@/components/about/TabNavigation.vue';
 import StoryTab from '@/components/about/StoryTab.vue';
 import TimelineList from '@/components/about/TimelineList.vue';
+import CompactList from '@/components/about/CompactList.vue';
 import CardGrid from '@/components/about/CardGrid.vue';
 import ExperienceItem from '@/components/about/ExperienceItem.vue';
-import { useHead } from '@vueuse/head';
+import DetailModal from '@/components/about/DetailModal.vue';
+
 import { 
   tabs, 
   storyItems, 
+  skillGroups, 
+  certificates, 
   educationItems, 
-  certificationItems, 
   awardItems, 
   experienceItems, 
   profileData 
 } from '@/data/about-me-data';
+
+import { useHead } from '@vueuse/head';
 
 export default {
   name: 'AboutMeView',
@@ -79,266 +154,228 @@ export default {
     TabNavigation,
     StoryTab,
     TimelineList,
+    CompactList,
     CardGrid,
-    ExperienceItem
+    ExperienceItem,
+    DetailModal
   },
   setup() {
     useHead({
-      title: 'About Me | Taha Bouhsine',
+      title: 'About Taha Bouhsine | ML Researcher & Engineer',
       meta: [
-        { name: 'description', content: 'ML Researcher & Google Developer Expert in AI/ML. Building bridges between mathematical foundations of machine learning and their practical applications, between black-box neural networks and cosmos-inspired safe and interpretable AI models.' },
-        { property: 'og:title', content: 'About Taha Bouhsine | ML Researcher & Google Developer Expert' },
-        { property: 'og:description', content: 'Learn about Taha Bouhsine, ML Researcher & Google Developer Expert in AI/ML, CEO of MLNomads, focused on interpretable AI models and safe AI systems.' },
-        { property: 'twitter:title', content: 'About Taha Bouhsine | ML Researcher & Google Developer Expert' },
-        { property: 'twitter:description', content: 'Learn about Taha Bouhsine, ML Researcher & Google Developer Expert in AI/ML, CEO of MLNomads, focused on interpretable AI models and safe AI systems.' }
-      ],
-      link: [
+        { name: 'description', content: 'Learn about Taha Bouhsine, his story, experience, and skills in Machine Learning and AI.' },
+        { property: 'og:title', content: 'About Taha Bouhsine' },
+        { property: 'og:description', content: 'ML Researcher & Engineer | Google Developer Expert in AI/ML' },
         { rel: 'canonical', href: 'https://mlnomadpy.github.io/about' }
       ]
     });
-  },
-  data() {
+
     return {
-      activeTab: 'story',
       tabs,
       storyItems,
+      skillGroups,
+      certificates,
       educationItems,
-      certificationItems,
       awardItems,
       experienceItems,
       profileData
     }
   },
+  data() {
+    return {
+      activeTab: 'identity',
+      viewMode: 'list', // 'list' or 'timeline'
+      selectedItem: null
+    }
+  },
   methods: {
     setActiveTab(tab) {
-      this.activeTab = tab;
+      if (this.activeTab !== tab) {
+        this.activeTab = tab;
+        this.selectedItem = null; // Close modal on tab change
+        // Reset view mode on tab change if desired, or keep it persistent? 
+        // Let's keep it persistent for now or reset to 'list'
+        // this.viewMode = 'list'; 
+        
+        // On mobile, scroll to content when tab changes
+        if (window.innerWidth < 768) {
+          const contentArea = this.$el.querySelector('.tab-content-area');
+          if (contentArea) {
+            setTimeout(() => {
+              contentArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+          }
+        }
+      }
+    },
+    toggleViewMode() {
+      this.viewMode = this.viewMode === 'list' ? 'timeline' : 'list';
+    },
+    openDetail(item) {
+      this.selectedItem = item;
+    },
+    closeDetail() {
+      this.selectedItem = null;
     }
   }
 }
 </script>
 
 <style scoped>
-/* Full height container with scrollable content */
+/* Main Layout */
 .view-container {
-  height: 100%;
+  height: 100%; /* Fill available space (nav bar is handled by App.vue) */
   width: 100%;
   position: relative;
+  overflow: hidden; /* No outer scroll */
+  display: flex;
+  flex-direction: column;
+}
+
+.section-content {
+  height: 100%;
+  width: 100%;
+  padding: 1.5rem; /* Reduced padding for more space */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* No scroll here */
+}
+
+/* Unified Card Container */
+.unified-card {
+  display: flex;
+  flex-direction: column;
+  background: rgba(30, 30, 30, 0.4);
+  border-radius: 20px;
   overflow: hidden;
-}
-
-.scrollable-content {
-  height: 100%;
-  width: 100%;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 20px;
-}
-
-/* Import existing styles */
-@import '@/assets/aboutme.css';
-@import '@/components/research/responsive-utils.css';
-
-/* Page title styling */
-.section-content h1 {
-  text-align: center;
-  margin-bottom: 3rem;
-  padding-bottom: 1rem;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  flex-grow: 1; /* Fill remaining space */
+  height: 100%; /* Ensure it takes height */
+  margin: 0;
   position: relative;
-  font-size: 2.5rem;
 }
 
-.section-content h1::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100px;
-  height: 3px;
-  background: var(--accent-color, rgb(244, 165, 96));
-  transition: width 0.3s ease;
+/* Content Section */
+.content-section {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  background: rgba(30, 30, 30, 0.2);
+  height: 100%;
 }
 
-.section-content h1:hover::after {
-  width: 150px;
+.tabs-container {
+  z-index: 10;
+  background: rgba(30, 30, 30, 0.8);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  flex-shrink: 0; /* Keep valid height */
 }
 
-/* Main container */
-.about-me {
-  padding: 20px;
-  min-height: 100vh;
+.tab-content-area {
+  flex-grow: 1;
+  overflow-y: auto; /* INNER SCROLLING */
+  padding: 2rem;
+  position: relative;
+  height: 0; /* Important for flex child scroll */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(244, 165, 96, 0.3) transparent;
 }
 
-.story-wrapper {
-  max-width: 1200px;
-  margin: 0 auto;
-  width: 100%;
+.tab-content-area::-webkit-scrollbar {
+  width: 6px;
 }
 
-/* Tab content styling */
-.tab-content {
-  padding: 30px;
+.tab-content-area::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tab-content-area::-webkit-scrollbar-thumb {
+  background-color: rgba(244, 165, 96, 0.3);
+  border-radius: 20px;
 }
 
 .tab-panel {
-  animation: fadeIn 0.4s ease;
+  /* animation handled by transition wrapper */
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.identity-panel {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100%; /* Ensure full height for centering */
 }
 
-.content-tabs {
-  background: rgba(30, 30, 30, 0.2);
-  border-radius: 12px;
-  overflow: hidden;
-  border: 1px solid rgba(244, 165, 96, 0.1);
-  width: 100%;
+/* Transitions */
+.fade-slide-enter-active {
+  transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
 }
 
-/* Tab navigation wrapper for mobile */
-.tab-navigation-wrapper {
-  position: relative;
-  width: 100%;
-  overflow: auto;
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
+.fade-slide-leave-active {
+  transition: all 0.3s cubic-bezier(1, 0.5, 0.8, 1);
 }
 
-.tab-navigation-wrapper::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera */
+.fade-slide-enter-from {
+  opacity: 0;
+  transform: translateY(20px) scale(0.98);
+  filter: blur(5px);
 }
 
-@media (min-width: 768px) {
-  .tab-content {
-    padding: 30px;
-  }
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-20px) scale(0.98);
+  filter: blur(5px);
 }
 
-@media (max-width: 767px) {
-  .scrollable-content {
-    padding: 10px 6px;
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .section-content {
+    padding: 0.5rem; /* Tiny padding on mobile */
   }
   
-  .section-content h1 {
-    font-size: 2rem;
-    margin-bottom: 1.5rem;
+  .unified-card {
+    border-radius: 12px;
   }
   
-  .story-wrapper {
-    width: calc(100% - 4px);
-    margin: 0 2px;
-  }
-  
-  .content-tabs {
-    border-radius: 10px;
-    width: 100%;
-    margin: 0;
-  }
-  
-  /* Custom styles to make tabs display as icons only, expanding on selection */
-  :deep(.tabs-navigation) {
-    flex-direction: row !important;
-    flex-wrap: nowrap !important;
-    overflow-x: auto !important;
-    justify-content: center !important;
-    width: 100% !important;
-    padding: 0.8rem !important;
-    gap: 0.5rem !important;
-  }
-  
-  :deep(.tab-button) {
-    flex: 0 0 auto !important;
-    padding: 15px !important;
-    min-width: 0 !important;
-    width: 50px !important;
-    height: 50px !important;
-    border-radius: 50% !important;
-    margin: 0 3px !important;
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: center !important;
-    position: relative !important;
-    overflow: hidden !important;
-  }
-  
-  :deep(.tab-button.active) {
-    width: 120px !important;
-    border-radius: 25px !important;
-  }
-  
-  :deep(.tab-button span) {
-    position: absolute !important;
-    opacity: 0 !important;
-    transform: translateY(10px) !important;
-    font-size: 0.85rem !important;
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
-    white-space: nowrap !important;
-  }
-  
-  :deep(.tab-button.active span) {
-    opacity: 1 !important;
-    transform: translateY(0) !important;
-    position: static !important;
-    margin-top: 5px !important;
-  }
-  
-  :deep(.tab-button i) {
-    font-size: 1.2rem !important;
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
-  }
-  
-  :deep(.tab-button.active i) {
-    transform: translateY(-2px) !important;
-    color: var(--accent-color) !important;
-  }
-  
-  .tab-content {
-    padding: 15px 10px;
+  .tab-content-area {
+    padding: 1rem;
   }
 }
 
-@media (max-width: 480px) {
-  .scrollable-content {
-    padding: 8px 4px;
-  }
-  
-  .story-wrapper {
-    width: 100%;
-    margin: 0;
-  }
-  
-  .content-tabs {
-    width: 100%;
-    margin: 0;
-    border-radius: 8px;
-  }
-  
-  .tab-content {
-    padding: 12px 8px;
-  }
-  
-  :deep(.tab-button) {
-    width: 45px !important;
-    height: 45px !important;
-    margin: 0 2px !important;
-  }
-  
-  :deep(.tab-button.active) {
-    width: 100px !important;
-  }
-  
-  :deep(.tab-button i) {
-    font-size: 1.1rem !important;
-  }
+/* View Toggle Styles */
+.view-toggle-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ddd;
+  padding: 6px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.view-toggle-btn:hover {
+  background: rgba(244, 165, 96, 0.2);
+  color: var(--accent-color, rgb(244, 165, 96));
+  border-color: rgba(244, 165, 96, 0.4);
+}
+
+.view-toggle-btn.active {
+  background: rgba(244, 165, 96, 0.15);
+  color: var(--accent-color, rgb(244, 165, 96));
+  border-color: rgba(244, 165, 96, 0.3);
+}
+
+.list-controls-bar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
 }
 </style>

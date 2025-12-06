@@ -474,8 +474,8 @@ export default {
     overflow-x: auto;
     flex-wrap: nowrap;
     justify-content: center;
-    padding: 1rem;
-    gap: 0.5rem;
+    padding: 1rem 0.5rem;
+    gap: 0.4rem;
     scrollbar-width: none; /* Hide scrollbar Firefox */
     -ms-overflow-style: none; /* Hide scrollbar IE and Edge */
   }
@@ -487,106 +487,100 @@ export default {
   .timeline-nav-item {
     flex: 0 0 auto;
     min-width: 0;
-    width: 50px;
-    height: 50px;
-    flex-direction: column;
+    width: 44px;
+    height: 44px;
+    flex-direction: row; /* Horizontal layout for active state expansion */
     align-items: center;
     justify-content: center;
     padding: 0;
-    margin-right: 0.5rem;
-    border-radius: 50%;
+    margin: 0;
+    border-radius: 22px;
     position: relative;
     overflow: hidden;
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid transparent;
   }
   
   .timeline-nav-item.active {
-    width: 100px;
-    border-radius: 25px;
-    transform: translateY(-3px) scale(1.05);
+    width: auto;
+    padding: 0 1.2rem 0 0.5rem;
+    background: rgba(244, 165, 96, 0.15);
+    border-color: rgba(244, 165, 96, 0.3);
   }
   
   .nav-indicator {
     margin-bottom: 0;
-    width: 30px;
-    height: 30px;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
     font-size: 0.8rem;
     z-index: 2;
+    background: transparent;
+    box-shadow: none;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #ccc;
+  }
+  
+  .timeline-nav-item.active .nav-indicator {
+    background: rgba(244, 165, 96, 0.9);
+    color: #222;
+    border-color: transparent;
+    margin-bottom: 0;
+    transform: none;
   }
   
   .nav-label {
-    position: absolute;
+    position: static;
     opacity: 0;
-    font-size: 0.8rem;
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    width: 0;
+    font-size: 0.9rem;
     white-space: nowrap;
-    max-width: 100%;
-    text-align: center;
     pointer-events: none;
-    transform: translateY(20px);
+    transform: none;
+    margin-left: 0;
+    overflow: hidden;
+    transition: all 0.3s ease;
   }
   
   .timeline-nav-item.active .nav-label {
     opacity: 1;
-    transform: translateY(0);
-    position: static;
-    margin-top: 3px;
+    width: auto;
+    margin-left: 0.8rem;
     pointer-events: auto;
-  }
-  
-  .timeline-nav-item.active .nav-indicator {
-    margin-bottom: 3px;
-    transform: translateY(-2px) scale(1.1);
+    color: var(--accent-color, rgb(244, 165, 96));
   }
   
   .timeline-progress-bar {
-    margin-top: 1rem;
+    display: none; /* Hide progress bar on mobile to save space */
   }
   
   .scene-content {
     padding: 1.5rem;
     padding-top: 2rem;
-    max-height: 350px;
-    height: 350px;
+    max-height: 400px;
+    height: auto;
+    min-height: 300px;
   }
 
   .scene-content h3 {
-    font-size: 1.8rem;
+    font-size: 1.6rem;
   }
   
   .scene-text p {
-    font-size: 1rem;
+    font-size: 0.95rem;
   }
   
   /* Improved story controls */
   .story-controls {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-top: 1.8rem;
+    margin-top: 1.5rem;
     padding: 1rem;
-    background: rgba(20, 20, 20, 0.5);
-    border-radius: 12px;
-    backdrop-filter: blur(5px);
   }
   
   .story-nav-btn {
-    width: 50px;
-    height: 50px;
-    font-size: 1.1rem;
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  }
-  
-  .story-nav-btn:hover {
-    transform: translateY(-3px);
-  }
-  
-  .story-page-indicator {
-    height: 40px;
-    min-width: 80px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    width: 44px;
+    height: 44px;
+    font-size: 1rem;
   }
 }
 </style> 
