@@ -1,6 +1,4 @@
-# Allow all crawlers
 User-agent: *
 Allow: /
 
-# Sitemap
-Sitemap: https://mlnomadpy.github.io/sitemap.xml 
+Sitemap: https://www.tahabouhsine.com/sitemap.xml
