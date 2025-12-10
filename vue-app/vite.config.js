@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { resolve } from 'path'
-import generateSitemap from 'vite-ssg-sitemap'
+
 import fs from 'fs'
 import path from 'path'
 
@@ -13,10 +13,14 @@ export default defineConfig({
       '@': resolve(__dirname, 'src'),
     },
   },
+  ssr: {
+    noExternal: ['vite-ssg-sitemap'],
+  },
   ssgOptions: {
     script: 'async',
     formatting: 'minify',
-    onFinished() {
+    async onFinished() {
+      const { default: generateSitemap } = await import('vite-ssg-sitemap')
       generateSitemap({
         hostname: 'https://www.tahabouhsine.com',
         readable: true /* consistent indentation */
@@ -66,7 +70,7 @@ export default defineConfig({
         return item.id ? `/blogs/${item.id}` : null
       })
 
-      return paths.concat(extraRoutes)
+      return paths.filter(p => !p.includes(':')).concat(extraRoutes)
     }
   },
 })
