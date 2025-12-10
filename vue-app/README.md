@@ -7,7 +7,7 @@ A personal portfolio and research website for Taha Bouhsine (MLNomadpy), showcas
 
 ## 🌐 Website
 
-Visit the live website at [https://mlnomadpy.github.io](https://mlnomadpy.github.io)
+Visit the live website at [https://www.tahabouhsine.com](https://www.tahabouhsine.com)
 
 ## ✨ Features
 

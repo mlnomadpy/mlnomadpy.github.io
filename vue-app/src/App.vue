@@ -35,7 +35,7 @@ export default {
         { property: 'og:site_name', content: 'MLNomadpy' },
         { property: 'og:description', content: 'Machine Learning Researcher & Engineer, Google Developer Expert in AI/ML, and CEO of MLNomads focusing on representation learning and interpretable AI models.' },
         { property: 'og:image', content: 'https://i.imgur.com/ScjU4Xr.png' },
-        { property: 'og:url', content: 'https://mlnomadpy.github.io/' },
+        { property: 'og:url', content: 'https://www.tahabouhsine.com/' },
         { property: 'og:type', content: 'website' },
         
         // Twitter Card
@@ -45,7 +45,7 @@ export default {
         { property: 'twitter:card', content: 'summary_large_image' }
       ],
       link: [
-        { rel: 'canonical', href: 'https://mlnomadpy.github.io/' }
+        { rel: 'canonical', href: 'https://www.tahabouhsine.com/' }
       ]
     })
   },
@@ -59,7 +59,7 @@ export default {
         // Update canonical URL on page change
         const canonicalLink = document.querySelector('link[rel="canonical"]');
         if (canonicalLink) {
-          canonicalLink.href = `https://mlnomadpy.github.io${to.path}`;
+          canonicalLink.href = `https://www.tahabouhsine.com${to.path}`;
         }
       } catch (e) {
         console.error('Analytics error:', e);

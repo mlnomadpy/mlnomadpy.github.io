@@ -18,7 +18,7 @@ export default defineConfig({
     formatting: 'minify',
     onFinished() {
       generateSitemap({
-        hostname: 'https://mlnomadpy.github.io',
+        hostname: 'https://www.tahabouhsine.com',
         readable: true /* consistent indentation */
       })
     },
