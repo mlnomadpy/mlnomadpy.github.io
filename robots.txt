@@ -10,7 +10,7 @@ Disallow: /.git/
 Disallow: /node_modules/
 
 # Sitemap location
-Sitemap: https://mlnomadpy.github.io/sitemap.xml
+Sitemap: https://www.tahabouhsine.com/sitemap.xml
 
 # Crawl-delay for politeness
 Crawl-delay: 1
