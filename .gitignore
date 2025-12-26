@@ -128,3 +128,12 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# Editor directories and files
+.DS_Store
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

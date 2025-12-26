@@ -2,135 +2,70 @@
 <html lang="en">
 
 <head>
-  <link href="https://fonts.googleapis.com/css?family=Orbitron&display=swap" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles/main.css" />
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
-  <script src="https://d3js.org/d3.v6.min.js"></script>
-  <!-- Include D3.js -->
-  <title>Taha Bouhsine</title>
-  <style></style>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <link rel="icon" href="/favicon.ico">
+
+  <!-- Primary Meta Tags -->
+  <title>Taha Bouhsine | ML Researcher & Google Developer Expert</title>
+  <meta name="title" content="Taha Bouhsine | ML Researcher & Google Developer Expert">
   <meta name="description"
-    content="Founder, CEO, Research Scientist in MLNomads L.L.C, NJ, USA. Data Scientist, Software Engineer, Electrical and Computer Engineer, Deep Learning Cyber Security, Deep Learning 2.0 researcher, creator of Neural Matter Network, creator of NNMap, Google Developer Expert in Machine Learning and Artificial Intelligence.">
+    content="Machine Learning Researcher & Engineer, Google Developer Expert in AI/ML, and CEO of Azetta.ai focusing on representation learning and interpretable AI models.">
   <meta name="keywords"
-    content="Founder, CEO, Research Scientist, MLNomads, Data Scientist, Software Engineer, Electrical Engineer, Computer Engineer, Deep Learning, Cyber Security, Neural Matter Network, NNMap, Google Developer Expert, Machine Learning, Artificial Intelligence">
+    content="Machine Learning, Artificial Intelligence, AI Research, Taha Bouhsine, Google Developer Expert, Azetta.ai, Neural Networks, Interpretable AI">
   <meta name="author" content="Taha Bouhsine">
-  <meta property="og:title" content="Taha Bouhsine">
+  <meta name="robots" content="index, follow">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.tahabouhsine.com/">
+  <meta property="og:title" content="Taha Bouhsine | ML Researcher & Google Developer Expert">
   <meta property="og:description"
-    content="Founder, CEO, Research Scientist in MLNomads L.L.C, NJ, USA. Data Scientist, Software Engineer, Electrical and Computer Engineer, Deep Learning Cyber Security, Deep Learning 2.0 researcher, creator of Neural Matter Network, creator of NNMap, Google Developer Expert in Machine Learning and Artificial Intelligence.">
-  <meta property="og:image" content="path/to/image.jpg">
-  <meta property="og:url" content="https://www.tahabouhsine.com">
-  <meta name="twitter:card" content="summary_large_image">
+    content="Machine Learning Researcher & Engineer, Google Developer Expert in AI/ML, and CEO of Azetta.ai focusing on representation learning and interpretable AI models.">
+  <meta property="og:image" content="https://i.imgur.com/ScjU4Xr.png">
+
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:url" content="https://www.tahabouhsine.com/">
+  <meta property="twitter:title" content="Taha Bouhsine | ML Researcher & Google Developer Expert">
+  <meta property="twitter:description"
+    content="Machine Learning Researcher & Engineer, Google Developer Expert in AI/ML, and CEO of Azetta.ai focusing on representation learning and interpretable AI models.">
+  <meta property="twitter:image" content="https://i.imgur.com/ScjU4Xr.png">
+
+  <!-- Canonical URL -->
+  <link rel="canonical" href="https://www.tahabouhsine.com/">
+
+  <!-- Structured Data (Person) -->
   <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "Person",
-      "name": "Taha Bouhsine",
-      "jobTitle": "Founder, CEO, Research Scientist",
-      "worksFor": {
-        "@type": "Organization",
-        "name": "MLNomads L.L.C"
-      },
-      "address": {
-        "@type": "PostalAddress",
-        "addressLocality": "NJ",
-        "addressRegion": "USA"
-      },
-      "sameAs": [
-        "https://twitter.com/Tahabsn",
-        "https://instagram.com/tahabsn",
-        "https://linkedin.com/in/tahabsn"
-      ]
-    }
+      {
+        "@context": "https://schema.org",
+        "@type": "Person",
+        "name": "Taha Bouhsine",
+        "url": "https://www.tahabouhsine.com/",
+        "image": "https://i.imgur.com/ScjU4Xr.png",
+        "jobTitle": "ML Researcher & Engineer",
+        "worksFor": {
+          "@type": "Organization",
+          "name": "Azetta.ai"
+        },
+        "description": "Machine Learning Researcher & Engineer, Google Developer Expert in AI/ML, and CEO of Azetta.ai",
+        "sameAs": [
+          "https://github.com/mlnomadpy",
+          "https://linkedin.com/in/Tahabsn",
+          "https://scholar.google.com/citations?hl=en&user=IsBjb3EAAAAJ"
+        ]
+      }
     </script>
 </head>
 
 <body>
-  <div class="navbar">
-    <a href="#aboutme" class="nav-link" data-section="aboutme">
-      <i class="fas fa-user"></i>
-      <span class="nav-text">about me</span>
-    </a>
-    <a href="#life" class="nav-link" data-section="life">
-      <i class="fas fa-heart"></i>
-      <span class="nav-text">life</span>
-    </a>
-    <a href="#poetry" class="nav-link" data-section="poetry">
-      <i class="fas fa-feather-alt"></i>
-      <span class="nav-text">poetry</span>
-    </a>
-    <a href="#" class="nav-link home" id="home-link">
-      <i class="fas fa-home"></i>
-    </a>
-
-    <a href="#blog" class="nav-link" data-section="blogs">
-      <i class="fas fa-blog"></i>
-      <span class="nav-text">blogs</span>
-    </a>
-    <a href="#talks" class="nav-link" data-section="talks">
-      <i class="fas fa-microphone"></i>
-      <span class="nav-text">talks</span>
-    </a>
-    <a href="#contact" class="nav-link" data-section="research">
-      <i class="fas fa-flask"></i>
-      <span class="nav-text">research</span>
-    </a>
-  </div>
-  <div class="hero-sec">
-    <video id="bg-video" autoplay muted loop>
-      <source src="imgs/bg.mp4" type="video/mp4" />
-      Your browser does not support the video tag.
-    </video>
-    <div class="circle-container">
-      <div class="circle-text">
-        <h1>ⵟⴰⵀⴰ ⴱⵓⵃⵙⵉⵏ</h1>
-        <sub>ⵉⵙⴽⴰⵏⵎⴰⴳⴰⵔ</sub>
-        <div class="social-icons">
-          <a href="https://twitter.com/Tahabsn" target="_blank"><i class="fab fa-twitter"></i></a>
-          <a href="https://instagram.com/tahabsn" target="_blank"><i class="fab fa-instagram"></i></a>
-          <a href="https://linkedin.com/in/tahabsn" target="_blank"><i class="fab fa-linkedin-in"></i></a>
-        </div>
-        <a href="#" class="join-btn" onclick="VideoEffects.applyRandomEffect()">don't click!</a>
-      </div>
-    </div>
-  </div>
-
-  <div class="about-me section" id="aboutme">
-    <!-- injecting content from aboutme.html -->
-  </div>
-
-  <div class="life section" id="life"></div>
-
-  <div class="poetry section" id="poetry"></div>
-
-  <div class="blogs section" id="blogs"></div>
-
-  <div class="talks section" id="talks">
-    <div class="section-content">
-      <h1>talks</h1>
-      <div class="content-container">
-        <div class="talks-container">
-          <!-- Talks will be loaded here -->
-        </div>
-      </div>
-      <div class="talk-content"></div>
-    </div>
-  </div>
-
-  <div class="research section" id="research"></div>
-
-  <script type="module">
-    import Portfolio from './js/app.js';
-    import VideoEffects from './js/effects.js';
-
-    // Make VideoEffects available globally for the onclick handler
-    window.VideoEffects = VideoEffects;
-    // Initialize the application
-    Portfolio.init();
-  </script>
-  <script src="talks.js"></script>
+  <noscript>
+    <strong>We're sorry but this website doesn't work properly without JavaScript enabled. Please enable it to
+      continue.</strong>
+  </noscript>
+  <div id="app"></div>
+  <script type="module" src="/src/main.js"></script>
 </body>
 
 </html>
