@@ -85,25 +85,27 @@
         </transition>
 
           <!-- Pagination Controls -->
-          <div v-if="filteredResearch.length > itemsPerPage" class="pagination-controls">
-            <button 
-              class="page-btn" 
-              :disabled="currentPage === 1" 
+          <nav v-if="filteredResearch.length > itemsPerPage" class="pagination-controls" role="navigation" aria-label="Research pagination">
+            <button
+              class="page-btn"
+              :disabled="currentPage === 1"
               @click="changePage(currentPage - 1)"
+              aria-label="Go to previous page"
             >
               <i class="fas fa-chevron-left"></i> Previous
             </button>
-            <span class="page-info">
+            <span class="page-info" aria-live="polite" aria-atomic="true">
               Page {{ currentPage }} of {{ totalPages }}
             </span>
-            <button 
-              class="page-btn" 
-              :disabled="currentPage === totalPages" 
+            <button
+              class="page-btn"
+              :disabled="currentPage === totalPages"
               @click="changePage(currentPage + 1)"
+              aria-label="Go to next page"
             >
               Next <i class="fas fa-chevron-right"></i>
             </button>
-          </div>
+          </nav>
         </div>
       </div>
     
@@ -259,22 +261,6 @@ export default {
   overflow-y: auto;
   overflow-x: hidden;
   padding: 20px;
-  /* Custom Scrollbar Styles to match About Me */
-  scrollbar-width: thin;
-  scrollbar-color: rgba(244, 165, 96, 0.3) transparent;
-}
-
-.scrollable-content::-webkit-scrollbar {
-  width: 6px;
-}
-
-.scrollable-content::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.scrollable-content::-webkit-scrollbar-thumb {
-  background-color: rgba(244, 165, 96, 0.3);
-  border-radius: 20px;
 }
 
 .research {

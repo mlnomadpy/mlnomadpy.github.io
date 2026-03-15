@@ -1,7 +1,10 @@
 <template>
   <div class="story-timeline-container">
     <!-- Interactive story panels - Maximize space -->
-    <div class="story-viewport">
+    <div class="story-viewport"
+      @touchstart="onTouchStart"
+      @touchend="onTouchEnd"
+    >
       <div 
         v-for="(item, index) in storyItems" 
         :key="item.id"
@@ -28,17 +31,20 @@
         <i class="fas fa-chevron-left"></i>
       </button>
       
-      <!-- Dot Indicators -->
-      <div class="carousel-indicators">
-        <button 
-          v-for="(item, index) in storyItems" 
-          :key="index"
-          class="indicator-dot"
-          :class="{ 'active': currentIndex === index }"
-          @click="setActiveStory(index)"
-          :aria-label="`Go to story ${index + 1}`"
-          :title="item.title"
-        ></button>
+      <!-- Indicators with title -->
+      <div class="carousel-center">
+        <span class="story-label">{{ storyItems[currentIndex].title }}</span>
+        <div class="carousel-indicators">
+          <button
+            v-for="(item, index) in storyItems"
+            :key="index"
+            class="indicator-dot"
+            :class="{ 'active': currentIndex === index }"
+            @click="setActiveStory(index)"
+            :aria-label="`Go to story: ${item.title}`"
+            :title="item.title"
+          ></button>
+        </div>
       </div>
 
       <button class="story-nav-btn next-btn" @click="navigateStory(1)" aria-label="Next Story">
@@ -59,7 +65,8 @@ export default {
   },
   data() {
     return {
-      currentIndex: 0
+      currentIndex: 0,
+      touchStartX: 0
     };
   },
   methods: {
@@ -71,6 +78,15 @@ export default {
       if (newIndex < 0) newIndex = this.storyItems.length - 1;
       if (newIndex >= this.storyItems.length) newIndex = 0;
       this.currentIndex = newIndex;
+    },
+    onTouchStart(e) {
+      this.touchStartX = e.changedTouches[0].screenX;
+    },
+    onTouchEnd(e) {
+      const diff = this.touchStartX - e.changedTouches[0].screenX;
+      if (Math.abs(diff) > 50) {
+        this.navigateStory(diff > 0 ? 1 : -1);
+      }
     }
   },
   mounted() {
@@ -168,23 +184,8 @@ export default {
   height: 100%;
   padding: 3rem;
   overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(244, 165, 96, 0.5) rgba(30, 30, 30, 0.3);
   display: flex;
   flex-direction: column;
-}
-
-.scene-content::-webkit-scrollbar {
-  width: 6px;
-}
-
-.scene-content::-webkit-scrollbar-track {
-  background: rgba(30, 30, 30, 0.1);
-}
-
-.scene-content::-webkit-scrollbar-thumb {
-  background-color: rgba(244, 165, 96, 0.5);
-  border-radius: 10px;
 }
 
 .scene-content h3 {
@@ -257,6 +258,21 @@ export default {
   background: var(--accent-color, rgb(244, 165, 96));
   color: #000;
   transform: scale(1.1);
+}
+
+.carousel-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.story-label {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 500;
 }
 
 .carousel-indicators {

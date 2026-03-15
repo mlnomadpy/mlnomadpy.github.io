@@ -26,7 +26,7 @@
         
         <div class="talk-description" v-if="talk.description">
           <h3><i class="fas fa-info-circle"></i> Description</h3>
-          <div v-html="talk.description"></div>
+          <p>{{ talk.description }}</p>
         </div>
         
         <div class="talk-media-tabs">
@@ -89,7 +89,7 @@
           <h3><i class="fas fa-link"></i> Resources</h3>
           <ul>
             <li v-for="(resource, index) in talk.resources" :key="index">
-              <a :href="resource.url" target="_blank" class="resource-link">
+              <a :href="resource.url" target="_blank" rel="noopener noreferrer" class="resource-link">
                 <i class="fas fa-external-link-alt"></i>
                 {{ resource.name }}
               </a>
@@ -109,6 +109,8 @@
 </template>
 
 <script>
+import { formatTalkDate, getTalkThumbnail, extractYouTubeId } from '@/utils/helpers';
+
 export default {
   name: 'TalkModal',
   props: {
@@ -124,29 +126,10 @@ export default {
   },
   computed: {
     formattedDate() {
-      return this.formatDate(this.talk.date);
+      return formatTalkDate(this.talk.date);
     },
     thumbnailUrl() {
-      // If talk has valid image, use it
-      if (this.talk.image && this.talk.image.trim() !== '') {
-        return this.talk.image;
-      }
-      
-      // Use thumbnail from talk data
-      if (this.talk.thumbnail && this.talk.thumbnail.trim() !== '') {
-        return this.talk.thumbnail;
-      }
-      
-      // If talk has a YouTube video, extract thumbnail from video URL
-      if (this.talk.video && this.talk.video.includes('youtube')) {
-        const videoId = this.extractYouTubeId(this.talk.video);
-        if (videoId) {
-          return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
-        }
-      }
-      
-      // Fallback to default thumbnail
-      return 'https://i.imgur.com/TwYAtdu.png';
+      return getTalkThumbnail(this.talk);
     },
     embedUrl() {
       return this.getEmbedUrl(this.talk.video);
@@ -156,35 +139,6 @@ export default {
     }
   },
   methods: {
-    formatDate(dateStr) {
-      // Check if dateStr is already in a well-formatted state
-      if (!dateStr || typeof dateStr !== 'string') return dateStr;
-      
-      // Try to handle various date formats
-      try {
-        const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-        
-        // For "Month Year" format
-        const monthYearMatch = dateStr.match(/([A-Za-z]+)\s+(\d{4})/);
-        if (monthYearMatch) {
-          const monthName = monthYearMatch[1];
-          const month = months.findIndex(m => m.toLowerCase().startsWith(monthName.toLowerCase())) + 1;
-          const year = monthYearMatch[2];
-          return `${month < 10 ? '0' + month : month}/${year}`;
-        }
-        
-        // For ISO 8601 or similar formats
-        const date = new Date(dateStr);
-        if (!isNaN(date.getTime())) {
-          return `${date.getMonth() + 1 < 10 ? '0' + (date.getMonth() + 1) : date.getMonth() + 1}/${date.getFullYear()}`;
-        }
-        
-        return dateStr; // Return original if no formatting applied
-      } catch (e) {
-        console.error('Error formatting date:', e);
-        return dateStr; // Return original on error
-      }
-    },
     getEmbedUrl(url) {
       if (!url) return '';
       
@@ -232,25 +186,6 @@ export default {
       
       // Return original if not recognized
       return url;
-    },
-    extractYouTubeId(url) {
-      if (!url) return null;
-      
-      let videoId = null;
-      
-      if (url.includes('v=')) {
-        videoId = url.split('v=')[1];
-        const ampersandPosition = videoId.indexOf('&');
-        if (ampersandPosition !== -1) {
-          videoId = videoId.substring(0, ampersandPosition);
-        }
-      } else if (url.includes('youtu.be/')) {
-        videoId = url.split('youtu.be/')[1];
-      } else if (url.includes('embed/')) {
-        videoId = url.split('embed/')[1];
-      }
-      
-      return videoId;
     },
     setActiveTab(tab) {
       this.activeTab = tab;
@@ -303,22 +238,6 @@ export default {
   position: relative;
   animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   border: 1px solid rgba(244, 165, 96, 0.2);
-  scrollbar-width: thin;
-  scrollbar-color: rgba(244, 165, 96, 0.5) rgba(30, 30, 30, 0.3);
-}
-
-.talk-details::-webkit-scrollbar {
-  width: 8px;
-}
-
-.talk-details::-webkit-scrollbar-track {
-  background: rgba(30, 30, 30, 0.3);
-  border-radius: 10px;
-}
-
-.talk-details::-webkit-scrollbar-thumb {
-  background-color: rgba(244, 165, 96, 0.5);
-  border-radius: 10px;
 }
 
 @keyframes slideUp {

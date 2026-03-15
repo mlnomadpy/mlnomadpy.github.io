@@ -57,7 +57,7 @@ export default {
       default: () => [
         { 
           name: 'Google Scholar', 
-          url: 'https://scholar.google.com/', 
+          url: 'https://scholar.google.com/citations?hl=en&user=IsBjb3EAAAAJ',
           icon: 'fas fa-graduation-cap',
           external: true 
         },
@@ -75,7 +75,7 @@ export default {
         },
         { 
           name: 'Email', 
-          url: 'mailto:tahabhs14@gmail.com', 
+          url: 'mailto:contact@tahabouhsine.com',
           icon: 'fas fa-envelope',
           external: false 
         },

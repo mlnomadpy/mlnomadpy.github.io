@@ -4,7 +4,8 @@ export const tabs = [
   { id: 'education', label: 'Education', icon: 'fas fa-graduation-cap' },
   { id: 'certifications', label: 'Certifications', icon: 'fas fa-certificate' },
   { id: 'awards', label: 'Awards', icon: 'fas fa-award' },
-  { id: 'experience', label: 'Experience', icon: 'fas fa-briefcase' }
+  { id: 'experience', label: 'Experience', icon: 'fas fa-briefcase' },
+  { id: 'skills', label: 'Skills', icon: 'fas fa-code' }
 ];
 
 export const storyItems = [
@@ -258,37 +259,44 @@ export const skillGroups = [
     title: 'Machine Learning & AI',
     icon: 'fas fa-brain',
     skills: [
-      'Deep Learning (TensorFlow, PyTorch)',
-      'Computer Vision',
-      'NLP (Transformers, LLMs)',
-      'MLOps',
-      'Generative AI'
+      { name: 'Deep Learning (TensorFlow, PyTorch)', level: 95 },
+      { name: 'Computer Vision', level: 90 },
+      { name: 'NLP (Transformers, LLMs)', level: 88 },
+      { name: 'Contrastive / Representation Learning', level: 92 },
+      { name: 'MLOps', level: 80 },
+      { name: 'Generative AI', level: 85 }
     ]
   },
   {
     title: 'Software Engineering',
     icon: 'fas fa-laptop-code',
     skills: [
-      'Python',
-      'JavaScript/TypeScript',
-      'Vue.js',
-      'React',
-      'Node.js',
-      'Docker',
-      'Kubernetes'
+      { name: 'Python', level: 95 },
+      { name: 'JavaScript / TypeScript', level: 85 },
+      { name: 'Vue.js / React', level: 80 },
+      { name: 'Node.js', level: 75 },
+      { name: 'Docker / Kubernetes', level: 70 },
+      { name: 'JAX / FLAX', level: 85 }
     ]
   },
   {
-    title: 'Research',
-    icon: 'fas fa-search',
+    title: 'Research & Communication',
+    icon: 'fas fa-flask',
     skills: [
-      'Technical Writing',
-      'Experiment Design',
-      'Data Analysis',
-      'Algorithm Development',
-      'Mathematical Modeling'
+      { name: 'Technical Writing', level: 90 },
+      { name: 'Experiment Design', level: 88 },
+      { name: 'Mathematical Modeling', level: 85 },
+      { name: 'Algorithm Development', level: 92 },
+      { name: 'Public Speaking', level: 88 }
     ]
   }
+];
+
+export const statsHighlights = [
+  { label: 'Research Papers', value: '8+', icon: 'fas fa-file-alt' },
+  { label: 'Talks Given', value: '80+', icon: 'fas fa-microphone' },
+  { label: 'Years Experience', value: '10+', icon: 'fas fa-briefcase' },
+  { label: 'Certifications', value: '4', icon: 'fas fa-certificate' }
 ];
 
 export const profileData = {

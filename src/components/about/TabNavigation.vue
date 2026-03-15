@@ -1,10 +1,11 @@
 <template>
-  <div class="tabs-navigation" role="tablist" aria-label="About Me Sections">
-    <button 
-      v-for="tab in tabs" 
+  <div class="tabs-navigation" role="tablist" aria-label="About Me Sections" @keydown="handleKeydown">
+    <button
+      v-for="(tab, index) in tabs"
       :key="tab.id"
-      class="tab-button" 
-      :class="{ 'active': activeTab === tab.id }"
+      :ref="el => { if (el) tabRefs[index] = el }"
+      class="tab-btn"
+      :class="{ active: activeTab === tab.id }"
       @click="$emit('tab-change', tab.id)"
       role="tab"
       :aria-selected="activeTab === tab.id"
@@ -13,7 +14,7 @@
       :tabindex="activeTab === tab.id ? 0 : -1"
     >
       <i :class="tab.icon" aria-hidden="true"></i>
-      <span>{{ tab.label }}</span>
+      <span class="tab-label">{{ tab.label }}</span>
     </button>
   </div>
 </template>
@@ -22,153 +23,132 @@
 export default {
   name: 'TabNavigation',
   props: {
-    activeTab: {
-      type: String,
-      required: true
-    },
-    tabs: {
-      type: Array,
-      required: true
+    activeTab: { type: String, required: true },
+    tabs: { type: Array, required: true }
+  },
+  data() {
+    return { tabRefs: [] }
+  },
+  methods: {
+    handleKeydown(e) {
+      const currentIdx = this.tabs.findIndex(t => t.id === this.activeTab);
+      let newIdx = -1;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); newIdx = (currentIdx + 1) % this.tabs.length; }
+      else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); newIdx = (currentIdx - 1 + this.tabs.length) % this.tabs.length; }
+      else if (e.key === 'Home') { e.preventDefault(); newIdx = 0; }
+      else if (e.key === 'End') { e.preventDefault(); newIdx = this.tabs.length - 1; }
+      if (newIdx >= 0) {
+        this.$emit('tab-change', this.tabs[newIdx].id);
+        this.$nextTick(() => { if (this.tabRefs[newIdx]) this.tabRefs[newIdx].focus(); });
+      }
     }
-  }
+  },
+  beforeUpdate() { this.tabRefs = []; }
 }
 </script>
 
 <style scoped>
-/* ... */
+/* Container — always centered pills */
 .tabs-navigation {
   display: flex;
-  /* Background and border handled by parent container for sticky effect */
-  background: transparent;
-  border-bottom: none;
-  width: 100%;
-  overflow-x: auto; /* Allow scrolling if needed on small screens even on desktop if resized */
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0.6rem 1rem;
+  overflow-x: auto;
   scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
-.tabs-navigation::-webkit-scrollbar {
-  display: none;
-}
+.tabs-navigation::-webkit-scrollbar { display: none; }
 
-.tab-button {
-  flex: 1;
-  background: none;
-  border: none;
-  padding: 12px 20px;
-  color: #ddd;
-  font-size: 0.95rem;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  cursor: pointer;
+/* Base button — pill style at ALL sizes */
+.tab-btn {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 7px;
+  padding: 9px 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid transparent;
+  border-radius: 100px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
   position: relative;
-  transition: all 0.3s ease;
   white-space: nowrap;
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
-.tab-button i {
-  font-size: 1.1rem;
-  opacity: 0.7;
-  transition: all 0.3s ease;
+.tab-btn i {
+  font-size: 0.95rem;
+  transition: color 0.25s ease;
 }
 
-.tab-button:hover {
+.tab-btn:hover {
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Active — highlighted pill */
+.tab-btn.active {
   color: var(--accent-color, rgb(244, 165, 96));
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(244, 165, 96, 0.1);
+  border-color: rgba(244, 165, 96, 0.2);
 }
 
-.tab-button.active {
-  color: var(--accent-color, rgb(244, 165, 96));
-  background: rgba(244, 165, 96, 0.05);
+/* Focus */
+.tab-btn:focus-visible {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 2px;
 }
 
-.tab-button.active i {
-  opacity: 1;
-  transform: translateY(-2px);
-}
-
-.tab-button.active::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 3px;
-  background: var(--accent-color, rgb(244, 165, 96));
-  box-shadow: 0 -2px 10px rgba(244, 165, 96, 0.5);
-}
-
-@media (max-width: 1024px) {
-  .tab-button {
-    padding: 15px;
-    font-size: 0.85rem;
-  }
-}
-
+/* Mobile — icon-only, expand active */
 @media (max-width: 767px) {
   .tabs-navigation {
-    justify-content: center; /* Center since they should fit now */
-    padding: 0.5rem;
-    gap: 0.5rem;
+    flex-wrap: nowrap;
+    gap: 6px;
+    padding: 0.5rem 0.75rem;
   }
-  
-  .tab-button {
-    flex: 0 0 auto;
-    width: 50px; /* Fixed width for icon only */
-    padding: 10px;
-    border-radius: 25px;
-    background: rgba(255, 255, 255, 0.05);
-    transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
-    justify-content: center;
+
+  .tab-btn {
+    width: 46px;
+    height: 46px;
+    padding: 0;
+    border-radius: 50%;
     overflow: hidden;
   }
-  
-  .tab-button span {
+
+  .tab-label {
     display: none;
     opacity: 0;
-    font-size: 0.85rem;
+    font-size: 0.78rem;
   }
-  
-  .tab-button.active {
+
+  .tab-btn.active {
     width: auto;
-    padding-left: 1.2rem;
-    padding-right: 1.2rem;
-    background: rgba(244, 165, 96, 0.15);
-    color: var(--accent-color, rgb(244, 165, 96));
+    padding: 0 1.1rem;
+    border-radius: 24px;
   }
-  
-  .tab-button.active span {
-    display: inline-block;
+
+  .tab-btn.active .tab-label {
+    display: inline;
     opacity: 1;
-    margin-left: 8px;
-    animation: fadeInLabel 0.3s ease forwards 0.2s;
-  }
-  
-  /* Remove the bottom border indicator from desktop style for cleaner pill look on mobile */
-  .tab-button.active::after {
-    display: none;
+    margin-left: 5px;
+    animation: labelIn 0.25s ease 0.12s both;
   }
 }
 
-@keyframes fadeInLabel {
-  from { opacity: 0; transform: translateX(5px); }
+@keyframes labelIn {
+  from { opacity: 0; transform: translateX(4px); }
   to { opacity: 1; transform: translateX(0); }
 }
 
 @media (max-width: 480px) {
-  .tab-button {
-    width: 44px;
-    height: 44px;
-    padding: 0;
-  }
-  
-  .tab-button.active {
-    width: auto;
-    padding: 0 16px;
-  }
+  .tab-btn { width: 42px; height: 42px; }
+  .tab-btn.active { padding: 0 0.9rem; }
 }
 </style>

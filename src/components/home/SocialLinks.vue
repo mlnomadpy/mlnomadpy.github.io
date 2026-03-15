@@ -1,10 +1,10 @@
 <template>
   <div class="social-icons">
-    <a href="https://scholar.google.com/citations?hl=en&user=IsBjb3EAAAAJ" target="_blank" aria-label="Google Scholar" class="social-link"><i class="fas fa-graduation-cap"></i></a>
-    <a href="https://github.com/mlnomadpy" target="_blank" aria-label="GitHub" class="social-link"><i class="fab fa-github"></i></a>
-    <a href="https://linkedin.com/in/Tahabsn" target="_blank" aria-label="LinkedIn" class="social-link"><i class="fab fa-linkedin"></i></a>
+    <a href="https://scholar.google.com/citations?hl=en&user=IsBjb3EAAAAJ" target="_blank" rel="noopener noreferrer" aria-label="Google Scholar" class="social-link"><i class="fas fa-graduation-cap"></i></a>
+    <a href="https://github.com/mlnomadpy" target="_blank" rel="noopener noreferrer" aria-label="GitHub" class="social-link"><i class="fab fa-github"></i></a>
+    <a href="https://linkedin.com/in/Tahabsn" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" class="social-link"><i class="fab fa-linkedin"></i></a>
     <a href="mailto:contact@tahabouhsine.com" aria-label="Email" class="social-link"><i class="fas fa-envelope"></i></a>
-    <a href="https://www.tahabouhsine.com" target="_blank" aria-label="Personal Website" class="social-link"><i class="fas fa-globe"></i></a>
+    <a href="https://www.tahabouhsine.com" target="_blank" rel="noopener noreferrer" aria-label="Personal Website" class="social-link"><i class="fas fa-globe"></i></a>
   </div>
 </template>
 

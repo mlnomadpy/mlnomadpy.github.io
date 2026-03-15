@@ -49,6 +49,8 @@
 </template>
 
 <script>
+import { formatTalkDate, getTalkThumbnail } from '@/utils/helpers';
+
 export default {
   name: 'TalkCard',
   props: {
@@ -59,58 +61,8 @@ export default {
   },
   emits: ['select'],
   methods: {
-    formatDate(dateStr) {
-      if (!dateStr || typeof dateStr !== 'string') return dateStr;
-      try {
-        const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-        const monthYearMatch = dateStr.match(/([A-Za-z]+)\s+(\d{4})/);
-        if (monthYearMatch) {
-          const monthName = monthYearMatch[1];
-          const month = months.findIndex(m => m.toLowerCase().startsWith(monthName.toLowerCase())) + 1;
-          const year = monthYearMatch[2];
-          return `${month < 10 ? '0' + month : month}/${year}`;
-        }
-        const date = new Date(dateStr);
-        if (!isNaN(date.getTime())) {
-          return `${date.getMonth() + 1 < 10 ? '0' + (date.getMonth() + 1) : date.getMonth() + 1}/${date.getFullYear()}`;
-        }
-        return dateStr;
-      } catch (e) {
-        console.error('Error formatting date:', e);
-        return dateStr;
-      }
-    },
-    getThumbnailUrl(talk) {
-      if (talk.image && talk.image.trim() !== '') {
-        return talk.image;
-      }
-      if (talk.thumbnail && talk.thumbnail.trim() !== '') {
-        return talk.thumbnail;
-      }
-      if (talk.video && talk.video.includes('youtube')) {
-        const videoId = this.extractYouTubeId(talk.video);
-        if (videoId) {
-          return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
-        }
-      }
-      return 'https://i.imgur.com/TwYAtdu.png';
-    },
-    extractYouTubeId(url) {
-      if (!url) return null;
-      let videoId = null;
-      if (url.includes('v=')) {
-        videoId = url.split('v=')[1];
-        const ampersandPosition = videoId.indexOf('&');
-        if (ampersandPosition !== -1) {
-          videoId = videoId.substring(0, ampersandPosition);
-        }
-      } else if (url.includes('youtu.be/')) {
-        videoId = url.split('youtu.be/')[1];
-      } else if (url.includes('embed/')) {
-        videoId = url.split('embed/')[1];
-      }
-      return videoId;
-    }
+    formatDate: formatTalkDate,
+    getThumbnailUrl: getTalkThumbnail
   }
 }
 </script>

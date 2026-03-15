@@ -3,6 +3,10 @@
 </template>
 
 <script>
+import { debounce } from '@/utils/helpers';
+
+const MAX_PARTICLES = 200;
+
 export default {
   name: 'SandStorm',
   data() {
@@ -15,15 +19,18 @@ export default {
       animationId: null
     }
   },
+  created() {
+    this._debouncedResize = debounce(this.handleResize, 250);
+  },
   mounted() {
     this.initCanvas();
     this.createParticles();
     this.animate();
-    
-    window.addEventListener('resize', this.handleResize);
+
+    window.addEventListener('resize', this._debouncedResize);
   },
   beforeUnmount() {
-    window.removeEventListener('resize', this.handleResize);
+    window.removeEventListener('resize', this._debouncedResize);
     cancelAnimationFrame(this.animationId);
   },
   methods: {
@@ -37,14 +44,14 @@ export default {
     },
     createParticles() {
       this.particles = [];
-      const particleCount = Math.floor(this.width * this.height / 15000);
+      const particleCount = Math.min(Math.floor(this.width * this.height / 15000), MAX_PARTICLES);
       
       for (let i = 0; i < particleCount; i++) {
         this.particles.push({
           x: Math.random() * this.width,
           y: Math.random() * this.height,
           radius: Math.random() * 2 + 1,
-          color: `rgba(${244}, ${165}, ${96}, ${Math.random() * 0.5 + 0.25})`,
+          color: `rgba(244, 165, 96, ${(Math.random() * 0.5 + 0.25).toFixed(2)})`,
           speedX: Math.random() * 2 - 1,
           speedY: Math.random() * 2 - 1,
           lifespan: Math.random() * 100 + 100,

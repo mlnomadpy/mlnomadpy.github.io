@@ -302,18 +302,6 @@ h4 {
   background: #fff;
 }
 
-/* Scrollbar */
-.scrollable-custom::-webkit-scrollbar {
-  width: 6px;
-}
-.scrollable-custom::-webkit-scrollbar-track {
-  background: rgba(0,0,0,0.1);
-}
-.scrollable-custom::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 3px;
-}
-
 /* Animation */
 .modal-fade-enter-active,
 .modal-fade-leave-active {

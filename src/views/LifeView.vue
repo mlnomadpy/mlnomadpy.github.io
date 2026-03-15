@@ -61,7 +61,7 @@
 
       <!-- Event Details Modal -->
       <div v-if="selectedEvent" class="modal-overlay" @click="closeModal">
-        <div class="modal-content glass-card" @click.stop>
+        <div class="modal-content glass-card" @click.stop role="dialog" aria-modal="true" :aria-label="selectedEvent.title">
           <button class="close-btn" @click="closeModal" aria-label="Close details">
             <i class="fas fa-times"></i>
           </button>
@@ -115,6 +115,17 @@
 <script>
 import LifeToolbar from '@/components/life/LifeToolbar.vue';
 import LifeTimelineEvent from '@/components/life/LifeTimelineEvent.vue';
+
+const CATEGORY_ICONS = {
+  education: 'fas fa-graduation-cap',
+  career: 'fas fa-briefcase',
+  milestone: 'fas fa-flag',
+  travel: 'fas fa-plane',
+  personal: 'fas fa-heart',
+  award: 'fas fa-trophy',
+  project: 'fas fa-code',
+  publication: 'fas fa-book'
+};
 
 export default {
   name: 'LifeView',
@@ -180,21 +191,10 @@ export default {
           return yearB - yearA;
         });
         
-        const categoryIcons = {
-          education: 'fas fa-graduation-cap',
-          career: 'fas fa-briefcase',
-          milestone: 'fas fa-flag',
-          travel: 'fas fa-plane',
-          personal: 'fas fa-heart',
-          award: 'fas fa-trophy',
-          project: 'fas fa-code',
-          publication: 'fas fa-book'
-        };
-        
         const categoriesSet = new Set(this.lifeEvents.map(event => event.category));
         this.categories = Array.from(categoriesSet).map(category => ({
           name: category,
-          icon: categoryIcons[category] || 'fas fa-star'
+          icon: CATEGORY_ICONS[category] || 'fas fa-star'
         }));
         
         this.filteredEvents = [...this.lifeEvents];
@@ -215,28 +215,37 @@ export default {
       }
     },
     selectEvent(event) {
+      this._previousFocus = document.activeElement;
       this.selectedEvent = event;
-      document.body.style.overflow = 'hidden'; // Prevent background scrolling
+      document.body.style.overflow = 'hidden';
+      this.$nextTick(() => {
+        const closeBtn = this.$el.querySelector('.modal-content .close-btn');
+        if (closeBtn) closeBtn.focus();
+        this._trapFocus = (e) => {
+          if (e.key === 'Escape') { this.closeModal(); return; }
+          if (e.key !== 'Tab') return;
+          const modal = this.$el.querySelector('.modal-content');
+          if (!modal) return;
+          const focusable = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+          const first = focusable[0];
+          const last = focusable[focusable.length - 1];
+          if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+          else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+        };
+        document.addEventListener('keydown', this._trapFocus);
+      });
     },
     closeModal() {
+      document.removeEventListener('keydown', this._trapFocus);
       this.selectedEvent = null;
-      document.body.style.overflow = ''; // Restore scrolling
+      document.body.style.overflow = '';
+      if (this._previousFocus) this._previousFocus.focus();
     },
     formatCategory(category) {
       return category.charAt(0).toUpperCase() + category.slice(1);
     },
     getCategoryIcon(category) {
-      const iconMap = {
-        education: 'fas fa-graduation-cap',
-        career: 'fas fa-briefcase',
-        milestone: 'fas fa-flag',
-        travel: 'fas fa-plane',
-        personal: 'fas fa-heart',
-        award: 'fas fa-trophy',
-        project: 'fas fa-code',
-        publication: 'fas fa-book'
-      };
-      return iconMap[category] || 'fas fa-star';
+      return CATEGORY_ICONS[category] || 'fas fa-star';
     }
   },
   mounted() {
@@ -296,23 +305,6 @@ export default {
   padding: 40px 20px;
   display: flex;
   align-items: center;
-  /* Custom Scrollbar */
-  scrollbar-width: thin;
-  scrollbar-color: var(--accent-color) rgba(255, 255, 255, 0.1);
-}
-
-.timeline-scroll-container::-webkit-scrollbar {
-  height: 8px;
-}
-
-.timeline-scroll-container::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 4px;
-}
-
-.timeline-scroll-container::-webkit-scrollbar-thumb {
-  background-color: var(--accent-color);
-  border-radius: 4px;
 }
 
 .timeline-track {
@@ -528,5 +520,43 @@ export default {
 @keyframes slideUp {
   from { transform: translateY(20px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
+}
+
+/* Mobile: switch timeline to vertical layout */
+@media (max-width: 768px) {
+  .timeline-scroll-container {
+    overflow-x: hidden;
+    overflow-y: auto;
+    flex-direction: column;
+    padding: 20px 10px;
+  }
+
+  .timeline-track {
+    flex-direction: column;
+    height: auto;
+    min-width: unset;
+    padding: 0 10px;
+    gap: 20px;
+  }
+
+  .timeline-line {
+    top: 0;
+    bottom: 0;
+    left: 20px;
+    right: auto;
+    width: 2px;
+    height: 100%;
+    transform: none;
+  }
+
+  .modal-content {
+    max-width: 100%;
+    border-radius: 12px;
+    padding: 20px;
+  }
+
+  .modal-title {
+    font-size: 1.4rem;
+  }
 }
 </style>

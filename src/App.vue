@@ -1,7 +1,8 @@
 <template>
   <div id="app">
+    <a href="#main-content" class="skip-link">Skip to content</a>
     <MainNavbar />
-    <main>
+    <main id="main-content">
       <router-view v-slot="{ Component }">
         <transition name="fade" mode="out-in">
           <component :is="Component" />
@@ -148,48 +149,96 @@ img, video, canvas {
   height: auto;
 }
 
-/* Global Scrollbar Styling */
+/* ========================================
+   Global Scrollbar & Scroll Behavior
+   ======================================== */
+
+/* Smooth scrolling for all scroll containers */
+*, *::before, *::after {
+  scroll-behavior: smooth;
+}
+
+/* Firefox scrollbar — applies to ALL scrollable elements */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(244, 165, 96, 0.35) transparent;
+}
+
+/* Webkit (Chrome, Safari, Edge) scrollbar — vertical */
 ::-webkit-scrollbar {
-  width: 8px; /* Slightly wider for better usability */
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 4px;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(244, 165, 96, 0.5); /* Accent color with transparency */
-  border-radius: 4px;
-  transition: background 0.3s ease;
+  background: rgba(244, 165, 96, 0.3);
+  border-radius: 100px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
+  background: rgba(244, 165, 96, 0.6);
+}
+
+::-webkit-scrollbar-thumb:active {
   background: rgba(244, 165, 96, 0.8);
 }
 
-/* Specific class for inner scroll containers to ensure application */
-.custom-scroll {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(244, 165, 96, 0.5) rgba(0, 0, 0, 0.1);
+/* Hide scrollbar until hover (auto-hide effect) */
+::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
-.custom-scroll::-webkit-scrollbar {
-  width: 8px;
+/* Smooth scroll utility class (for JS-driven containers) */
+.smooth-scroll {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch; /* iOS momentum scrolling */
 }
 
-.custom-scroll::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.1);
+/* Overscroll containment — prevent scroll chaining */
+.scrollable-content,
+.tab-content-area,
+.timeline-scroll-container {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
-.custom-scroll::-webkit-scrollbar-thumb {
-  background-color: rgba(244, 165, 96, 0.5);
-  border-radius: 4px;
+/* Fade-in scrollbar effect: hidden when idle, visible on hover/scroll */
+.scroll-fade {
+  scrollbar-color: transparent transparent;
 }
 
-.custom-scroll::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(244, 165, 96, 0.8);
+.scroll-fade:hover,
+.scroll-fade:focus-within {
+  scrollbar-color: rgba(244, 165, 96, 0.35) transparent;
+}
+
+.scroll-fade::-webkit-scrollbar-thumb {
+  background: transparent;
+  transition: background 0.3s ease;
+}
+
+.scroll-fade:hover::-webkit-scrollbar-thumb,
+.scroll-fade:focus-within::-webkit-scrollbar-thumb {
+  background: rgba(244, 165, 96, 0.3);
+}
+
+/* Mobile: thinner scrollbar */
+@media (max-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+}
+
+/* Reduced motion: disable smooth scroll */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+  }
 }
 
 /* Accessibility improvements */

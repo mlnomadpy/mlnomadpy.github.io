@@ -47,7 +47,7 @@ const currentYear = computed(() => new Date().getFullYear())
 
 const footerLinks = [
   { name: 'Home', path: '/' },
-  { name: 'About', path: '/about' },
+  { name: 'About', path: '/aboutme' },
   { name: 'Research', path: '/research' },
   { name: 'Talks', path: '/talks' },
 ]
@@ -55,7 +55,7 @@ const footerLinks = [
 const socialLinks = [
   { name: 'GitHub', url: 'https://github.com/mlnomadpy' },
   { name: 'LinkedIn', url: 'https://linkedin.com/in/Tahabsn' },
-  { name: 'Scholar', url: 'https://scholar.google.com/citations?user=SCHOLARID' },
+  { name: 'Scholar', url: 'https://scholar.google.com/citations?hl=en&user=IsBjb3EAAAAJ' },
 ]
 </script>
 

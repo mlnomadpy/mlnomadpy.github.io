@@ -73,6 +73,8 @@
 </template>
 
 <script>
+import { throttle } from '@/utils/helpers';
+
 export default {
   name: 'MainNavbar',
   data() {
@@ -118,12 +120,14 @@ export default {
       this.scrollProgress = (winScroll / height) * 100;
     }
   },
+  created() {
+    this._throttledScroll = throttle(this.handleScroll, 100);
+  },
   mounted() {
-    // Add scroll event listener for scroll-triggered effects
-    window.addEventListener('scroll', this.handleScroll);
+    window.addEventListener('scroll', this._throttledScroll);
   },
   beforeUnmount() {
-    window.removeEventListener('scroll', this.handleScroll);
+    window.removeEventListener('scroll', this._throttledScroll);
   }
 }
 </script>

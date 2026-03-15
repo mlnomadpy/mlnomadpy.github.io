@@ -40,6 +40,7 @@
 
 <script>
 import { getBlogById } from '@/utils/blog-loader';
+import { useMeta } from '@/composables/useMeta';
 import 'katex/dist/katex.min.css';
 
 export default {
@@ -68,6 +69,13 @@ export default {
         const post = await getBlogById(this.id);
         if (post) {
           this.post = post;
+          const { setPageMeta } = useMeta();
+          setPageMeta({
+            title: `${post.title} | Taha Bouhsine`,
+            description: post.excerpt || `Blog post: ${post.title}`,
+            ogTitle: post.title,
+            ogDescription: post.excerpt || `Blog post: ${post.title}`
+          });
         } else {
           this.error = 'Blog post not found';
         }

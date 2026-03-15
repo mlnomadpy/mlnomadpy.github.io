@@ -1,6 +1,6 @@
 <template>
   <div class="hero-sec">
-    <video autoplay muted loop playsinline>
+    <video autoplay muted loop playsinline preload="auto" aria-hidden="true">
       <source src="@/assets/background-video.mp4" type="video/mp4" onerror="this.parentElement.remove()">
     </video>
     
@@ -8,7 +8,7 @@
       <div class="circle-text">
         <h1>Taha Bouhsine</h1>
         <p>ML Researcher &amp; Engineer</p>
-        <a href="https://linkedin.com/in/Tahabsn" target="_blank" class="join-btn">Connect</a>
+        <a href="https://linkedin.com/in/Tahabsn" target="_blank" rel="noopener noreferrer" class="join-btn">Connect</a>
         
         <SocialLinks />
       </div>
