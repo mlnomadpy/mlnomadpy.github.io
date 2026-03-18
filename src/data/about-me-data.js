@@ -4,8 +4,7 @@ export const tabs = [
   { id: 'education', label: 'Education', icon: 'fas fa-graduation-cap' },
   { id: 'certifications', label: 'Certifications', icon: 'fas fa-certificate' },
   { id: 'awards', label: 'Awards', icon: 'fas fa-award' },
-  { id: 'experience', label: 'Experience', icon: 'fas fa-briefcase' },
-  { id: 'skills', label: 'Skills', icon: 'fas fa-code' }
+  { id: 'experience', label: 'Experience', icon: 'fas fa-briefcase' }
 ];
 
 export const storyItems = [

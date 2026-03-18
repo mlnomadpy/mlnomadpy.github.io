@@ -55,12 +55,7 @@ export default defineConfig({
         return `/talks/${slug}`
       })
 
-      // 2. Research - /research/:id (using item.id)
-      readData('research.json', (item) => {
-        return item.id ? `/research/${item.id}` : null
-      })
-
-      // 3. Poetry - /poetry/:id (using item.id)
+      // 2. Poetry - /poetry/:id (using item.id)
       readData('poetry.json', (item) => {
         return item.id ? `/poetry/${item.id}` : null
       })

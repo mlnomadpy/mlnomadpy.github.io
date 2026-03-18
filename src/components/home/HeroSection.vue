@@ -1,6 +1,6 @@
 <template>
   <div class="hero-sec">
-    <video autoplay muted loop playsinline preload="auto" aria-hidden="true">
+    <video v-if="!isMobile" autoplay muted loop playsinline preload="metadata" aria-hidden="true">
       <source src="@/assets/background-video.mp4" type="video/mp4" onerror="this.parentElement.remove()">
     </video>
     
@@ -18,11 +18,16 @@
 
 <script>
 import SocialLinks from '@/components/home/SocialLinks.vue';
+import { useResponsive } from '@/composables/useResponsive';
 
 export default {
   name: 'HeroSection',
   components: {
     SocialLinks
+  },
+  setup() {
+    const { isMobile } = useResponsive();
+    return { isMobile };
   }
 }
 </script>
@@ -95,12 +100,14 @@ export default {
 
 .circle-text h1 {
   font-size: 3rem;
-  animation: blink 1s infinite;
   border-right: 8px solid #fff;
   padding-right: 5px;
   text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.7);
   white-space: nowrap;
   width: fit-content;
+  overflow: hidden;
+  animation: typing 1.8s steps(14, end) forwards, blink 0.8s step-end 1.8s infinite;
+  max-width: 0;
 }
 
 .circle-text p {
@@ -164,17 +171,16 @@ export default {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
+@keyframes typing {
+  from { max-width: 0; }
+  to { max-width: 100%; }
+}
+
 @keyframes blink {
-  0% {
+  0%, 50% {
     border-right-color: transparent;
   }
-  50% {
-    border-right-color: transparent;
-  }
-  51% {
-    border-right-color: #fff;
-  }
-  100% {
+  51%, 100% {
     border-right-color: #fff;
   }
 }

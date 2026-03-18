@@ -48,8 +48,8 @@ const currentYear = computed(() => new Date().getFullYear())
 const footerLinks = [
   { name: 'Home', path: '/' },
   { name: 'About', path: '/aboutme' },
-  { name: 'Research', path: '/research' },
   { name: 'Talks', path: '/talks' },
+  { name: 'Poetry', path: '/poetry' },
 ]
 
 const socialLinks = [

@@ -79,19 +79,18 @@ export default {
 
 <style scoped>
 .poetry-card {
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 16px;
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  background: var(--card-bg);
+  border-radius: var(--card-radius);
+  transition: var(--card-transition);
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: var(--card-border);
   cursor: pointer;
-  backdrop-filter: blur(5px);
 }
 
 .poetry-card:hover, .poetry-card:focus {
-  border-color: rgba(244, 165, 96, 0.3);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
-  transform: translateY(-4px);
+  border-color: var(--card-border-hover);
+  box-shadow: var(--card-shadow-hover);
+  transform: translateY(var(--card-hover-lift));
   outline: none;
 }
 

@@ -1,110 +1,174 @@
 <template>
-  <div class="construction-message glass-panel">
-    <div class="icon-container">
-      <i class="fas fa-pen-fancy"></i>
-    </div>
-    <h2>Thoughts in Progress</h2>
-    <p>I'm currently curating a collection of articles on Machine Learning, AI ethics, and software engineering. Check back soon for deep dives and tutorials.</p>
-    
-    <div class="newsletter-signup">
-      <p>Want to be notified when I publish?</p>
-      <div class="input-group">
-        <input type="email" placeholder="Enter your email" disabled aria-label="Email address for newsletter subscription">
-        <button class="btn-primary" disabled>Subscribe</button>
+  <div class="coming-soon">
+    <div class="coming-soon-hero">
+      <div class="icon-container">
+        <i class="fas fa-pen-fancy" aria-hidden="true"></i>
       </div>
-      <span class="coming-soon-badge">Coming Soon</span>
+      <h2>Coming Soon</h2>
+      <p class="subtitle">Deep dives into Machine Learning, AI ethics, and software engineering.</p>
+    </div>
+
+    <div class="topics-preview">
+      <h3>Upcoming Topics</h3>
+      <div class="topic-cards">
+        <div class="topic-card" v-for="topic in topics" :key="topic.icon">
+          <i :class="topic.icon" aria-hidden="true"></i>
+          <span>{{ topic.label }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="explore-instead">
+      <p>In the meantime, explore:</p>
+      <div class="alt-links">
+        <router-link to="/talks" class="alt-link">
+          <i class="fas fa-microphone" aria-hidden="true"></i>
+          Talks & Workshops
+        </router-link>
+        <router-link to="/poetry" class="alt-link">
+          <i class="fas fa-feather-alt" aria-hidden="true"></i>
+          Poetry
+        </router-link>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
 export default {
-  name: 'ConstructionMessage'
+  name: 'ConstructionMessage',
+  data() {
+    return {
+      topics: [
+        { icon: 'fas fa-brain', label: 'Interpretable AI' },
+        { icon: 'fas fa-network-wired', label: 'Representation Learning' },
+        { icon: 'fas fa-balance-scale', label: 'AI Ethics' },
+        { icon: 'fas fa-code', label: 'Engineering Practices' }
+      ]
+    }
+  }
 }
 </script>
 
 <style scoped>
-.construction-message {
+.coming-soon {
+  max-width: 700px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.coming-soon-hero {
   text-align: center;
-  padding: 50px;
-  border-radius: 20px;
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+  padding: 40px 30px;
+  background: var(--card-bg, linear-gradient(135deg, rgba(30, 30, 30, 0.6), rgba(20, 20, 20, 0.8)));
+  border-radius: var(--card-radius, 12px);
+  border: var(--card-border, 1px solid rgba(244, 165, 96, 0.1));
 }
 
 .icon-container {
-  font-size: 4rem;
+  font-size: 3rem;
   color: var(--accent-color);
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   animation: float 3s ease-in-out infinite;
 }
 
-.construction-message h2 {
-  font-size: 2rem;
-  margin-bottom: 15px;
+.coming-soon-hero h2 {
+  font-size: 1.8rem;
+  margin: 0 0 12px;
   color: var(--primary-text);
 }
 
-.construction-message p {
+.subtitle {
   color: var(--secondary-text);
-  margin-bottom: 30px;
+  font-size: 1rem;
   line-height: 1.6;
-  font-size: 1.1rem;
+  margin: 0;
 }
 
-.newsletter-signup {
-  margin-top: 40px;
-  padding-top: 30px;
-  border-top: 1px solid var(--glass-border);
-  position: relative;
+.topics-preview h3 {
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--accent-color);
+  margin: 0 0 16px;
+  text-align: center;
 }
 
-.input-group {
+.topic-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.topic-card {
   display: flex;
+  align-items: center;
   gap: 10px;
-  max-width: 400px;
-  margin: 20px auto 0;
-  opacity: 0.6; /* Disabled look */
-}
-
-.input-group input {
-  flex: 1;
-  padding: 12px 20px;
-  border-radius: 30px;
-  border: 1px solid var(--glass-border);
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--primary-text);
-}
-
-.coming-soon-badge {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%) rotate(-5deg);
-  background: var(--accent-color);
-  color: var(--primary-bg);
-  padding: 5px 15px;
-  border-radius: 4px;
-  font-weight: bold;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  color: var(--secondary-text);
   font-size: 0.9rem;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+  transition: all 0.3s ease;
+}
+
+.topic-card i {
+  color: var(--accent-color);
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.topic-card:hover {
+  border-color: rgba(244, 165, 96, 0.2);
+  background: rgba(244, 165, 96, 0.05);
+}
+
+.explore-instead {
+  text-align: center;
+}
+
+.explore-instead p {
+  color: var(--secondary-text);
+  font-size: 0.95rem;
+  margin: 0 0 16px;
+}
+
+.alt-links {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.alt-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border: 1px solid rgba(244, 165, 96, 0.3);
+  border-radius: 8px;
+  color: var(--accent-color);
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+
+.alt-link:hover {
+  background: rgba(244, 165, 96, 0.1);
+  transform: translateY(-2px);
 }
 
 @keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-15px); }
-  100% { transform: translateY(0px); }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
 }
 
-@media (max-width: 768px) {
-  .input-group {
-    flex-direction: column;
-  }
-  
-  .construction-message {
-    padding: 30px 20px;
-  }
+@media (max-width: 480px) {
+  .coming-soon-hero { padding: 30px 20px; }
+  .topic-cards { grid-template-columns: 1fr 1fr; }
+  .alt-links { flex-direction: column; align-items: center; }
 }
 </style>

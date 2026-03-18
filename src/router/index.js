@@ -6,60 +6,58 @@ export const routes = [
   {
     path: '/',
     name: 'home',
-    component: HomeView
+    component: HomeView,
+    meta: { index: 0 }
   },
   {
     path: '/aboutme',
     name: 'aboutme',
-    component: () => import('../views/AboutMeView.vue')
-  },
-  {
-    path: '/research',
-    name: 'research',
-    component: () => import('../views/ResearchView.vue')
-  },
-  {
-    path: '/research/:id',
-    name: 'ResearchDetails',
-    component: () => import('../views/ResearchDetailsView.vue'),
-    props: true
+    component: () => import('../views/AboutMeView.vue'),
+    meta: { index: 1 }
   },
   {
     path: '/talks',
     name: 'talks',
-    component: () => import('../views/TalksView.vue')
+    component: () => import('../views/TalksView.vue'),
+    meta: { index: 2 }
   },
   {
     path: '/talks/:id',
     name: 'TalkDetails',
     component: () => import('../views/TalkDetailsView.vue'),
-    props: true
+    props: true,
+    meta: { index: 2, isDetail: true }
   },
   {
     path: '/poetry',
     name: 'poetry',
-    component: () => import('../views/PoetryView.vue')
+    component: () => import('../views/PoetryView.vue'),
+    meta: { index: 3 }
   },
   {
     path: '/poetry/:id',
     name: 'PoetryDetails',
     component: () => import('../views/PoetryDetailsView.vue'),
-    props: true
+    props: true,
+    meta: { index: 3, isDetail: true }
   },
   {
     path: '/blogs',
     name: 'blogs',
-    component: () => import('../views/BlogsView.vue')
+    component: () => import('../views/BlogsView.vue'),
+    meta: { index: 4 }
   },
   {
     path: '/blogs/:id',
     name: 'BlogDetails',
     component: () => import('../views/BlogDetailsView.vue'),
-    props: true
+    props: true,
+    meta: { index: 4, isDetail: true }
   },
   {
-    path: '/life',
-    name: 'life',
-    component: () => import('../views/LifeView.vue')
+    path: '/:pathMatch(.*)*',
+    name: 'NotFound',
+    component: () => import('../views/NotFoundView.vue'),
+    meta: { index: 99 }
   }
 ]

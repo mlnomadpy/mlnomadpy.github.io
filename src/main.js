@@ -4,6 +4,7 @@ import App from './App.vue'
 import { routes } from './router'
 import '@fortawesome/fontawesome-free/css/all.css'
 import './assets/styles.css'
+import './assets/styles/animations.css'
 import './assets/styles/responsive.css'
 import './assets/styles/mobile.css'
 import { Buffer } from 'buffer'
@@ -25,6 +26,22 @@ export const createApp = ViteSSG(
     history
   },
   ({ app, router, routes, isClient, initialState }) => {
-    // install plugins etc.
+    if (isClient) {
+      router.afterEach(() => {
+        // Reset all scrollable containers
+        const scrollables = document.querySelectorAll('.scrollable-content, .section-content, .tab-content-area')
+        scrollables.forEach(el => {
+          el.scrollTop = 0
+        })
+
+        // Move focus to main content for keyboard/screen reader users
+        requestAnimationFrame(() => {
+          const main = document.getElementById('main-content')
+          if (main) {
+            main.focus({ preventScroll: true })
+          }
+        })
+      })
+    }
   }
 )

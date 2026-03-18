@@ -95,12 +95,15 @@
 
           <!-- Grid View -->
           <div v-else-if="filteredPoems.length" class="poetry-grid" key="grid">
-            <PoetryCard
-              v-for="poem in filteredPoems"
-              :key="poem.id"
-              :poem="poem"
-              grid
-            />
+            <TransitionGroup name="card-stagger" appear>
+              <PoetryCard
+                v-for="(poem, index) in filteredPoems"
+                :key="poem.id"
+                :poem="poem"
+                grid
+                :style="{ transitionDelay: `${Math.min(index * 60, 600)}ms` }"
+              />
+            </TransitionGroup>
           </div>
 
           <!-- No Results -->
@@ -185,7 +188,7 @@ export default {
 </script>
 
 <style scoped>
-@import '@/components/research/responsive-utils.css';
+@import '@/assets/styles/responsive-utils.css';
 
 .view-container {
   height: 100%;

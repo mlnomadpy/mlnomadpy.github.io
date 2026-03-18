@@ -1,11 +1,14 @@
 <template>
-  <canvas id="sand" ref="sandCanvas"></canvas>
+  <canvas id="sand" ref="sandCanvas" aria-hidden="true"></canvas>
 </template>
 
 <script>
 import { debounce } from '@/utils/helpers';
 
-const MAX_PARTICLES = 200;
+const MAX_PARTICLES_DESKTOP = 200;
+const MAX_PARTICLES_MOBILE = 80;
+const TARGET_FPS = 30;
+const FRAME_INTERVAL = 1000 / TARGET_FPS;
 
 export default {
   name: 'SandStorm',
@@ -16,16 +19,33 @@ export default {
       particles: [],
       width: 0,
       height: 0,
-      animationId: null
+      animationId: null,
+      lastFrameTime: 0,
+      reducedMotion: false
     }
   },
   created() {
     this._debouncedResize = debounce(this.handleResize, 250);
   },
   mounted() {
+    // Check reduced motion preference
+    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    this.reducedMotion = motionQuery.matches;
+    motionQuery.addEventListener('change', (e) => {
+      this.reducedMotion = e.matches;
+      if (this.reducedMotion) {
+        cancelAnimationFrame(this.animationId);
+        this.ctx && this.ctx.clearRect(0, 0, this.width, this.height);
+      } else {
+        this.animate(0);
+      }
+    });
+
+    if (this.reducedMotion) return;
+
     this.initCanvas();
     this.createParticles();
-    this.animate();
+    this.animate(0);
 
     window.addEventListener('resize', this._debouncedResize);
   },
@@ -44,8 +64,11 @@ export default {
     },
     createParticles() {
       this.particles = [];
-      const particleCount = Math.min(Math.floor(this.width * this.height / 15000), MAX_PARTICLES);
-      
+      const isMobile = window.innerWidth < 768;
+      const maxParticles = isMobile ? MAX_PARTICLES_MOBILE : MAX_PARTICLES_DESKTOP;
+      const divisor = isMobile ? 25000 : 15000;
+      const particleCount = Math.min(Math.floor(this.width * this.height / divisor), maxParticles);
+
       for (let i = 0; i < particleCount; i++) {
         this.particles.push({
           x: Math.random() * this.width,
@@ -59,47 +82,51 @@ export default {
         });
       }
     },
-    animate() {
+    animate(timestamp) {
+      if (this.reducedMotion) return;
+
+      // Throttle to target FPS
+      const elapsed = timestamp - this.lastFrameTime;
+      if (elapsed < FRAME_INTERVAL) {
+        this.animationId = requestAnimationFrame(this.animate);
+        return;
+      }
+      this.lastFrameTime = timestamp - (elapsed % FRAME_INTERVAL);
+
       this.ctx.clearRect(0, 0, this.width, this.height);
-      
+
       for (let i = 0; i < this.particles.length; i++) {
         const p = this.particles[i];
-        
+
         p.age++;
         if (p.age > p.lifespan) {
-          // Reset particle
           p.x = Math.random() * this.width;
           p.y = Math.random() * this.height;
           p.age = 0;
           p.lifespan = Math.random() * 100 + 100;
         }
-        
-        // Update position
+
         p.x += p.speedX;
         p.y += p.speedY;
-        
-        // Wrap around screen edges
+
         if (p.x < 0) p.x = this.width;
         if (p.x > this.width) p.x = 0;
         if (p.y < 0) p.y = this.height;
         if (p.y > this.height) p.y = 0;
-        
-        // Random movement changes
+
         if (Math.random() < 0.01) {
           p.speedX = Math.random() * 2 - 1;
           p.speedY = Math.random() * 2 - 1;
         }
-        
-        // Calculate opacity based on lifespan
+
         const opacity = (1 - p.age / p.lifespan) * 0.7;
-        
-        // Draw particle
+
         this.ctx.beginPath();
         this.ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
         this.ctx.fillStyle = p.color.replace(/[\d.]+\)$/g, `${opacity})`);
         this.ctx.fill();
       }
-      
+
       this.animationId = requestAnimationFrame(this.animate);
     },
     handleResize() {
@@ -121,5 +148,6 @@ canvas {
   z-index: 0;
   top: 0;
   left: 0;
+  will-change: transform;
 }
 </style> 

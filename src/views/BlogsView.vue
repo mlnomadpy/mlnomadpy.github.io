@@ -229,7 +229,7 @@ export default {
 </script>
 
 <style scoped>
-@import '@/components/research/responsive-utils.css';
+@import '@/assets/styles/responsive-utils.css';
 
 .view-container {
   height: 100%;

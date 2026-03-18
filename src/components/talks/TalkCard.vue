@@ -69,20 +69,19 @@ export default {
 
 <style scoped>
 .talk-card {
-  border-radius: 12px;
+  border-radius: var(--card-radius);
   overflow: hidden;
-  background: var(--glass-bg);
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-  border: 1px solid var(--glass-border);
+  background: var(--card-bg);
+  transition: var(--card-transition);
+  box-shadow: var(--card-shadow);
+  border: var(--card-border);
   cursor: pointer;
-  backdrop-filter: blur(5px);
 }
 
 .talk-card:hover, .talk-card:focus {
-  transform: translateY(-8px);
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
-  border-color: var(--accent-color);
+  transform: translateY(var(--card-hover-lift));
+  box-shadow: var(--card-shadow-hover);
+  border-color: var(--card-border-hover);
   outline: none;
 }
 

@@ -14,55 +14,41 @@
       <!-- Navigation links wrapper -->
       <div id="nav-links" class="nav-links">
         <!-- First half of navigation links -->
-        <router-link to="/aboutme" @click="closeMenuIfOpen" class="nav-item" title="About Me">
+        <router-link to="/aboutme" @click="closeMenuIfOpen" class="nav-item" data-tooltip="About Me" aria-label="About Me">
           <div class="nav-icon">
             <i class="fas fa-user" aria-hidden="true"></i>
           </div>
           <span class="sr-only">About Me</span>
         </router-link>
-        
-        <router-link to="/research" @click="closeMenuIfOpen" class="nav-item" title="Research">
-          <div class="nav-icon">
-            <i class="fas fa-flask" aria-hidden="true"></i>
-          </div>
-          <span class="sr-only">Research</span>
-        </router-link>
-        
-        <router-link to="/talks" @click="closeMenuIfOpen" class="nav-item" title="Talks">
+
+        <router-link to="/talks" @click="closeMenuIfOpen" class="nav-item" data-tooltip="Talks" aria-label="Talks">
           <div class="nav-icon">
             <i class="fas fa-microphone" aria-hidden="true"></i>
           </div>
           <span class="sr-only">Talks</span>
         </router-link>
-        
+
         <!-- Home link in the middle with logo -->
-        <router-link to="/" id="home-link" class="home nav-item" @click="closeMenuIfOpen" title="Home">
+        <router-link to="/" id="home-link" class="home nav-item" @click="closeMenuIfOpen" data-tooltip="Home" aria-label="Home">
           <div class="home-icon-container">
             <i class="fas fa-home" aria-hidden="true"></i>
           </div>
           <span class="sr-only">Home</span>
         </router-link>
-        
+
         <!-- Second half of navigation links -->
-        <router-link to="/poetry" @click="closeMenuIfOpen" class="nav-item" title="Poetry">
+        <router-link to="/poetry" @click="closeMenuIfOpen" class="nav-item" data-tooltip="Poetry" aria-label="Poetry">
           <div class="nav-icon">
             <i class="fas fa-feather-alt" aria-hidden="true"></i>
           </div>
           <span class="sr-only">Poetry</span>
         </router-link>
-        
-        <router-link to="/blogs" @click="closeMenuIfOpen" class="nav-item" title="Blogs">
+
+        <router-link to="/blogs" @click="closeMenuIfOpen" class="nav-item" data-tooltip="Blogs" aria-label="Blogs">
           <div class="nav-icon">
             <i class="fas fa-pen-nib" aria-hidden="true"></i>
           </div>
           <span class="sr-only">Blogs</span>
-        </router-link>
-        
-        <router-link to="/life" @click="closeMenuIfOpen" class="nav-item" title="Life">
-          <div class="nav-icon">
-            <i class="fas fa-heart" aria-hidden="true"></i>
-          </div>
-          <span class="sr-only">Life</span>
         </router-link>
       </div>
     </div>
@@ -91,15 +77,12 @@ export default {
       // Map route names to display titles
       const titleMap = {
         'aboutme': 'About Me',
-        'research': 'Research',
-        'ResearchDetails': 'Research',
         'talks': 'Talks',
         'TalkDetails': 'Talks',
         'poetry': 'Poetry',
         'PoetryDetails': 'Poetry',
         'blogs': 'Blogs',
         'BlogDetails': 'Blogs',
-        'life': 'Life',
         'home': 'Home'
       };
       
@@ -418,28 +401,21 @@ export default {
 }
 
 /* Add icon styles for each link */
+/* 1: About Me, 2: Talks, 3: Home, 4: Poetry, 5: Blogs */
 .mlnomadpy-navbar a.nav-item:nth-child(1) i {
   color: #77aaff;
 }
 
 .mlnomadpy-navbar a.nav-item:nth-child(2) i {
-  color: #66ddbb;
-}
-
-.mlnomadpy-navbar a.nav-item:nth-child(3) i {
   color: #ff88aa;
 }
 
-.mlnomadpy-navbar a.nav-item:nth-child(5) i {
+.mlnomadpy-navbar a.nav-item:nth-child(4) i {
   color: #ddaaff;
 }
 
-.mlnomadpy-navbar a.nav-item:nth-child(6) i {
+.mlnomadpy-navbar a.nav-item:nth-child(5) i {
   color: #ffcc66;
-}
-
-.mlnomadpy-navbar a.nav-item:nth-child(7) i {
-  color: #ff6677;
 }
 
 /* Scroll progress indicator */
@@ -581,23 +557,44 @@ export default {
   outline-offset: 2px;
 }
 
-/* Custom tooltip styling for browsers that don't support title attribute well */
-.mlnomadpy-navbar a.nav-item:hover::before {
-  content: attr(title);
+/* Custom tooltip using data-tooltip (avoids double tooltip from native title) */
+.mlnomadpy-navbar a.nav-item[data-tooltip]:hover::before {
+  content: attr(data-tooltip);
   position: absolute;
   bottom: -30px;
   left: 50%;
   transform: translateX(-50%);
-  background-color: rgba(0, 0, 0, 0.8);
+  background-color: rgba(0, 0, 0, 0.85);
   color: white;
   padding: 5px 10px;
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 12px;
   white-space: nowrap;
   pointer-events: none;
   opacity: 0;
   animation: fadeIn 0.3s forwards;
   z-index: 1001;
+  font-family: var(--font-body, 'Space Mono', monospace);
+}
+
+/* Active dot indicator for mobile */
+@media (max-width: 768px) {
+  .mlnomadpy-navbar .router-link-active.nav-item:not(.home) .nav-icon::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--accent-color, rgb(244, 165, 96));
+    box-shadow: 0 0 6px rgba(244, 165, 96, 0.5);
+  }
+
+  .mlnomadpy-navbar .nav-icon {
+    position: relative;
+  }
 }
 
 @keyframes fadeIn {
@@ -627,7 +624,7 @@ export default {
     box-shadow: 0 2px 15px rgba(0, 0, 0, 0.4);
   }
   
-  .mlnomadpy-navbar a.nav-item:hover::before {
+  .mlnomadpy-navbar a.nav-item[data-tooltip]:hover::before {
     background-color: rgba(30, 30, 30, 0.95);
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
   }

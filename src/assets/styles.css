@@ -1,12 +1,9 @@
-/* Add import for new font in head section of HTML */
-@import url("https://fonts.googleapis.com/css?family=Orbitron&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Space+Mono&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+/* Fonts are loaded via <link> tags in index.html for better performance */
 
 :root {
   --font-heading: 'Orbitron', sans-serif;
   --font-body: 'Space Mono', monospace;
-  --primary-bg: #0a0a0a;
+  --primary-bg: #412c0f;
   --primary-text: #ffffff;
   --secondary-text: #cccccc;
   --accent-color: #f4a560;
@@ -14,6 +11,18 @@
   --glass-bg: rgba(255, 255, 255, 0.05);
   --glass-border: rgba(255, 255, 255, 0.1);
   --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+}
+
+/* Card design tokens */
+:root {
+  --card-radius: 12px;
+  --card-bg: linear-gradient(135deg, rgba(30, 30, 30, 0.6), rgba(20, 20, 20, 0.8));
+  --card-border: 1px solid rgba(244, 165, 96, 0.1);
+  --card-border-hover: rgba(244, 165, 96, 0.3);
+  --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  --card-shadow-hover: 0 15px 35px rgba(0, 0, 0, 0.25);
+  --card-hover-lift: -6px;
+  --card-transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 body {
@@ -149,23 +158,7 @@ p img {
   transform: translateY(-2px);
 }
 
-/* Scrollbar */
-::-webkit-scrollbar {
-  width: 10px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--accent-color);
-  border-radius: 5px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--accent-color-hover);
-}
-
-::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.2);
-}
+/* Scrollbar styles defined in App.vue global styles */
 
 /* Section Styles */
 .section {
@@ -223,11 +216,9 @@ p img {
 */
 
 #aboutme,
-#life,
 #poetry,
 #blogs,
-#talks,
-#research {
+#talks {
   background-color: rgba(65, 44, 15, 0.95);
   /* High opacity for readability */
   backdrop-filter: blur(10px);

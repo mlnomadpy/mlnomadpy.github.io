@@ -164,36 +164,6 @@
             </transition>
           </div>
 
-          <!-- Skills -->
-          <div v-else-if="activeTab === 'skills'" class="tab-panel" key="skills">
-            <div class="skills-section">
-              <div class="section-header">
-                <i class="fas fa-code"></i>
-                <h2>Skills & Technologies</h2>
-              </div>
-              <div class="skill-groups">
-                <div v-for="group in skillGroups" :key="group.title" class="skill-group">
-                  <div class="skill-group-header">
-                    <i :class="group.icon" aria-hidden="true"></i>
-                    <h3>{{ group.title }}</h3>
-                  </div>
-                  <div class="skill-bars">
-                    <div v-for="(skill, i) in group.skills" :key="skill.name" class="skill-bar-item"
-                         :style="{ '--delay': i * 0.08 + 's' }">
-                      <div class="skill-bar-header">
-                        <span class="skill-name">{{ skill.name }}</span>
-                        <span class="skill-pct">{{ skill.level }}%</span>
-                      </div>
-                      <div class="skill-bar-track">
-                        <div class="skill-bar-fill" :style="{ '--target-width': skill.level + '%' }"></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
           <!-- Certifications -->
           <div v-else-if="activeTab === 'certifications'" class="tab-panel" key="certifications">
             <transition name="fade" mode="out-in">
@@ -252,7 +222,6 @@ import DetailModal from '@/components/about/DetailModal.vue';
 import {
   tabs,
   storyItems,
-  skillGroups,
   certificates,
   educationItems,
   awardItems,
@@ -286,7 +255,7 @@ export default {
     });
 
     return {
-      tabs, storyItems, skillGroups, certificates,
+      tabs, storyItems, certificates,
       educationItems, awardItems, experienceItems,
       profileData, statsHighlights
     }
@@ -540,86 +509,6 @@ export default {
   margin: 0;
 }
 
-/* === Skills === */
-.skills-section { width: 100%; }
-
-.skill-groups {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1.5rem;
-}
-
-.skill-group {
-  background: rgba(255, 255, 255, 0.02);
-  border-radius: 16px;
-  padding: 1.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.skill-group-header {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  margin-bottom: 1.25rem;
-}
-
-.skill-group-header i {
-  font-size: 1.1rem;
-  color: var(--accent-color, rgb(244, 165, 96));
-}
-
-.skill-group-header h3 {
-  margin: 0;
-  font-size: 1.05rem;
-  color: rgba(255, 255, 255, 0.9);
-  font-weight: 600;
-}
-
-.skill-bars {
-  display: flex;
-  flex-direction: column;
-  gap: 0.9rem;
-}
-
-.skill-bar-header {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 0.3rem;
-}
-
-.skill-name {
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.75);
-}
-
-.skill-pct {
-  font-size: 0.75rem;
-  color: var(--accent-color, rgb(244, 165, 96));
-  font-weight: 600;
-  font-family: 'Space Mono', monospace;
-}
-
-.skill-bar-track {
-  width: 100%;
-  height: 5px;
-  background: rgba(255, 255, 255, 0.06);
-  border-radius: 100px;
-  overflow: hidden;
-}
-
-.skill-bar-fill {
-  height: 100%;
-  width: 0;
-  background: linear-gradient(90deg, var(--accent-color, rgb(244, 165, 96)), rgba(244, 165, 96, 0.5));
-  border-radius: 100px;
-  animation: fillBar 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-  animation-delay: var(--delay, 0s);
-}
-
-@keyframes fillBar {
-  to { width: var(--target-width); }
-}
-
 /* === View Toggle === */
 .view-toggle-btn {
   background: rgba(255, 255, 255, 0.06);
@@ -696,8 +585,6 @@ export default {
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
 
   .stat-value { font-size: 1.5rem; }
-
-  .skill-groups { grid-template-columns: 1fr; }
 
   .section-header h2 { font-size: 1.3rem; }
   .section-header i { font-size: 1.3rem; }

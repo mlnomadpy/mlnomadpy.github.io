@@ -2,9 +2,9 @@
   <div id="app">
     <a href="#main-content" class="skip-link">Skip to content</a>
     <MainNavbar />
-    <main id="main-content">
+    <main id="main-content" tabindex="-1">
       <router-view v-slot="{ Component }">
-        <transition name="fade" mode="out-in">
+        <transition :name="transitionName" mode="out-in">
           <component :is="Component" />
         </transition>
       </router-view>
@@ -13,6 +13,7 @@
 </template>
 
 <script>
+import { ref } from 'vue'
 import MainNavbar from '@/components/Navbar.vue'
 import { useHead } from '@vueuse/head'
 
@@ -22,6 +23,8 @@ export default {
     MainNavbar
   },
   setup() {
+    const transitionName = ref('fade')
+
     useHead({
       title: 'Taha Bouhsine | ML Researcher & Google Developer Expert',
       titleTemplate: '%s | MLNomadpy',
@@ -30,7 +33,7 @@ export default {
         { name: 'keywords', content: 'Machine Learning, Artificial Intelligence, AI Research, Taha Bouhsine, Google Developer Expert, MLNomads, Neural Networks, Interpretable AI' },
         { name: 'author', content: 'Taha Bouhsine' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1.0, maximum-scale=5.0' },
-        
+
         // Open Graph
         { property: 'og:title', content: 'Taha Bouhsine | ML Researcher & Google Developer Expert' },
         { property: 'og:site_name', content: 'MLNomadpy' },
@@ -38,7 +41,7 @@ export default {
         { property: 'og:image', content: 'https://i.imgur.com/ScjU4Xr.png' },
         { property: 'og:url', content: 'https://www.tahabouhsine.com/' },
         { property: 'og:type', content: 'website' },
-        
+
         // Twitter Card
         { property: 'twitter:title', content: 'Taha Bouhsine | ML Researcher & Google Developer Expert' },
         { property: 'twitter:description', content: 'Machine Learning Researcher & Engineer, Google Developer Expert in AI/ML, and CEO of MLNomads.' },
@@ -49,15 +52,32 @@ export default {
         { rel: 'canonical', href: 'https://www.tahabouhsine.com/' }
       ]
     })
+
+    return { transitionName }
   },
   mounted() {
-    // Track page views with a simple analytics approach
+    this.$router.beforeEach((to, from) => {
+      const toIndex = to.meta?.index ?? 0
+      const fromIndex = from.meta?.index ?? 0
+      const toDetail = to.meta?.isDetail
+      const fromDetail = from.meta?.isDetail
+
+      // Detail page transitions (zoom in/out)
+      if (toDetail || fromDetail) {
+        this.transitionName = 'scale-fade'
+      }
+      // Lateral navigation between sibling pages
+      else if (toIndex > fromIndex) {
+        this.transitionName = 'slide-fade-left'
+      } else if (toIndex < fromIndex) {
+        this.transitionName = 'slide-fade-right'
+      } else {
+        this.transitionName = 'fade'
+      }
+    })
+
     this.$router.afterEach((to) => {
       try {
-        // You can replace this with a proper analytics setup later
-        console.log(`Page visited: ${to.path}`);
-        
-        // Update canonical URL on page change
         const canonicalLink = document.querySelector('link[rel="canonical"]');
         if (canonicalLink) {
           canonicalLink.href = `https://www.tahabouhsine.com${to.path}`;
@@ -418,14 +438,5 @@ p, li, span, a, button, input, textarea, select, label {
   /* Already dark themed, but could add additional customizations */
 }
 
-/* Page Transition */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
+/* Page transitions defined in animations.css */
 </style> 

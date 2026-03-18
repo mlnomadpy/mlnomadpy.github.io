@@ -127,12 +127,15 @@
 
             <!-- Grid View -->
             <div v-else-if="paginatedTalks.length > 0" class="talks-grid" key="grid">
-              <TalkCard
-                v-for="talk in paginatedTalks"
-                :key="talk.id"
-                :talk="talk"
-                @select="openDetail"
-              />
+              <TransitionGroup name="card-stagger" appear>
+                <TalkCard
+                  v-for="(talk, index) in paginatedTalks"
+                  :key="talk.id"
+                  :talk="talk"
+                  @select="openDetail"
+                  :style="{ transitionDelay: `${Math.min(index * 60, 600)}ms` }"
+                />
+              </TransitionGroup>
             </div>
             
             <div v-else class="no-talks-found" role="status" key="no-results">
@@ -353,7 +356,7 @@ export default {
 </script>
 
 <style scoped>
-@import '@/components/research/responsive-utils.css';
+@import '@/assets/styles/responsive-utils.css';
 
 .view-container {
   height: 100%;

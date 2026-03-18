@@ -40,10 +40,10 @@ const mobileMenuOpen = ref(false)
 
 const navLinks = [
   { name: 'Home', path: '/' },
-  { name: 'About', path: '/about' },
-  { name: 'Research', path: '/research' },
+  { name: 'About', path: '/aboutme' },
   { name: 'Talks', path: '/talks' },
-  { name: 'Life', path: '/life' },
+  { name: 'Poetry', path: '/poetry' },
+  { name: 'Blogs', path: '/blogs' },
 ]
 
 const toggleMobileMenu = () => {
