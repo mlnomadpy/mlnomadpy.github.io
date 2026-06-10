@@ -23,6 +23,7 @@ export default defineConfig({
       const { default: generateSitemap } = await import('vite-ssg-sitemap')
       generateSitemap({
         hostname: 'https://www.tahabouhsine.com',
+        exclude: ['/404'], // 404 page is pre-rendered for GitHub Pages but must not be indexed
         readable: true /* consistent indentation */
       })
     },
