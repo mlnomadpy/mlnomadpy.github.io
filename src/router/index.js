@@ -42,19 +42,6 @@ export const routes = [
     meta: { index: 3, isDetail: true }
   },
   {
-    path: '/blogs',
-    name: 'blogs',
-    component: () => import('../views/BlogsView.vue'),
-    meta: { index: 4 }
-  },
-  {
-    path: '/blogs/:id',
-    name: 'BlogDetails',
-    component: () => import('../views/BlogDetailsView.vue'),
-    props: true,
-    meta: { index: 4, isDetail: true }
-  },
-  {
     // Concrete route so vite-ssg pre-renders dist/404.html.
     // GitHub Pages serves this for any unmatched URL (deep links, typos).
     path: '/404',
