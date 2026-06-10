@@ -1,0 +1,116 @@
+/* ============================================================
+   Desert Obsidian — single source of truth for design tokens.
+   Imported first (main.js) so every component inherits it.
+   Legacy variable names are kept as aliases so existing
+   components reskin automatically.
+   ============================================================ */
+
+:root {
+  /* --- Warm-dark neutral ramp --- */
+  --bg:          #0E0B08;   /* page background (warm near-black) */
+  --bg-elev:     #16110B;   /* +1 elevation: cards               */
+  --bg-elev-2:   #1F1810;   /* +2 elevation: modals, popovers    */
+  --wash:        rgba(240, 178, 101, 0.05); /* hover/selection tint */
+
+  /* --- Text ramp (warm off-white, never pure #fff) --- */
+  --fg:          #F0EBE3;   /* primary   — 16.5:1 AA */
+  --fg-dim:      #B3A896;   /* secondary —  8.4:1 AA */
+  --fg-mute:     #867B68;   /* micro     —  4.7:1 AA */
+
+  /* --- Brand --- */
+  --accent:        #F0B265; /* sand — CTAs, links, emphasis (10.5:1) */
+  --accent-hover:  #E0A050; /* darker sand for hover                 */
+  --accent-2:      #46C2A8; /* oasis teal — secondary signal (8.9:1) */
+  --accent-3:      #E07A4D; /* clay — highlights / Arabic (6.6:1)    */
+  --on-accent:     #1A1206; /* dark text on accent fills (9.9:1)     */
+
+  /* --- Lines & glow --- */
+  --line:        rgba(240, 178, 101, 0.14);
+  --line-strong: rgba(240, 178, 101, 0.38);
+  --glow:        0 0 0 1px rgba(240, 178, 101, 0.28),
+                 0 20px 50px -18px rgba(240, 178, 101, 0.18);
+  --shadow-card: 0 10px 30px rgba(0, 0, 0, 0.35);
+
+  /* --- Glass (elevated translucent surfaces) --- */
+  --glass-bg:     rgba(255, 255, 255, 0.04);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.37);
+
+  /* --- Typography --- */
+  --font-display: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --font-body:    "Inter", system-ui, sans-serif;
+  --font-mono:    "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+  --font-arabic:  "Amiri", "Scheherazade New", serif;
+
+  --t-display: clamp(2.4rem, 6vw, 4rem);
+  --t-h1:      clamp(2rem, 4.5vw, 3rem);
+  --t-h2:      clamp(1.5rem, 3vw, 2.1rem);
+  --t-h3:      1.05rem;
+  --t-body:    1rem;
+  --t-sub:     0.85rem;
+  --t-label:   0.72rem;
+
+  /* --- Motion --- */
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --dur-fast: 150ms;
+  --dur:      250ms;
+
+  /* --- Radius --- */
+  --radius:    14px;
+  --radius-sm: 10px;
+  --radius-pill: 999px;
+
+  /* ============================================================
+     Legacy aliases — map old token names onto the new palette
+     so pre-existing component styles inherit the redesign.
+     ============================================================ */
+  --primary-bg:        var(--bg);
+  --primary-bg-dark:   var(--bg);
+  --primary-text:      var(--fg);
+  --secondary-text:    var(--fg-dim);
+  --accent-color:      var(--accent);
+  --accent-color-hover:var(--accent-hover);
+  --font-heading:      var(--font-display);
+  /* --font-body already defined above (Inter) */
+  --bg-dark:           var(--bg);
+  --text-light:        var(--fg);
+  --text-muted:        var(--fg-mute);
+  --border-color:      var(--line);
+  --card-bg:           var(--bg-elev);
+}
+
+/* Atmospheric background layers — apply to a full-viewport element.
+   Cheap, GPU-light replacement for the hero video. */
+.atmosphere::before,
+.atmosphere::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Faint grid, masked to fade at the edges */
+.atmosphere::before {
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 64px 64px;
+  opacity: 0.5;
+  -webkit-mask-image: radial-gradient(ellipse at center, #000 0%, transparent 72%);
+          mask-image: radial-gradient(ellipse at center, #000 0%, transparent 72%);
+}
+
+/* Two ultra-low-opacity radial vignettes (sand TL, teal BR) */
+.atmosphere::after {
+  background:
+    radial-gradient(40% 50% at 12% 0%, rgba(240, 178, 101, 0.10), transparent 70%),
+    radial-gradient(45% 55% at 100% 100%, rgba(70, 194, 168, 0.08), transparent 70%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

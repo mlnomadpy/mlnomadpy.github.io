@@ -95,9 +95,9 @@ export default {
 
 /* Active — highlighted pill */
 .tab-btn.active {
-  color: var(--accent-color, rgb(244, 165, 96));
-  background: rgba(244, 165, 96, 0.1);
-  border-color: rgba(244, 165, 96, 0.2);
+  color: var(--accent-color, rgb(240, 178, 101));
+  background: rgba(240, 178, 101, 0.1);
+  border-color: rgba(240, 178, 101, 0.2);
 }
 
 /* Focus */

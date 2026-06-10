@@ -123,7 +123,7 @@ export default {
   overflow: hidden;
   border-radius: 12px;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(244, 165, 96, 0.15);
+  border: 1px solid rgba(240, 178, 101, 0.15);
   background: rgba(20, 20, 20, 0.3);
   min-height: 0; /* Important for flex child */
 }
@@ -189,7 +189,7 @@ export default {
 }
 
 .scene-content h3 {
-  color: var(--accent-color, rgb(244, 165, 96));
+  color: var(--accent-color, rgb(240, 178, 101));
   font-size: 2.5rem;
   margin-bottom: 2rem;
   font-weight: 700;
@@ -213,10 +213,10 @@ export default {
 .scene-quote {
   font-style: italic;
   font-size: 1.2rem;
-  color: var(--accent-color, rgb(244, 165, 96));
+  color: var(--accent-color, rgb(240, 178, 101));
   margin: 2rem 0;
   padding: 1.5rem;
-  border-left: 4px solid var(--accent-color, rgb(244, 165, 96));
+  border-left: 4px solid var(--accent-color, rgb(240, 178, 101));
   background: rgba(0, 0, 0, 0.3);
   border-radius: 0 10px 10px 0;
   max-width: 800px;
@@ -255,7 +255,7 @@ export default {
 }
 
 .story-nav-btn:hover {
-  background: var(--accent-color, rgb(244, 165, 96));
+  background: var(--accent-color, rgb(240, 178, 101));
   color: #000;
   transform: scale(1.1);
 }
@@ -298,9 +298,9 @@ export default {
 }
 
 .indicator-dot.active {
-  background: var(--accent-color, rgb(244, 165, 96));
+  background: var(--accent-color, rgb(240, 178, 101));
   transform: scale(1.4);
-  box-shadow: 0 0 10px rgba(244, 165, 96, 0.5);
+  box-shadow: 0 0 10px rgba(240, 178, 101, 0.5);
 }
 
 /* Responsive */

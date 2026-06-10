@@ -74,7 +74,7 @@ export default {
           x: Math.random() * this.width,
           y: Math.random() * this.height,
           radius: Math.random() * 2 + 1,
-          color: `rgba(244, 165, 96, ${(Math.random() * 0.5 + 0.25).toFixed(2)})`,
+          color: `rgba(240, 178, 101, ${(Math.random() * 0.5 + 0.25).toFixed(2)})`,
           speedX: Math.random() * 2 - 1,
           speedY: Math.random() * 2 - 1,
           lifespan: Math.random() * 100 + 100,

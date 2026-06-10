@@ -42,11 +42,11 @@ export default {
 }
 
 .social-link:hover {
-  color: rgb(244, 165, 96);
+  color: rgb(240, 178, 101);
   background-color: rgba(255, 255, 255, 0.2);
   transform: translateY(-3px);
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-  border-color: rgba(244, 165, 96, 0.4);
+  border-color: rgba(240, 178, 101, 0.4);
 }
 
 @media (max-width: 992px) {

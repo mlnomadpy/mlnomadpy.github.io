@@ -51,7 +51,7 @@ export default {
 
 .stat-item {
   background: rgba(30, 30, 30, 0.6);
-  border: 1px solid rgba(244, 165, 96, 0.3);
+  border: 1px solid rgba(240, 178, 101, 0.3);
   border-radius: 10px;
   padding: 15px;
   text-align: center;

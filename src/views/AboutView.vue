@@ -3,7 +3,7 @@
     <section class="about-hero">
       <div class="container">
         <h1 class="page-title">About Me</h1>
-        <p class="page-subtitle">ML Researcher, Engineer, and Innovator</p>
+        <p class="page-subtitle">AI Researcher, Engineer, and Innovator</p>
       </div>
     </section>
 
@@ -47,8 +47,8 @@ const { setPageMeta } = useMeta()
 onMounted(() => {
   setPageMeta({
     title: 'About - Taha Bouhsine',
-    description: 'Learn more about Taha Bouhsine, ML Researcher and Google Developer Expert',
-    keywords: 'Taha Bouhsine, ML Researcher, AI Expert, Google Developer Expert',
+    description: 'Learn more about Taha Bouhsine, AI Researcher and Google Developer Expert',
+    keywords: 'Taha Bouhsine, AI Researcher, AI Expert, Google Developer Expert',
   })
 })
 </script>
@@ -71,7 +71,7 @@ onMounted(() => {
 .page-title {
   font-size: 3rem;
   margin-bottom: 1rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #F0B265 0%, #46C2A8 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

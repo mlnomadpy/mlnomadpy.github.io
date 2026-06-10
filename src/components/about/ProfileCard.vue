@@ -46,7 +46,7 @@ export default {
     },
     tagline: {
       type: String,
-      default: 'ML Researcher & Engineer | Google Developer Expert in AI/ML | CEO of MLNomads'
+      default: 'AI Researcher & Engineer | Google Developer Expert in AI/ML | CEO of MLNomads'
     },
     quote: {
       type: String,
@@ -139,7 +139,7 @@ export default {
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(180deg, rgba(65, 44, 15, 0.8) 0%, rgba(90, 66, 28, 0.2) 100%);
+  background: linear-gradient(180deg, rgba(14, 11, 8, 0.8) 0%, rgba(90, 66, 28, 0.2) 100%);
   z-index: 1;
 }
 
@@ -151,7 +151,7 @@ export default {
   z-index: 3;
   width: 160px;
   height: 160px;
-  border: 4px solid rgba(244, 165, 96, 0.5);
+  border: 4px solid rgba(240, 178, 101, 0.5);
   border-radius: 50%; /* Circle */
   overflow: hidden;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
@@ -160,7 +160,7 @@ export default {
 
 .profile-image:hover {
   transform: translate(-50%, -50%) scale(1.05);
-  border-color: rgba(244, 165, 96, 0.9);
+  border-color: rgba(240, 178, 101, 0.9);
 }
 
 .profile-image img {
@@ -181,7 +181,7 @@ export default {
 
 .profile-name {
   margin: 0;
-  color: var(--accent-color, rgb(244, 165, 96));
+  color: var(--accent-color, rgb(240, 178, 101));
   font-size: 2rem;
   font-weight: 700;
   letter-spacing: -0.5px;
@@ -192,7 +192,7 @@ export default {
   color: #ccc;
   font-size: 1.1rem;
   font-weight: 400;
-  font-family: 'Space Mono', monospace;
+  font-family: 'Inter', sans-serif;
 }
 
 .profile-tagline {
@@ -204,7 +204,7 @@ export default {
 
 .profile-quote {
   background: rgba(255, 165, 0, 0.05);
-  border-left: 2px solid rgba(244, 165, 96, 0.5);
+  border-left: 2px solid rgba(240, 178, 101, 0.5);
   padding: 15px;
   margin: auto 0 20px; /* Push to bottom if space permits, or just margin */
   border-radius: 0 8px 8px 0;
@@ -236,14 +236,14 @@ export default {
   height: 36px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.05);
-  color: rgba(244, 165, 96, 0.8);
+  color: rgba(240, 178, 101, 0.8);
   font-size: 1rem;
   transition: all 0.2s ease;
 }
 
 .social-links a:hover {
-  background: rgba(244, 165, 96, 0.2);
-  color: rgb(244, 165, 96);
+  background: rgba(240, 178, 101, 0.2);
+  color: rgb(240, 178, 101);
   transform: translateY(-3px);
 }
 

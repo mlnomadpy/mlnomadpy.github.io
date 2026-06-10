@@ -221,7 +221,7 @@ export default {
 <style scoped>
 /* Use global CSS variables for consistency */
 .talk-details-view {
-  background-color: var(--primary-bg, #412c0f);
+  background-color: var(--primary-bg, #0E0B08);
   min-height: 100%;
 }
 
@@ -238,7 +238,7 @@ export default {
   overflow-y: auto;
   overflow-x: hidden;
   padding: var(--spacing-lg, 1.5rem);
-  background-color: var(--primary-bg, #412c0f);
+  background-color: var(--primary-bg, #0E0B08);
 }
 
 /* Loading & Error States */
@@ -260,7 +260,7 @@ export default {
 
 .error-container i {
   font-size: 3rem;
-  color: var(--accent-color, rgb(244, 165, 96));
+  color: var(--accent-color, rgb(240, 178, 101));
   opacity: 0.8;
 }
 
@@ -268,7 +268,7 @@ export default {
   width: 50px;
   height: 50px;
   border: 3px solid rgba(255, 255, 255, 0.1);
-  border-top-color: var(--accent-color, rgb(244, 165, 96));
+  border-top-color: var(--accent-color, rgb(240, 178, 101));
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -280,13 +280,13 @@ export default {
 .retry-btn {
   margin-top: var(--spacing-md, 1rem);
   padding: 12px 24px;
-  background: var(--accent-color, rgb(244, 165, 96));
-  color: var(--primary-bg, #412c0f);
+  background: var(--accent-color, rgb(240, 178, 101));
+  color: var(--primary-bg, #0E0B08);
   border: none;
   border-radius: 25px;
   cursor: pointer;
   font-weight: bold;
-  font-family: 'Orbitron', sans-serif;
+  font-family: 'Space Grotesk', sans-serif;
   transition: all 0.3s ease;
   display: inline-flex;
   align-items: center;
@@ -295,13 +295,13 @@ export default {
 
 .retry-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 5px 20px rgba(244, 165, 96, 0.4);
+  box-shadow: 0 5px 20px rgba(240, 178, 101, 0.4);
 }
 
 .back-link {
   display: block;
   margin-top: var(--spacing-md, 1rem);
-  color: var(--accent-color, rgb(244, 165, 96));
+  color: var(--accent-color, rgb(240, 178, 101));
   text-decoration: none;
   transition: opacity 0.3s ease;
 }
@@ -322,7 +322,7 @@ export default {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  color: var(--accent-color, rgb(244, 165, 96));
+  color: var(--accent-color, rgb(240, 178, 101));
   text-decoration: none;
   font-weight: 600;
   margin-bottom: var(--spacing-lg, 1.5rem);
@@ -332,14 +332,14 @@ export default {
   border-radius: 12px;
   backdrop-filter: blur(5px);
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  font-family: 'Orbitron', sans-serif;
+  font-family: 'Space Grotesk', sans-serif;
 }
 
 .back-btn:hover {
   transform: translateX(-8px);
-  background: var(--accent-color, rgb(244, 165, 96));
-  color: var(--primary-bg, #412c0f);
-  box-shadow: 0 5px 20px rgba(244, 165, 96, 0.3);
+  background: var(--accent-color, rgb(240, 178, 101));
+  color: var(--primary-bg, #0E0B08);
+  box-shadow: 0 5px 20px rgba(240, 178, 101, 0.3);
 }
 
 /* Hero Section with Video/Image */
@@ -383,9 +383,9 @@ export default {
   font-size: var(--font-size-h1, 2.5rem);
   margin-bottom: var(--spacing-md, 1rem);
   color: var(--primary-text, white);
-  font-family: 'Orbitron', sans-serif;
+  font-family: 'Space Grotesk', sans-serif;
   line-height: 1.3;
-  background: linear-gradient(135deg, #fff 0%, var(--accent-color, rgb(244, 165, 96)) 100%);
+  background: linear-gradient(135deg, #fff 0%, var(--accent-color, rgb(240, 178, 101)) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -410,7 +410,7 @@ export default {
 }
 
 .meta-info span i {
-  color: var(--accent-color, rgb(244, 165, 96));
+  color: var(--accent-color, rgb(240, 178, 101));
 }
 
 /* Glass Cards */
@@ -427,14 +427,14 @@ export default {
 }
 
 .glass-card:hover {
-  border-color: rgba(244, 165, 96, 0.2);
+  border-color: rgba(240, 178, 101, 0.2);
   box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
 }
 
 .glass-card h2 {
-  color: var(--accent-color, rgb(244, 165, 96));
+  color: var(--accent-color, rgb(240, 178, 101));
   margin-bottom: var(--spacing-lg, 1.5rem);
-  font-family: 'Orbitron', sans-serif;
+  font-family: 'Space Grotesk', sans-serif;
   font-size: var(--font-size-h3, 1.5rem);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   padding-bottom: var(--spacing-md, 1rem);
@@ -447,7 +447,7 @@ export default {
   content: '';
   width: 4px;
   height: 24px;
-  background: var(--accent-color, rgb(244, 165, 96));
+  background: var(--accent-color, rgb(240, 178, 101));
   border-radius: 2px;
 }
 
@@ -463,14 +463,14 @@ export default {
 }
 
 .description-text :deep(a) {
-  color: var(--accent-color, rgb(244, 165, 96));
+  color: var(--accent-color, rgb(240, 178, 101));
   text-decoration: none;
   border-bottom: 1px solid transparent;
   transition: border-color 0.3s ease;
 }
 
 .description-text :deep(a:hover) {
-  border-bottom-color: var(--accent-color, rgb(244, 165, 96));
+  border-bottom-color: var(--accent-color, rgb(240, 178, 101));
 }
 
 /* Resource Links Grid */
@@ -492,7 +492,7 @@ export default {
   color: var(--primary-text, white);
   text-decoration: none;
   font-weight: 600;
-  font-family: 'Orbitron', sans-serif;
+  font-family: 'Space Grotesk', sans-serif;
   font-size: 0.9rem;
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   position: relative;
@@ -506,7 +506,7 @@ export default {
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, var(--accent-color, rgb(244, 165, 96)) 0%, #e67e22 100%);
+  background: linear-gradient(135deg, var(--accent-color, rgb(240, 178, 101)) 0%, #e67e22 100%);
   opacity: 0;
   transition: opacity 0.3s ease;
   z-index: 0;
@@ -524,8 +524,8 @@ export default {
 
 .resource-link:hover {
   transform: translateY(-4px);
-  border-color: var(--accent-color, rgb(244, 165, 96));
-  box-shadow: 0 10px 30px rgba(244, 165, 96, 0.2);
+  border-color: var(--accent-color, rgb(240, 178, 101));
+  box-shadow: 0 10px 30px rgba(240, 178, 101, 0.2);
 }
 
 .resource-link:hover::before {
@@ -533,7 +533,7 @@ export default {
 }
 
 .resource-link:hover {
-  color: var(--primary-bg, #412c0f);
+  color: var(--primary-bg, #0E0B08);
 }
 
 .resource-link:hover i {

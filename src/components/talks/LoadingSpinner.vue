@@ -27,7 +27,7 @@ export default {
 }
 
 .loader {
-  border: 5px solid rgba(244, 165, 96, 0.2);
+  border: 5px solid rgba(240, 178, 101, 0.2);
   border-radius: 50%;
   border-top: 5px solid var(--accent-color);
   width: 50px;

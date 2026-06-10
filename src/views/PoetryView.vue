@@ -252,7 +252,7 @@ export default {
 .search-input:focus {
   outline: none;
   border-color: var(--accent-color);
-  box-shadow: 0 0 15px rgba(244, 165, 96, 0.2);
+  box-shadow: 0 0 15px rgba(240, 178, 101, 0.2);
 }
 
 .search-icon {
@@ -415,7 +415,7 @@ export default {
 
 .reset-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(244, 165, 96, 0.3);
+  box-shadow: 0 5px 15px rgba(240, 178, 101, 0.3);
 }
 
 /* Transitions */

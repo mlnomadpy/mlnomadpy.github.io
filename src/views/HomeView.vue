@@ -19,7 +19,7 @@ export default {
       meta: [
         {
           name: 'description',
-          content: 'Portfolio of Taha Bouhsine (MLNomadpy) - AI/ML Researcher & Engineer specializing in Deep Learning, Computer Vision, and Interpretable AI.'
+          content: 'Portfolio of Taha Bouhsine (MLNomadpy) - AI Researcher & Engineer specializing in Deep Learning, Computer Vision, and Interpretable AI.'
         }
       ]
     })

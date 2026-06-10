@@ -237,7 +237,7 @@ export default {
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
   position: relative;
   animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  border: 1px solid rgba(244, 165, 96, 0.2);
+  border: 1px solid rgba(240, 178, 101, 0.2);
 }
 
 @keyframes slideUp {
@@ -253,7 +253,7 @@ export default {
 
 .talk-details-header {
   padding: 30px 30px 20px;
-  border-bottom: 1px solid rgba(244, 165, 96, 0.2);
+  border-bottom: 1px solid rgba(240, 178, 101, 0.2);
 }
 
 .talk-details-content {
@@ -264,8 +264,8 @@ export default {
   position: absolute;
   top: 20px;
   right: 20px;
-  background: rgba(244, 165, 96, 0.1);
-  border: 1px solid rgba(244, 165, 96, 0.3);
+  background: rgba(240, 178, 101, 0.1);
+  border: 1px solid rgba(240, 178, 101, 0.3);
   color: var(--accent-color);
   width: 40px;
   height: 40px;
@@ -320,7 +320,7 @@ export default {
   color: var(--accent-color);
   font-size: 1.4rem;
   margin: 30px 0 15px;
-  border-bottom: 1px solid rgba(244, 165, 96, 0.2);
+  border-bottom: 1px solid rgba(240, 178, 101, 0.2);
   padding-bottom: 10px;
   display: flex;
   align-items: center;
@@ -365,7 +365,7 @@ export default {
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(244, 165, 96, 0.2);
+  border: 1px solid rgba(240, 178, 101, 0.2);
 }
 
 .video-container iframe, .slides-container iframe, .notebook-container iframe {
@@ -395,13 +395,13 @@ export default {
   align-items: center;
   gap: 10px;
   padding: 8px 15px;
-  background: rgba(244, 165, 96, 0.05);
+  background: rgba(240, 178, 101, 0.05);
   border-radius: 6px;
   font-size: 0.95rem;
 }
 
 .resource-link:hover {
-  background: rgba(244, 165, 96, 0.15);
+  background: rgba(240, 178, 101, 0.15);
   transform: translateX(5px);
 }
 
@@ -415,9 +415,9 @@ export default {
 .tags-container .tag {
   padding: 6px 12px;
   font-size: 0.9rem;
-  background: rgba(244, 165, 96, 0.1);
+  background: rgba(240, 178, 101, 0.1);
   color: var(--accent-color);
-  border: 1px solid rgba(244, 165, 96, 0.2);
+  border: 1px solid rgba(240, 178, 101, 0.2);
 }
 
 .talk-image-preview {
@@ -446,12 +446,12 @@ export default {
 .tab-btn {
   padding: 10px 20px;
   background: rgba(30, 30, 30, 0.6);
-  border: 1px solid rgba(244, 165, 96, 0.3);
+  border: 1px solid rgba(240, 178, 101, 0.3);
   color: var(--primary-text);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s ease;
-  font-family: "Space Mono", monospace;
+  font-family: "Inter", sans-serif;
   font-size: 0.95rem;
   display: flex;
   align-items: center;
@@ -463,7 +463,7 @@ export default {
 }
 
 .tab-btn:hover {
-  background: rgba(244, 165, 96, 0.2);
+  background: rgba(240, 178, 101, 0.2);
   border-color: var(--accent-color);
 }
 
@@ -471,7 +471,7 @@ export default {
   background: var(--accent-color);
   color: var(--primary-bg);
   border-color: var(--accent-color);
-  box-shadow: 0 4px 12px rgba(244, 165, 96, 0.3);
+  box-shadow: 0 4px 12px rgba(240, 178, 101, 0.3);
 }
 
 /* Mobile Responsiveness */

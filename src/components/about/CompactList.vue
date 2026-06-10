@@ -72,13 +72,13 @@ export default {
   align-items: center;
   gap: 1rem;
   padding-bottom: 1rem;
-  border-bottom: 2px solid rgba(244, 165, 96, 0.2);
+  border-bottom: 2px solid rgba(240, 178, 101, 0.2);
   margin-bottom: 0.5rem;
 }
 
 .list-header i {
   font-size: 1.8rem;
-  color: var(--accent-color, rgb(244, 165, 96));
+  color: var(--accent-color, rgb(240, 178, 101));
 }
 
 .list-header h2 {
@@ -108,8 +108,8 @@ export default {
 }
 
 .list-item:hover {
-  background: rgba(244, 165, 96, 0.1);
-  border-color: rgba(244, 165, 96, 0.3);
+  background: rgba(240, 178, 101, 0.1);
+  border-color: rgba(240, 178, 101, 0.3);
   transform: translateX(5px);
 }
 
@@ -137,8 +137,8 @@ export default {
 
 .item-date {
   font-size: 0.9rem;
-  color: var(--accent-color, rgb(244, 165, 96));
-  background: rgba(244, 165, 96, 0.1);
+  color: var(--accent-color, rgb(240, 178, 101));
+  background: rgba(240, 178, 101, 0.1);
   padding: 2px 8px;
   border-radius: 12px;
   white-space: nowrap;
@@ -172,7 +172,7 @@ export default {
 }
 
 .list-item:hover .item-arrow {
-  color: var(--accent-color, rgb(244, 165, 96));
+  color: var(--accent-color, rgb(240, 178, 101));
   transform: translateX(3px);
 }
 

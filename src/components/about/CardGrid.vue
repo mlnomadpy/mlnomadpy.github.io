@@ -88,7 +88,7 @@ export default {
   padding: 1.5rem;
   background: rgba(20, 20, 20, 0.3);
   border-radius: 12px;
-  border: 1px solid rgba(244, 165, 96, 0.15);
+  border: 1px solid rgba(240, 178, 101, 0.15);
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
   position: relative;
@@ -102,14 +102,14 @@ export default {
   left: 0;
   width: 5px;
   height: 100%;
-  background: var(--accent-color, rgb(244, 165, 96));
+  background: var(--accent-color, rgb(240, 178, 101));
   opacity: 0.7;
 }
 
 .card-item:hover {
   transform: translateY(-5px);
   background: rgba(30, 30, 30, 0.4);
-  border-color: rgba(244, 165, 96, 0.3);
+  border-color: rgba(240, 178, 101, 0.3);
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
 }
 
@@ -119,16 +119,16 @@ export default {
   justify-content: center;
   min-width: 60px;
   height: 60px;
-  background: rgba(244, 165, 96, 0.1);
+  background: rgba(240, 178, 101, 0.1);
   border-radius: 50%;
-  color: var(--accent-color, rgb(244, 165, 96));
+  color: var(--accent-color, rgb(240, 178, 101));
   font-size: 1.5rem;
-  border: 1px solid rgba(244, 165, 96, 0.3);
+  border: 1px solid rgba(240, 178, 101, 0.3);
   transition: all 0.3s ease;
 }
 
 .card-item:hover .card-icon {
-  background: rgba(244, 165, 96, 0.9);
+  background: rgba(240, 178, 101, 0.9);
   color: #222;
   transform: scale(1.1) rotate(10deg);
 }
@@ -146,7 +146,7 @@ export default {
 }
 
 .card-item:hover .card-title {
-  color: var(--accent-color, rgb(244, 165, 96));
+  color: var(--accent-color, rgb(240, 178, 101));
 }
 
 .card-details {
@@ -156,7 +156,7 @@ export default {
 }
 
 .card-subtitle {
-  color: var(--accent-color, rgb(244, 165, 96));
+  color: var(--accent-color, rgb(240, 178, 101));
   font-weight: 500;
   margin-bottom: 0.5rem;
 }
@@ -176,7 +176,7 @@ export default {
 }
 
 .card-info i {
-  color: rgba(244, 165, 96, 0.7);
+  color: rgba(240, 178, 101, 0.7);
 }
 
 .card-grid-certification .card-item {
@@ -257,12 +257,12 @@ export default {
   gap: 1rem;
   margin-bottom: 0.5rem;
   padding-bottom: 1rem;
-  border-bottom: 2px solid rgba(244, 165, 96, 0.2);
+  border-bottom: 2px solid rgba(240, 178, 101, 0.2);
 }
 
 .grid-section-header i {
   font-size: 1.8rem;
-  color: var(--accent-color, rgb(244, 165, 96));
+  color: var(--accent-color, rgb(240, 178, 101));
 }
 
 .grid-section-header h2 {

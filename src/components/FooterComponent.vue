@@ -4,7 +4,7 @@
       <div class="footer-content">
         <div class="footer-section">
           <h3>Taha Bouhsine</h3>
-          <p>ML Researcher & Google Developer Expert</p>
+          <p>AI Researcher & Google Developer Expert</p>
         </div>
 
         <div class="footer-section">
@@ -82,7 +82,7 @@ const socialLinks = [
 
 .footer-section h3 {
   margin-bottom: 0.5rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #F0B265 0%, #46C2A8 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -114,7 +114,7 @@ const socialLinks = [
 }
 
 .footer-section a:hover {
-  color: #667eea;
+  color: #F0B265;
 }
 
 .social-links {

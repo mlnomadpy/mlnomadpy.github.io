@@ -245,11 +245,11 @@ export default {
   },
   setup() {
     useHead({
-      title: 'About Taha Bouhsine | ML Researcher & Engineer',
+      title: 'About Taha Bouhsine | AI Researcher & Engineer',
       meta: [
         { name: 'description', content: 'Learn about Taha Bouhsine, his story, experience, and skills in Machine Learning and AI.' },
         { property: 'og:title', content: 'About Taha Bouhsine' },
-        { property: 'og:description', content: 'ML Researcher & Engineer | Google Developer Expert in AI/ML' }
+        { property: 'og:description', content: 'AI Researcher & Engineer | Google Developer Expert in AI/ML' }
       ]
     });
 
@@ -349,13 +349,13 @@ export default {
   height: 160px;
   border-radius: 50%;
   overflow: hidden;
-  border: 3px solid rgba(244, 165, 96, 0.4);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 6px rgba(244, 165, 96, 0.08);
+  border: 3px solid rgba(240, 178, 101, 0.4);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 6px rgba(240, 178, 101, 0.08);
   transition: all 0.4s ease;
 }
 
 .profile-avatar:hover {
-  border-color: rgba(244, 165, 96, 0.8);
+  border-color: rgba(240, 178, 101, 0.8);
   transform: scale(1.04);
 }
 
@@ -381,8 +381,8 @@ export default {
 .profile-native {
   margin: 0 0 0.75rem;
   font-size: 1rem;
-  color: var(--accent-color, rgb(244, 165, 96));
-  font-family: 'Space Mono', monospace;
+  color: var(--accent-color, rgb(240, 178, 101));
+  font-family: 'Inter', sans-serif;
   opacity: 0.8;
 }
 
@@ -413,9 +413,9 @@ export default {
 }
 
 .social-btn:hover {
-  background: rgba(244, 165, 96, 0.15);
-  border-color: rgba(244, 165, 96, 0.4);
-  color: var(--accent-color, rgb(244, 165, 96));
+  background: rgba(240, 178, 101, 0.15);
+  border-color: rgba(240, 178, 101, 0.4);
+  color: var(--accent-color, rgb(240, 178, 101));
   transform: translateY(-3px);
 }
 
@@ -423,8 +423,8 @@ export default {
 .profile-quote {
   margin: 0;
   padding: 1.25rem 1.5rem;
-  background: rgba(244, 165, 96, 0.04);
-  border-left: 3px solid rgba(244, 165, 96, 0.5);
+  background: rgba(240, 178, 101, 0.04);
+  border-left: 3px solid rgba(240, 178, 101, 0.5);
   border-radius: 0 12px 12px 0;
   font-style: italic;
   font-size: 0.95rem;
@@ -434,7 +434,7 @@ export default {
 }
 
 .quote-icon {
-  color: rgba(244, 165, 96, 0.3);
+  color: rgba(240, 178, 101, 0.3);
   font-size: 0.9rem;
   margin-right: 8px;
 }
@@ -460,14 +460,14 @@ export default {
 }
 
 .stat-card:hover {
-  background: rgba(244, 165, 96, 0.06);
-  border-color: rgba(244, 165, 96, 0.2);
+  background: rgba(240, 178, 101, 0.06);
+  border-color: rgba(240, 178, 101, 0.2);
   transform: translateY(-4px);
 }
 
 .stat-card i {
   font-size: 1.3rem;
-  color: var(--accent-color, rgb(244, 165, 96));
+  color: var(--accent-color, rgb(240, 178, 101));
   opacity: 0.7;
 }
 
@@ -475,7 +475,7 @@ export default {
   font-size: 1.8rem;
   font-weight: 700;
   color: #fff;
-  font-family: 'Orbitron', sans-serif;
+  font-family: 'Space Grotesk', sans-serif;
   line-height: 1;
 }
 
@@ -493,12 +493,12 @@ export default {
   gap: 0.75rem;
   padding-bottom: 1rem;
   margin-bottom: 1.5rem;
-  border-bottom: 1px solid rgba(244, 165, 96, 0.15);
+  border-bottom: 1px solid rgba(240, 178, 101, 0.15);
 }
 
 .section-header i {
   font-size: 1.5rem;
-  color: var(--accent-color, rgb(244, 165, 96));
+  color: var(--accent-color, rgb(240, 178, 101));
 }
 
 .section-header h2 {
@@ -524,15 +524,15 @@ export default {
 }
 
 .view-toggle-btn:hover {
-  background: rgba(244, 165, 96, 0.12);
-  color: var(--accent-color, rgb(244, 165, 96));
-  border-color: rgba(244, 165, 96, 0.3);
+  background: rgba(240, 178, 101, 0.12);
+  color: var(--accent-color, rgb(240, 178, 101));
+  border-color: rgba(240, 178, 101, 0.3);
 }
 
 .view-toggle-btn.active {
-  background: rgba(244, 165, 96, 0.1);
-  color: var(--accent-color, rgb(244, 165, 96));
-  border-color: rgba(244, 165, 96, 0.25);
+  background: rgba(240, 178, 101, 0.1);
+  color: var(--accent-color, rgb(240, 178, 101));
+  border-color: rgba(240, 178, 101, 0.25);
 }
 
 .list-controls-bar {
@@ -579,7 +579,7 @@ export default {
 
   .profile-socials { justify-content: center; }
 
-  .profile-quote { text-align: center; border-left: none; border-top: 3px solid rgba(244, 165, 96, 0.5); border-radius: 0 0 12px 12px; }
+  .profile-quote { text-align: center; border-left: none; border-top: 3px solid rgba(240, 178, 101, 0.5); border-radius: 0 0 12px 12px; }
 
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
 

@@ -29,7 +29,7 @@ export default {
 .skeleton-card {
   background: var(--card-bg, linear-gradient(135deg, rgba(30, 30, 30, 0.6), rgba(20, 20, 20, 0.8)));
   border-radius: var(--card-radius, 12px);
-  border: var(--card-border, 1px solid rgba(244, 165, 96, 0.1));
+  border: var(--card-border, 1px solid rgba(240, 178, 101, 0.1));
   overflow: hidden;
 }
 

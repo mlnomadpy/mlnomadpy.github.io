@@ -38,7 +38,7 @@ export default {
     })
 
     useHead(computed(() => ({
-      title: 'Taha Bouhsine | ML Researcher & Google Developer Expert',
+      title: 'Taha Bouhsine | AI Researcher & Google Developer Expert',
       titleTemplate: '%s | MLNomadpy',
       meta: [
         { name: 'description', content: 'Machine Learning Researcher & Engineer, Google Developer Expert in AI/ML, and CEO of MLNomads focusing on representation learning and interpretable AI models.' },
@@ -47,7 +47,7 @@ export default {
         { name: 'viewport', content: 'width=device-width, initial-scale=1.0, maximum-scale=5.0' },
 
         // Open Graph
-        { property: 'og:title', content: 'Taha Bouhsine | ML Researcher & Google Developer Expert' },
+        { property: 'og:title', content: 'Taha Bouhsine | AI Researcher & Google Developer Expert' },
         { property: 'og:site_name', content: 'MLNomadpy' },
         { property: 'og:description', content: 'Machine Learning Researcher & Engineer, Google Developer Expert in AI/ML, and CEO of MLNomads focusing on representation learning and interpretable AI models.' },
         { property: 'og:image', content: 'https://i.imgur.com/ScjU4Xr.png' },
@@ -55,7 +55,7 @@ export default {
         { property: 'og:type', content: 'website' },
 
         // Twitter Card
-        { property: 'twitter:title', content: 'Taha Bouhsine | ML Researcher & Google Developer Expert' },
+        { property: 'twitter:title', content: 'Taha Bouhsine | AI Researcher & Google Developer Expert' },
         { property: 'twitter:description', content: 'Machine Learning Researcher & Engineer, Google Developer Expert in AI/ML, and CEO of MLNomads.' },
         { property: 'twitter:image', content: 'https://i.imgur.com/ScjU4Xr.png' },
         { property: 'twitter:card', content: 'summary_large_image' },
@@ -94,9 +94,8 @@ export default {
 
 <style>
 :root {
-  --primary-bg: #412c0f;
-  --primary-text: white;
-  --accent-color: rgb(244, 165, 96);
+  /* Colors + fonts now come from tokens.css (Desert Obsidian).
+     Only layout/spacing locals remain here. */
   --container-width-desktop: 100%;
   --container-width-tablet: 100%;
   --container-width-mobile: 100%;
@@ -131,9 +130,9 @@ html, body {
 }
 
 body {
-  font-family: 'Orbitron', sans-serif;
-  background-color: var(--primary-bg);
-  color: var(--primary-text);
+  font-family: var(--font-body);
+  background-color: var(--bg);
+  color: var(--fg);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-size-adjust: 100%; /* Prevent browser from auto-adjusting text size */
@@ -150,8 +149,9 @@ body {
 
 main {
   flex: 1;
+  min-height: 0;
   width: 100%;
-  height: calc(100% - 70px); /* Exact navbar height */
+  height: calc(100% - 64px); /* Exact navbar height */
   max-width: 100%;
   position: relative;
   overflow: hidden;
@@ -183,7 +183,7 @@ img, video, canvas {
 /* Firefox scrollbar — applies to ALL scrollable elements */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(244, 165, 96, 0.35) transparent;
+  scrollbar-color: rgba(240, 178, 101, 0.35) transparent;
 }
 
 /* Webkit (Chrome, Safari, Edge) scrollbar — vertical */
@@ -197,16 +197,16 @@ img, video, canvas {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(244, 165, 96, 0.3);
+  background: rgba(240, 178, 101, 0.3);
   border-radius: 100px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(244, 165, 96, 0.6);
+  background: rgba(240, 178, 101, 0.6);
 }
 
 ::-webkit-scrollbar-thumb:active {
-  background: rgba(244, 165, 96, 0.8);
+  background: rgba(240, 178, 101, 0.8);
 }
 
 /* Hide scrollbar until hover (auto-hide effect) */
@@ -235,7 +235,7 @@ img, video, canvas {
 
 .scroll-fade:hover,
 .scroll-fade:focus-within {
-  scrollbar-color: rgba(244, 165, 96, 0.35) transparent;
+  scrollbar-color: rgba(240, 178, 101, 0.35) transparent;
 }
 
 .scroll-fade::-webkit-scrollbar-thumb {
@@ -245,7 +245,7 @@ img, video, canvas {
 
 .scroll-fade:hover::-webkit-scrollbar-thumb,
 .scroll-fade:focus-within::-webkit-scrollbar-thumb {
-  background: rgba(244, 165, 96, 0.3);
+  background: rgba(240, 178, 101, 0.3);
 }
 
 /* Mobile: thinner scrollbar */
