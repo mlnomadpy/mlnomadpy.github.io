@@ -249,8 +249,7 @@ export default {
       meta: [
         { name: 'description', content: 'Learn about Taha Bouhsine, his story, experience, and skills in Machine Learning and AI.' },
         { property: 'og:title', content: 'About Taha Bouhsine' },
-        { property: 'og:description', content: 'ML Researcher & Engineer | Google Developer Expert in AI/ML' },
-        { rel: 'canonical', href: 'https://www.tahabouhsine.com/aboutme' }
+        { property: 'og:description', content: 'ML Researcher & Engineer | Google Developer Expert in AI/ML' }
       ]
     });
 
