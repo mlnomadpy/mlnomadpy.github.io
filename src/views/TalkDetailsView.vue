@@ -87,16 +87,25 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue';
+import { computed } from 'vue';
 import { useHead } from '@vueuse/head';
 import { useRoute } from 'vue-router';
+import talksData from '@/data/talks.json';
 
 const props = defineProps(['id']);
 const route = useRoute();
 
-const talk = ref(null);
-const loading = ref(true);
-const error = ref(null);
+// Resolve the talk synchronously from the static data so it is fully
+// rendered during SSG pre-render (not loaded client-side after hydration).
+const talk = computed(() => {
+  const slug = props.id;
+  return talksData.find(t => {
+    const tSlug = t.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+    return tSlug === slug;
+  }) || null;
+});
+const loading = computed(() => false);
+const error = computed(() => (talk.value ? null : 'Talk not found'));
 
 // Computeds
 const hasResources = computed(() => {
@@ -125,43 +134,6 @@ useHead({
     { property: 'og:image', content: pageImage },
   ]
 });
-
-// Watch
-watch(() => props.id, (newId) => {
-  if (newId) loadTalk();
-}, { immediate: true });
-
-async function loadTalk() {
-  loading.value = true;
-  error.value = null;
-  console.log('Loading talk with ID:', props.id);
-  try {
-    // Import data dynamically
-    const talksData = await import('@/data/talks.json');
-    const talks = talksData.default || talksData;
-    
-    // Match by title slug
-    const slug = props.id;
-    const foundTalk = talks.find(t => {
-      const tSlug = t.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
-      return tSlug === slug;
-    });
-
-    console.log('Found talk:', foundTalk);
-
-    if (foundTalk) {
-      talk.value = foundTalk;
-    } else {
-      error.value = 'Talk not found';
-      console.warn('Talk not found for slug:', slug);
-    }
-  } catch (err) {
-    console.error('Error loading talk:', err);
-    error.value = 'Failed to load talk details';
-  } finally {
-    loading.value = false;
-  }
-}
 
 function extractGistUrl(gistHtml) {
   // Extract URL from gist embed script tag
