@@ -7,7 +7,7 @@
   >
     <div class="nav__inner">
       <!-- Wordmark / home -->
-      <router-link to="/" class="nav__brand" aria-label="Home — Taha Bouhsine">
+      <router-link to="/" class="nav__brand" aria-label="Home, Taha Bouhsine">
         <span class="nav__mark" aria-hidden="true"></span>
         <span class="nav__name">Taha&nbsp;Bouhsine</span>
       </router-link>
