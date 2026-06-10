@@ -121,19 +121,85 @@ const hasDescription = computed(() => {
 });
 
 // SEO
-const pageTitle = computed(() => talk.value ? talk.value.title : 'Talk Details');
-const pageDescription = computed(() => talk.value ? `Talk at ${talk.value.organization}: ${talk.value.title}` : 'Presentation details');
-const pageImage = computed(() => talk.value ? talk.value.thumbnail : null);
+const stripHtml = (html) => (html || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+const youtubeId = (link) => {
+  if (!link || !link.includes('/embed/')) return null;
+  const id = link.split('/embed/')[1].split(/[?&/]/)[0];
+  return id || null;
+};
 
-useHead({
-  title: pageTitle,
-  meta: [
-    { name: 'description', content: pageDescription },
-    { property: 'og:title', content: pageTitle },
-    { property: 'og:description', content: pageDescription },
-    { property: 'og:image', content: pageImage },
-  ]
+const pageTitle = computed(() => (talk.value ? talk.value.title : 'Talk Details'));
+
+// Full, HTML-stripped description (for JSON-LD and og:description).
+const fullDescription = computed(() => {
+  const t = talk.value;
+  if (!t) return 'A talk by Taha Bouhsine on AI and Machine Learning.';
+  const d = stripHtml(t.description);
+  if (d && d !== '.') return d;
+  return `${t.title} — a talk by Taha Bouhsine${t.organization ? ' at ' + t.organization : ''} on AI and Machine Learning.`;
 });
+
+// Search-snippet length cap (~160 chars) for the meta description tag.
+const metaDescription = computed(() => {
+  const d = fullDescription.value;
+  return d.length > 160 ? d.slice(0, 157).trimEnd() + '…' : d;
+});
+
+const pageImage = computed(() => (talk.value ? talk.value.thumbnail : null));
+const talkUrl = computed(() => `https://www.tahabouhsine.com/talks/${props.id}`);
+
+const keywords = computed(() => {
+  const t = talk.value;
+  const base = ['Taha Bouhsine', 'Machine Learning', 'Artificial Intelligence', 'AI talk', 'tech talk'];
+  if (!t) return base.join(', ');
+  const extra = [];
+  if (t.type) extra.push(t.type);
+  if (t.organization) extra.push(t.organization.replace('@', ''));
+  ['TensorFlow', 'Keras', 'JAX', 'NLP', 'Computer Vision', 'GAN', 'LLM', 'Reinforcement Learning', 'MLOps']
+    .forEach(k => { if (t.title.toLowerCase().includes(k.toLowerCase())) extra.push(k); });
+  return [...new Set([...base, ...extra])].join(', ');
+});
+
+// VideoObject structured data — drives video rich results in search.
+const videoLd = computed(() => {
+  const t = talk.value;
+  if (!t) return null;
+  const ld = {
+    '@context': 'https://schema.org',
+    '@type': 'VideoObject',
+    name: t.title,
+    description: fullDescription.value,
+    url: talkUrl.value,
+    author: { '@type': 'Person', name: 'Taha Bouhsine', url: 'https://www.tahabouhsine.com' },
+    publisher: { '@type': 'Person', name: 'Taha Bouhsine', url: 'https://www.tahabouhsine.com' },
+  };
+  if (t.thumbnail) ld.thumbnailUrl = [t.thumbnail];
+  if (t.link) ld.embedUrl = t.link;
+  const yid = youtubeId(t.link);
+  if (yid) ld.contentUrl = `https://www.youtube.com/watch?v=${yid}`;
+  return ld;
+});
+
+useHead(computed(() => ({
+  title: pageTitle.value,
+  meta: [
+    { name: 'description', content: metaDescription.value },
+    { name: 'keywords', content: keywords.value },
+    // Open Graph (og:url/canonical handled globally in App.vue per route)
+    { property: 'og:title', content: pageTitle.value },
+    { property: 'og:description', content: metaDescription.value },
+    { property: 'og:image', content: pageImage.value },
+    { property: 'og:type', content: 'video.other' },
+    // Twitter Card
+    { property: 'twitter:card', content: 'summary_large_image' },
+    { property: 'twitter:title', content: pageTitle.value },
+    { property: 'twitter:description', content: metaDescription.value },
+    { property: 'twitter:image', content: pageImage.value },
+  ],
+  script: videoLd.value
+    ? [{ type: 'application/ld+json', children: JSON.stringify(videoLd.value) }]
+    : [],
+})));
 
 function extractGistUrl(gistHtml) {
   // Extract URL from gist embed script tag
