@@ -21,7 +21,7 @@
       <h1 class="hero__title">Taha Bouhsine</h1>
 
       <p class="hero__sub">
-        I build interpretable, efficient neural networks — researching
+        I build interpretable, efficient neural networks, researching
         representation learning and the geometry of how models understand the world.
       </p>
 

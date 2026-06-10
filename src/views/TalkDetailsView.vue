@@ -136,7 +136,7 @@ const fullDescription = computed(() => {
   if (!t) return 'A talk by Taha Bouhsine on AI and Machine Learning.';
   const d = stripHtml(t.description);
   if (d && d !== '.') return d;
-  return `${t.title} — a talk by Taha Bouhsine${t.organization ? ' at ' + t.organization : ''} on AI and Machine Learning.`;
+  return `${t.title}, a talk by Taha Bouhsine${t.organization ? ' at ' + t.organization : ''} on AI and Machine Learning.`;
 });
 
 // Search-snippet length cap (~160 chars) for the meta description tag.

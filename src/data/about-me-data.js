@@ -13,8 +13,8 @@ export const storyItems = [
     title: 'Origins',
     heading: 'Who am I?',
     backgroundImage: "url('/imgs/bg-origins.jpg'), linear-gradient(135deg, #0E0B08 0%, #5a421c 100%)",
-    content: `<p>I didn't start with a roadmap; I started with curiosity. Growing up in Tamazgha, the world outside felt vast and full of secrets I was desperate to uncover. My journey wasn't about following a set path, but about asking "why" and "how"—a relentless need to peel back the layers of the ordinary to find the wonder underneath.</p>
-    <p>Today, people might define me by my work, but at my core, I am still that curious kid, a "Nomad" navigating the landscapes of life. I am driven not by a need to conquer, but by a need to understand—to build bridges between where I came from and where I am going, and to find meaning in the spaces between.</p>`,
+    content: `<p>I didn't start with a roadmap; I started with curiosity. Growing up in Tamazgha, the world outside felt vast and full of secrets I was desperate to uncover. My journey wasn't about following a set path, but about asking "why" and "how", a relentless need to peel back the layers of the ordinary to find the wonder underneath.</p>
+    <p>Today, people might define me by my work, but at my core, I am still that curious kid, a "Nomad" navigating the landscapes of life. I am driven not by a need to conquer, but by a need to understand, to build bridges between where I came from and where I am going, and to find meaning in the spaces between.</p>`,
     quote: "The titles are just waypoints. The real journey is the relentless pursuit of understanding."
   },
   {
@@ -22,7 +22,7 @@ export const storyItems = [
     title: 'Philosophy',
     heading: 'My Philosophy in a Nutshell',
     backgroundImage: "url('/imgs/bg-philosophy.jpg'), linear-gradient(135deg, #4a3517 0%, #6b4b22 100%)",
-    content: `<p>I learned early on that if you wait for a guide, you might never leave the starting line. Navigating life without a clear map meant I had to build my own compass. Failures weren't setbacks; they were lessons—essential steps in the long walk of personal growth. I made a pact with myself: never fear the stumble, only the refusal to get back up.</p>
+    content: `<p>I learned early on that if you wait for a guide, you might never leave the starting line. Navigating life without a clear map meant I had to build my own compass. Failures weren't setbacks; they were lessons, essential steps in the long walk of personal growth. I made a pact with myself: never fear the stumble, only the refusal to get back up.</p>
     <p>My philosophy is simple: remain perpetually curious. The moment we think we know enough is the moment we stop growing. I don't fear the unknown; I fear the stagnation of comfort. This hunger for knowledge isn't about status or achievement; it's the fuel that sustains my spirit and gives meaning to the struggle.</p>`,
     quote: "I don't fear the unknown. I fear the loss of the hunger to seek the unknown."
   },
@@ -40,16 +40,16 @@ export const storyItems = [
     title: 'Journey',
     heading: 'The Crossroads',
     backgroundImage: "url('/imgs/bg-journey.jpg'), linear-gradient(135deg, #5c4726 0%, #856030 100%)",
-    content: `<p>There was a defining moment where I stood at a crossroads—separated from everything familiar, with nothing but my own resolve. It was terrifying, but it was also the moment I truly became free. I realized that while I couldn't control the circumstances around me, I had absolute dominion over my response.</p>
-    <p>I channeled that energy into moving forward. Every step I took wasn't just a motion—it was an assertion of existence. My journey from the mountains of North Africa to where I stand today is a testament to the power of resilience. I carry my roots with me, proving that where we start does not dictate where we end, and that ambition, when coupled with action, can bridge any divide.</p>`,
+    content: `<p>There was a defining moment where I stood at a crossroads, separated from everything familiar, with nothing but my own resolve. It was terrifying, but it was also the moment I truly became free. I realized that while I couldn't control the circumstances around me, I had absolute dominion over my response.</p>
+    <p>I channeled that energy into moving forward. Every step I took wasn't just a motion; it was an assertion of existence. My journey from the mountains of North Africa to where I stand today is a testament to the power of resilience. I carry my roots with me, proving that where we start does not dictate where we end, and that ambition, when coupled with action, can bridge any divide.</p>`,
     quote: "Every step is a proof that where you start doesn't dictate where you end."
   },
   {
     id: 'path',
     title: 'Path',
-    heading: 'Where to Next? —Iskanmagar',
+    heading: 'Where to Next? Iskanmagar',
     backgroundImage: "url('/imgs/bg-path.jpg'), linear-gradient(135deg, #654f2d 0%, #926a36 100%)",
-    content: `<p>I don't have a fixed coordinate for the destination. The spirit of "Iskanmagar" guides me—the belief that the path itself is the destination. I find myself drawn not to the easy comforts, but to the challenges that scare me. I've learned that fear is often just a compass pointing towards where I need to grow next.</p>
+    content: `<p>I don't have a fixed coordinate for the destination. The spirit of "Iskanmagar" guides me, the belief that the path itself is the destination. I find myself drawn not to the easy comforts, but to the challenges that scare me. I've learned that fear is often just a compass pointing towards where I need to grow next.</p>
     <p>I'm not chasing a static state of happiness, but a dynamic state of evolution. The goal is to keep moving, to keep learning, and to ensure that with every step, I'm staying true to the curiosity that started it all. As long as there are questions left to answer, my journey continues.</p>`,
     quote: "I embrace the fear, for it is the only reliable compass pointing toward growth."
   }
@@ -153,7 +153,7 @@ export const experienceItems = [
     company: 'Azetta.ai',
     title: 'Research Scientist/Co-Founder',
     location: 'San Francisco, CA',
-    period: 'September 2025—Present',
+    period: 'September 2025 - Present',
     sections: [
       {
         title: 'R&D',
@@ -177,7 +177,7 @@ export const experienceItems = [
     company: 'MLNomads L.L.C',
     title: 'Research Scientist/C.E.O',
     location: 'San Francisco, CA',
-    period: 'November 2024—September 2025',
+    period: 'November 2024 - September 2025',
     sections: [
       {
         title: 'R&D',
