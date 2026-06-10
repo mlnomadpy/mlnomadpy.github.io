@@ -24,6 +24,7 @@ export default defineConfig({
       generateSitemap({
         hostname: 'https://www.tahabouhsine.com',
         exclude: ['/404'], // 404 page is pre-rendered for GitHub Pages but must not be indexed
+        generateRobotsTxt: false, // keep public/robots.txt (points at the master sitemap index)
         readable: true /* consistent indentation */
       })
     },

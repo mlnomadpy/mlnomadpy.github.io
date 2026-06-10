@@ -2,5 +2,7 @@
 User-agent: *
 Allow: /
 
-# Sitemap
-Sitemap: https://www.tahabouhsine.com/sitemap.xml 
+# Sitemaps — master index aggregates the portfolio sitemap and the
+# standalone project sitemaps (blog, docs, demos) on the same domain.
+Sitemap: https://www.tahabouhsine.com/sitemap-index.xml
+Sitemap: https://www.tahabouhsine.com/sitemap.xml
