@@ -1,60 +1,38 @@
 <template>
-  <nav 
-    class="mlnomadpy-navbar" 
-    :class="{ 'scrolled': isScrolled }"
+  <nav
+    class="nav"
+    :class="{ 'nav--scrolled': isScrolled }"
     role="navigation"
     aria-label="Main navigation"
   >
-    <!-- Dynamic Section Title -->
-    <div class="section-title-bar" v-if="pageTitle">
-      <span class="current-title">{{ pageTitle }}</span>
+    <div class="nav__inner">
+      <!-- Wordmark / home -->
+      <router-link to="/" class="nav__brand" aria-label="Home — Taha Bouhsine">
+        <span class="nav__mark" aria-hidden="true"></span>
+        <span class="nav__name">Taha&nbsp;Bouhsine</span>
+      </router-link>
+
+      <!-- Primary destinations -->
+      <ul class="nav__links">
+        <li v-for="item in items" :key="item.to">
+          <router-link :to="item.to" class="nav__link">
+            <i :class="item.icon" aria-hidden="true"></i>
+            <span class="nav__label">{{ item.label }}</span>
+          </router-link>
+        </li>
+      </ul>
+
+      <!-- Single CTA -->
+      <a
+        class="nav__cta"
+        href="https://linkedin.com/in/Tahabsn"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <i class="fas fa-paper-plane" aria-hidden="true"></i>
+        <span>Get in touch</span>
+      </a>
     </div>
-
-    <div class="navbar-container">
-      <!-- Navigation links wrapper -->
-      <div id="nav-links" class="nav-links">
-        <!-- First half of navigation links -->
-        <router-link to="/aboutme" @click="closeMenuIfOpen" class="nav-item" data-tooltip="About Me" aria-label="About Me">
-          <div class="nav-icon">
-            <i class="fas fa-user" aria-hidden="true"></i>
-          </div>
-          <span class="sr-only">About Me</span>
-        </router-link>
-
-        <router-link to="/talks" @click="closeMenuIfOpen" class="nav-item" data-tooltip="Talks" aria-label="Talks">
-          <div class="nav-icon">
-            <i class="fas fa-microphone" aria-hidden="true"></i>
-          </div>
-          <span class="sr-only">Talks</span>
-        </router-link>
-
-        <!-- Home link in the middle with logo -->
-        <router-link to="/" id="home-link" class="home nav-item" @click="closeMenuIfOpen" data-tooltip="Home" aria-label="Home">
-          <div class="home-icon-container">
-            <i class="fas fa-home" aria-hidden="true"></i>
-          </div>
-          <span class="sr-only">Home</span>
-        </router-link>
-
-        <!-- Second half of navigation links -->
-        <router-link to="/poetry" @click="closeMenuIfOpen" class="nav-item" data-tooltip="Poetry" aria-label="Poetry">
-          <div class="nav-icon">
-            <i class="fas fa-feather-alt" aria-hidden="true"></i>
-          </div>
-          <span class="sr-only">Poetry</span>
-        </router-link>
-
-        <router-link to="/blogs" @click="closeMenuIfOpen" class="nav-item" data-tooltip="Blogs" aria-label="Blogs">
-          <div class="nav-icon">
-            <i class="fas fa-pen-nib" aria-hidden="true"></i>
-          </div>
-          <span class="sr-only">Blogs</span>
-        </router-link>
-      </div>
-    </div>
-    
-    <!-- Progress indicator for scrolling -->
-    <div class="scroll-progress" :style="{ width: scrollProgress + '%' }"></div>
   </nav>
 </template>
 
@@ -66,567 +44,193 @@ export default {
   data() {
     return {
       isScrolled: false,
-      scrollProgress: 0
-    }
-  },
-  computed: {
-    pageTitle() {
-      const routeName = this.$route.name;
-      const path = this.$route.path;
-      
-      // Map route names to display titles
-      const titleMap = {
-        'aboutme': 'About Me',
-        'talks': 'Talks',
-        'TalkDetails': 'Talks',
-        'poetry': 'Poetry',
-        'PoetryDetails': 'Poetry',
-        'blogs': 'Blogs',
-        'BlogDetails': 'Blogs',
-        'home': 'Home'
-      };
-      
-      return titleMap[routeName] || '';
-    }
+      items: [
+        { to: '/aboutme', label: 'About', icon: 'fas fa-user' },
+        { to: '/talks', label: 'Talks', icon: 'fas fa-microphone' },
+        { to: '/poetry', label: 'Poetry', icon: 'fas fa-feather-alt' },
+        { to: '/blogs', label: 'Blog', icon: 'fas fa-pen-nib' },
+      ],
+    };
   },
   methods: {
-    closeMenuIfOpen() {
-      // Method kept for compatibility but no longer needed
-    },
     handleScroll() {
-      // Track scroll position for navbar styling changes
-      this.isScrolled = window.scrollY > 50;
-      
-      // Calculate scroll progress for progress bar
-      const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
-      const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-      this.scrollProgress = (winScroll / height) * 100;
-    }
+      // Track inner scroll containers (route views) and the window.
+      const inner = document.querySelector('.scrollable-content, .section-content');
+      const y = (inner && inner.scrollTop) || window.scrollY || 0;
+      this.isScrolled = y > 12;
+    },
   },
   created() {
     this._throttledScroll = throttle(this.handleScroll, 100);
   },
   mounted() {
-    window.addEventListener('scroll', this._throttledScroll);
+    window.addEventListener('scroll', this._throttledScroll, true);
   },
   beforeUnmount() {
-    window.removeEventListener('scroll', this._throttledScroll);
-  }
-}
+    window.removeEventListener('scroll', this._throttledScroll, true);
+  },
+};
 </script>
 
 <style scoped>
-/* Base navbar styles - using unique class name to avoid conflicts */
-.mlnomadpy-navbar {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 10px 10px;
-  position: relative;
+.nav {
+  position: sticky;
+  top: 0;
   z-index: 1000;
-  background-color: var(--primary-bg);
-  opacity: 0.95;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  transition: all 0.3s ease;
-  flex-direction: column; /* Keep column for stacking context, but adjust internal layout */
+  height: 64px;
   width: 100%;
-  height: 70px; /* Restore unified height */
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  border-bottom: 1px solid var(--line);
+  transition: border-color var(--dur) var(--ease),
+              background var(--dur) var(--ease);
 }
 
-/* Title Bar - Desktop: Absolute Left */
-.section-title-bar {
-  position: absolute;
-  left: 30px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: auto;
-  text-align: left;
-  margin: 0;
-  z-index: 1002;
-  pointer-events: none;
-  opacity: 0;
-  animation: fadeIn 0.5s 0.2s forwards; /* Slight delay */
+.nav--scrolled {
+  border-bottom-color: var(--line-strong);
+  background: color-mix(in srgb, var(--bg) 92%, transparent);
+}
+
+.nav__inner {
+  max-width: 1180px;
+  height: 100%;
+  margin: 0 auto;
+  padding: 0 clamp(16px, 4vw, 32px);
   display: flex;
   align-items: center;
+  gap: 16px;
 }
 
-.current-title {
-  font-family: 'Orbitron', sans-serif;
-  font-size: 1rem; /* Smaller, subtler */
-  color: var(--accent-color, rgb(244, 165, 96));
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  font-weight: 700;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+/* --- Brand --- */
+.nav__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--fg);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.98rem;
+  letter-spacing: -0.01em;
   white-space: nowrap;
-  background: rgba(0,0,0,0.3); /* Legibility bg */
-  padding: 4px 10px;
-  border-radius: 4px;
-  border-left: 2px solid var(--accent-color);
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+.nav__mark {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px rgba(240, 178, 101, 0.18),
+              0 0 14px rgba(240, 178, 101, 0.5);
+  flex: none;
+  transition: transform var(--dur) var(--ease);
 }
 
-@media (max-width: 1100px) {
-  /* On medium screens, title might overlap icons. Move to top or hide? 
-     Let's move to top center nicely overlapping or just stack tightly */
-  
-  .mlnomadpy-navbar {
-     height: auto;
-     min-height: 70px;
-     padding-top: 25px; /* Make space for title on top */
-  }
+.nav__brand:hover .nav__mark { transform: scale(1.18); }
 
-  .section-title-bar {
-    position: absolute;
-    left: 50%;
-    top: 5px;
-    transform: translateX(-50%);
-    width: auto;
-    text-align: center;
-  }
-  
-  .current-title {
-    font-size: 0.75rem;
-    padding: 2px 8px;
-    background: none;
-    border: none;
-    border-bottom: 2px solid var(--accent-color);
-  }
-}
-
-@media (max-width: 480px) {
-   .mlnomadpy-navbar {
-      height: auto;
-      min-height: 80px; /* Needs slightly more for touch targets + title */
-   }
-}
-
-.mlnomadpy-navbar.scrolled {
-  padding: 10px 5px;
-  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3);
-  background-color: var(--primary-bg-dark);
-}
-
-.mlnomadpy-navbar .navbar-container {
-  width: 100%;
-  max-width: 1280px;
+/* --- Links --- */
+.nav__links {
   display: flex;
-  justify-content: space-around;
   align-items: center;
-  position: relative;
+  gap: 4px;
+  list-style: none;
+  margin: 0 auto 0 12px;
+  padding: 0;
 }
 
-/* Decorative lines */
-.mlnomadpy-navbar::after,
-.mlnomadpy-navbar::before {
+.nav__link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  color: var(--fg-dim);
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 0.92rem;
+  transition: color var(--dur-fast) var(--ease),
+              background var(--dur-fast) var(--ease);
+}
+
+.nav__link i { font-size: 0.92rem; opacity: 0.85; }
+
+.nav__link:hover {
+  color: var(--fg);
+  background: var(--wash);
+}
+
+/* Active underline (single accent treatment) */
+.nav__link::after {
   content: "";
   position: absolute;
-  bottom: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
-  width: 50%;
+  left: 14px;
+  right: 14px;
+  bottom: 2px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--accent);
   transform: scaleX(0);
-  transition: transform 0.6s ease;
+  transform-origin: center;
+  transition: transform var(--dur) var(--ease);
 }
 
-.mlnomadpy-navbar.scrolled::after,
-.mlnomadpy-navbar.scrolled::before {
-  transform: scaleX(0.7);
+.nav__link.router-link-active {
+  color: var(--accent);
 }
+.nav__link.router-link-active::after { transform: scaleX(1); }
 
-.mlnomadpy-navbar::before {
-  left: 0;
-  transform-origin: left;
-}
-
-.mlnomadpy-navbar::after {
-  right: 0;
-  transform-origin: right;
-}
-
-/* Navigation links container */
-.mlnomadpy-navbar .nav-links {
-  display: flex;
-  justify-content: space-around;
+/* --- CTA --- */
+.nav__cta {
+  display: inline-flex;
   align-items: center;
-  width: 100%;
-}
-
-/* Individual navigation items */
-.mlnomadpy-navbar a.nav-item {
-  color: white;
+  gap: 8px;
+  padding: 9px 16px;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: var(--on-accent);
   text-decoration: none;
-  display: flex !important;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 10px 12px;
-  border-radius: 8px;
-  transition: all 0.3s ease;
-  position: relative;
-  text-align: center;
-  margin: 0;
-}
-
-/* Icon containers */
-.mlnomadpy-navbar .nav-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 46px;
-  width: 46px;
-  border-radius: 50%;
-  transition: all 0.3s ease;
-  background-color: rgba(255, 255, 255, 0.1);
-}
-
-.mlnomadpy-navbar a:hover .nav-icon {
-  background-color: rgba(244, 165, 96, 0.2);
-  transform: translateY(-3px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-/* Animated underlines for nav links */
-.mlnomadpy-navbar a.nav-item:not(.home)::after {
-  content: '';
-  position: absolute;
-  bottom: -2px;
-  left: 50%;
-  width: 0;
-  height: 2px;
-  background-color: var(--accent-color);
-  transition: width 0.3s ease, left 0.3s ease;
-}
-
-.mlnomadpy-navbar a.nav-item:not(.home):hover::after {
-  width: 70%;
-  left: 15%;
-}
-
-/* Icons within navigation */
-.mlnomadpy-navbar a i {
-  font-size: 22px;
-  transition: transform 0.3s ease;
-}
-
-/* Accessibility - Hide text visually but keep for screen readers */
-.mlnomadpy-navbar .sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  border: 0;
-}
-
-/* Hover effects for navigation items */
-.mlnomadpy-navbar a.nav-item:hover {
-  background-color: rgba(244, 165, 96, 0.1);
-  color: rgb(244, 165, 96);
-  transform: translateY(-2px);
-}
-
-.mlnomadpy-navbar a:hover i {
-  transform: scale(1.2);
-}
-
-/* Special home button styling */
-.mlnomadpy-navbar .home {
-  padding: 0 15px;
-  display: flex !important;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  transform: scale(1.2);
-}
-
-.mlnomadpy-navbar .home-icon-container {
-  background: linear-gradient(145deg, rgba(244, 165, 96, 0.8), rgba(244, 165, 96, 0.9));
-  border-radius: 50%;
-  width: 56px;
-  height: 56px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-}
-
-.mlnomadpy-navbar .home:hover .home-icon-container {
-  transform: translateY(-5px) rotate(5deg);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-  background: linear-gradient(145deg, rgb(244, 165, 96), rgb(255, 190, 120));
-}
-
-.mlnomadpy-navbar .home i {
-  font-size: 28px;
-  color: #2d0f41;
-}
-
-.mlnomadpy-navbar #home-link {
-  margin: 0;
-}
-
-/* Style active links */
-.mlnomadpy-navbar .router-link-active.nav-item:not(.home) {
-  color: var(--accent-color) !important;
-}
-
-.mlnomadpy-navbar .router-link-active.nav-item:not(.home)::after {
-  width: 100%;
-  left: 0;
-  height: 2px;
-  background-color: rgb(244, 165, 96);
-}
-
-.mlnomadpy-navbar .router-link-active.nav-item:not(.home) .nav-icon {
-  background-color: rgba(244, 165, 96, 0.2);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(244, 165, 96, 0.3);
-}
-
-/* Active Home link styling */
-.mlnomadpy-navbar .router-link-exact-active.home .home-icon-container {
-  background: linear-gradient(145deg, rgb(244, 165, 96), rgb(255, 190, 120));
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-/* Add icon styles for each link */
-/* 1: About Me, 2: Talks, 3: Home, 4: Poetry, 5: Blogs */
-.mlnomadpy-navbar a.nav-item:nth-child(1) i {
-  color: #77aaff;
-}
-
-.mlnomadpy-navbar a.nav-item:nth-child(2) i {
-  color: #ff88aa;
-}
-
-.mlnomadpy-navbar a.nav-item:nth-child(4) i {
-  color: #ddaaff;
-}
-
-.mlnomadpy-navbar a.nav-item:nth-child(5) i {
-  color: #ffcc66;
-}
-
-/* Scroll progress indicator */
-.mlnomadpy-navbar .scroll-progress {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  height: 3px;
-  background: linear-gradient(90deg, rgb(244, 165, 96), rgb(255, 190, 120));
-  width: 0%;
-  transition: width 0.1s ease-out;
-}
-
-/* Mobile responsive styling */
-@media (max-width: 992px) {
-  .mlnomadpy-navbar {
-    padding: 30px 5px 10px; /* Top padding reserved for title */
-  }
-  
-  .mlnomadpy-navbar a.nav-item {
-    padding: 8px 6px;
-  }
-  
-  .mlnomadpy-navbar .nav-icon {
-    height: 42px;
-    width: 42px;
-  }
-  
-  .mlnomadpy-navbar .home {
-    transform: scale(1.1);
-  }
-  
-  .mlnomadpy-navbar .home-icon-container {
-    width: 50px;
-    height: 50px;
-  }
-  
-  .mlnomadpy-navbar .home i {
-    font-size: 24px;
-  }
-  
-  .mlnomadpy-navbar .scroll-progress {
-    height: 2px;
-  }
-}
-
-@media (max-width: 768px) {
-  .mlnomadpy-navbar {
-    padding: 30px 5px 10px;
-  }
-  
-  /* Adjust icon size and margins */
-  .mlnomadpy-navbar .nav-icon {
-    height: 42px;
-    width: 42px;
-    background-color: rgba(255, 255, 255, 0.15);
-  }
-  
-  .mlnomadpy-navbar .home {
-    transform: none;
-  }
-  
-  .mlnomadpy-navbar .home-icon-container {
-    width: 46px;
-    height: 46px;
-  }
-  
-  /* Adjust spacing for mobile */
-  .mlnomadpy-navbar a.nav-item {
-    padding: 8px 4px;
-  }
-  
-  /* Enhance active indication */
-  .mlnomadpy-navbar .router-link-active .nav-icon {
-    background-color: rgba(244, 165, 96, 0.25);
-    border: 1px solid rgba(244, 165, 96, 0.5);
-    transform: scale(1.1);
-  }
-  
-  .mlnomadpy-navbar a i {
-    font-size: 20px;
-  }
-}
-
-@media (max-width: 480px) {
-  .mlnomadpy-navbar {
-    padding: 30px 2px 8px;
-  }
-  
-  .mlnomadpy-navbar .nav-icon {
-    height: 40px;
-    width: 40px;
-  }
-  
-  .mlnomadpy-navbar .home-icon-container {
-    width: 44px;
-    height: 44px;
-  }
-  
-  .mlnomadpy-navbar .home i {
-    font-size: 20px;
-  }
-  
-  .mlnomadpy-navbar a.nav-item {
-    padding: 5px 3px;
-  }
-  
-  .mlnomadpy-navbar a i {
-    font-size: 18px;
-  }
-  
-  /* Improve tooltip visibility */
-  .mlnomadpy-navbar a.nav-item:hover::before {
-    font-size: 14px;
-    padding: 6px 12px;
-  }
-}
-
-@media (max-width: 360px) {
-  .mlnomadpy-navbar .nav-icon {
-    height: 38px;
-    width: 38px;
-    margin: 0 1px;
-  }
-  
-  .mlnomadpy-navbar .home-icon-container {
-    width: 42px;
-    height: 42px;
-  }
-  
-  .mlnomadpy-navbar a i {
-    font-size: 17px;
-  }
-}
-
-/* Enhance focus styles for accessibility */
-.mlnomadpy-navbar a:focus {
-  outline: 2px solid var(--accent-color, rgb(244, 165, 96));
-  outline-offset: 2px;
-}
-
-/* Custom tooltip using data-tooltip (avoids double tooltip from native title) */
-.mlnomadpy-navbar a.nav-item[data-tooltip]:hover::before {
-  content: attr(data-tooltip);
-  position: absolute;
-  bottom: -30px;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: rgba(0, 0, 0, 0.85);
-  color: white;
-  padding: 5px 10px;
-  border-radius: 6px;
-  font-size: 12px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.88rem;
   white-space: nowrap;
-  pointer-events: none;
-  opacity: 0;
-  animation: fadeIn 0.3s forwards;
-  z-index: 1001;
-  font-family: var(--font-body, 'Space Mono', monospace);
+  transition: transform var(--dur-fast) var(--ease),
+              background var(--dur-fast) var(--ease),
+              box-shadow var(--dur-fast) var(--ease);
 }
 
-/* Active dot indicator for mobile */
-@media (max-width: 768px) {
-  .mlnomadpy-navbar .router-link-active.nav-item:not(.home) .nav-icon::after {
-    content: '';
-    position: absolute;
-    bottom: -6px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background: var(--accent-color, rgb(244, 165, 96));
-    box-shadow: 0 0 6px rgba(244, 165, 96, 0.5);
-  }
-
-  .mlnomadpy-navbar .nav-icon {
-    position: relative;
-  }
+.nav__cta:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px -8px rgba(240, 178, 101, 0.6);
 }
 
-@keyframes fadeIn {
-  to {
-    opacity: 1;
-  }
+.nav a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
 }
 
-/* Reduce motion settings for users who prefer reduced motion */
-@media (prefers-reduced-motion: reduce) {
-  .mlnomadpy-navbar a,
-  .mlnomadpy-navbar .nav-icon,
-  .mlnomadpy-navbar .nav-links,
-  .mlnomadpy-navbar .home-icon-container {
-    transition-duration: 0.1s;
-  }
-  
-  .mlnomadpy-navbar a.nav-item:hover::before {
-    animation: none;
-    opacity: 1;
-  }
+/* ============================================================
+   Mobile: brand shortens, CTA becomes icon-only, labels move
+   under icons so destinations stay discoverable on touch.
+   ============================================================ */
+@media (max-width: 720px) {
+  .nav__name { display: none; }
+  .nav__links { gap: 0; margin: 0 auto; }
+  .nav__link { flex-direction: column; gap: 3px; padding: 6px 10px; }
+  .nav__label { font-size: 0.62rem; letter-spacing: 0.02em; }
+  .nav__link i { font-size: 1.05rem; }
+  .nav__link::after { left: 50%; right: auto; width: 18px; transform: translateX(-50%) scaleX(0); }
+  .nav__link.router-link-active::after { transform: translateX(-50%) scaleX(1); }
+  .nav__cta span { display: none; }
+  .nav__cta { padding: 9px 11px; }
 }
 
-/* Dark theme adjustments */
-@media (prefers-color-scheme: dark) {
-  .mlnomadpy-navbar {
-    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.4);
-  }
-  
-  .mlnomadpy-navbar a.nav-item[data-tooltip]:hover::before {
-    background-color: rgba(30, 30, 30, 0.95);
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-  }
+@media (max-width: 380px) {
+  .nav__inner { gap: 6px; padding: 0 10px; }
+  .nav__link { padding: 6px 7px; }
 }
-</style> 
+</style>

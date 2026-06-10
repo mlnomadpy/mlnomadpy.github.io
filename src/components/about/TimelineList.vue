@@ -90,7 +90,7 @@ export default {
 .timeline-item {
   background: rgba(20, 20, 20, 0.3);
   border-radius: 12px;
-  border: 1px solid rgba(244, 165, 96, 0.15);
+  border: 1px solid rgba(240, 178, 101, 0.15);
   overflow: hidden;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
@@ -99,23 +99,23 @@ export default {
 .timeline-item:hover {
   transform: translateY(-5px);
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
-  border-color: rgba(244, 165, 96, 0.3);
+  border-color: rgba(240, 178, 101, 0.3);
 }
 
 .timeline-header {
   padding: 1.5rem;
   background: rgba(30, 30, 30, 0.5);
-  border-bottom: 1px solid rgba(244, 165, 96, 0.1);
+  border-bottom: 1px solid rgba(240, 178, 101, 0.1);
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
 }
 
 .timeline-date {
-  color: var(--accent-color, rgb(244, 165, 96));
+  color: var(--accent-color, rgb(240, 178, 101));
   font-weight: 600;
   padding: 0.3rem 0.8rem;
-  background: rgba(244, 165, 96, 0.1);
+  background: rgba(240, 178, 101, 0.1);
   border-radius: 20px;
   display: inline-block;
 }
@@ -132,7 +132,7 @@ export default {
   font-family: "Font Awesome 5 Free";
   font-weight: 900;
   font-size: 0.8rem;
-  color: rgba(244, 165, 96, 0.7);
+  color: rgba(240, 178, 101, 0.7);
 }
 
 .timeline-content {
@@ -147,7 +147,7 @@ export default {
 }
 
 .timeline-subtitle {
-  color: var(--accent-color, rgb(244, 165, 96));
+  color: var(--accent-color, rgb(240, 178, 101));
   font-weight: 500;
   font-size: 1.1rem;
   opacity: 0.9;
@@ -181,7 +181,7 @@ export default {
   font-weight: 900;
   position: absolute;
   left: 0;
-  color: rgba(244, 165, 96, 0.7);
+  color: rgba(240, 178, 101, 0.7);
 }
 
 .timeline-sections {
@@ -194,13 +194,13 @@ export default {
   background: rgba(20, 20, 20, 0.3);
   padding: 1.2rem;
   border-radius: 8px;
-  border-left: 3px solid rgba(244, 165, 96, 0.5);
+  border-left: 3px solid rgba(240, 178, 101, 0.5);
 }
 
 .section-title {
   font-size: 1.1rem;
   font-weight: 600;
-  color: var(--accent-color, rgb(244, 165, 96));
+  color: var(--accent-color, rgb(240, 178, 101));
   margin-bottom: 0.8rem;
 }
 
@@ -288,12 +288,12 @@ export default {
   gap: 1rem;
   margin-bottom: 0.5rem;
   padding-bottom: 1rem;
-  border-bottom: 2px solid rgba(244, 165, 96, 0.2);
+  border-bottom: 2px solid rgba(240, 178, 101, 0.2);
 }
 
 .list-section-header i {
   font-size: 1.8rem;
-  color: var(--accent-color, rgb(244, 165, 96));
+  color: var(--accent-color, rgb(240, 178, 101));
 }
 
 .list-section-header h2 {

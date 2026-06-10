@@ -1,13 +1,13 @@
 /* Fonts are loaded via <link> tags in index.html for better performance */
 
 :root {
-  --font-heading: 'Orbitron', sans-serif;
-  --font-body: 'Space Mono', monospace;
-  --primary-bg: #412c0f;
+  --font-heading: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --primary-bg: #0E0B08;
   --primary-text: #ffffff;
   --secondary-text: #cccccc;
-  --accent-color: #f4a560;
-  --accent-color-hover: #e08e45;
+  --accent-color: #F0B265;
+  --accent-color-hover: #E0A050;
   --glass-bg: rgba(255, 255, 255, 0.05);
   --glass-border: rgba(255, 255, 255, 0.1);
   --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
@@ -17,12 +17,12 @@
 :root {
   --card-radius: 12px;
   --card-bg: linear-gradient(135deg, rgba(30, 30, 30, 0.6), rgba(20, 20, 20, 0.8));
-  --card-border: 1px solid rgba(244, 165, 96, 0.1);
-  --card-border-hover: rgba(244, 165, 96, 0.3);
+  --card-border: 1px solid rgba(240, 178, 101, 0.1);
+  --card-border-hover: rgba(240, 178, 101, 0.3);
   --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
   --card-shadow-hover: 0 15px 35px rgba(0, 0, 0, 0.25);
-  --card-hover-lift: -6px;
-  --card-transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --card-hover-lift: -3px;
+  --card-transition: transform 0.25s cubic-bezier(0.22, 0.61, 0.36, 1), border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
 body {
@@ -178,13 +178,15 @@ p img {
 }
 
 .section h1 {
-  font-size: 2.5rem;
+  font-family: var(--font-display);
+  font-size: var(--t-h2);
+  font-weight: 700;
+  letter-spacing: -0.02em;
   text-align: center;
   margin-bottom: 40px;
-  padding-bottom: 20px;
+  padding-bottom: 18px;
   position: relative;
-  color: var(--accent-color);
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  color: var(--fg);
 }
 
 .section h1::after {
@@ -193,10 +195,10 @@ p img {
   bottom: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 100px;
+  width: 56px;
   height: 3px;
-  background: var(--accent-color);
-  box-shadow: 0 0 10px var(--accent-color);
+  border-radius: 3px;
+  background: var(--accent);
 }
 
 .section-content {
@@ -219,7 +221,7 @@ p img {
 #poetry,
 #blogs,
 #talks {
-  background-color: rgba(65, 44, 15, 0.95);
+  background-color: rgba(14, 11, 8, 0.95);
   /* High opacity for readability */
   backdrop-filter: blur(10px);
 }
@@ -328,7 +330,7 @@ p img {
   max-width: 900px;
   margin: 50px auto;
   padding: 30px;
-  background: #2d0f41;
+  background: #1F1810;
   border-radius: 16px;
   max-height: 90vh;
   overflow-y: auto;
@@ -379,7 +381,7 @@ p img {
 /* Story Wrapper */
 .story-wrapper {
   position: relative;
-  background: linear-gradient(to bottom, rgba(65, 44, 15, 0.4), rgba(65, 44, 15, 0.8));
+  background: linear-gradient(to bottom, rgba(14, 11, 8, 0.4), rgba(14, 11, 8, 0.8));
   border-radius: 16px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   overflow: hidden;

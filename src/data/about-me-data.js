@@ -12,7 +12,7 @@ export const storyItems = [
     id: 'origins',
     title: 'Origins',
     heading: 'Who am I?',
-    backgroundImage: "url('/imgs/bg-origins.jpg'), linear-gradient(135deg, #412c0f 0%, #5a421c 100%)",
+    backgroundImage: "url('/imgs/bg-origins.jpg'), linear-gradient(135deg, #0E0B08 0%, #5a421c 100%)",
     content: `<p>I didn't start with a roadmap; I started with curiosity. Growing up in Tamazgha, the world outside felt vast and full of secrets I was desperate to uncover. My journey wasn't about following a set path, but about asking "why" and "how"—a relentless need to peel back the layers of the ordinary to find the wonder underneath.</p>
     <p>Today, people might define me by my work, but at my core, I am still that curious kid, a "Nomad" navigating the landscapes of life. I am driven not by a need to conquer, but by a need to understand—to build bridges between where I came from and where I am going, and to find meaning in the spaces between.</p>`,
     quote: "The titles are just waypoints. The real journey is the relentless pursuit of understanding."
@@ -301,7 +301,7 @@ export const statsHighlights = [
 export const profileData = {
   name: 'Taha Bouhsine',
   nativeTitle: 'ⵉⵙⴽⴰⵏⵎⴰⴳⴰⵔ',
-  tagline: 'ML Researcher & Engineer | Google Developer Expert in AI/ML | Azetta.ai Co-Founder',
+  tagline: 'AI Researcher & Engineer | Google Developer Expert in AI/ML | Azetta.ai Co-Founder',
   quote: 'I build bridges between mathematical foundations of machine learning and their practical applications, between black-box neural networks and cosmos-inspired safe and interpretable AI models',
   socialLinks: [
     {

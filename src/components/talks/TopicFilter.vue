@@ -70,12 +70,12 @@ export default {
 .filter-buttons button {
   padding: 10px 15px;
   background: rgba(30, 30, 30, 0.6);
-  border: 1px solid rgba(244, 165, 96, 0.3);
+  border: 1px solid rgba(240, 178, 101, 0.3);
   color: var(--primary-text);
   border-radius: 20px;
   cursor: pointer;
   transition: all 0.3s ease;
-  font-family: "Space Mono", monospace;
+  font-family: "Inter", sans-serif;
   font-size: 0.9rem;
   display: flex;
   align-items: center;
@@ -88,7 +88,7 @@ export default {
 }
 
 .filter-buttons button:hover {
-  background: rgba(244, 165, 96, 0.2);
+  background: rgba(240, 178, 101, 0.2);
   border-color: var(--accent-color);
   transform: translateY(-2px);
 }
@@ -97,7 +97,7 @@ export default {
   background: var(--accent-color);
   color: var(--primary-bg);
   border-color: var(--accent-color);
-  box-shadow: 0 4px 12px rgba(244, 165, 96, 0.3);
+  box-shadow: 0 4px 12px rgba(240, 178, 101, 0.3);
 }
 
 .filter-buttons button.active i {

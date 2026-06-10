@@ -93,7 +93,7 @@ export default {
 <style scoped>
 /* Use global CSS variables for consistency */
 .blog-details-view {
-  background-color: var(--primary-bg, #412c0f);
+  background-color: var(--primary-bg, #0E0B08);
   min-height: 100%;
 }
 
@@ -110,7 +110,7 @@ export default {
   overflow-y: auto;
   overflow-x: hidden;
   padding: var(--spacing-lg, 1.5rem);
-  background-color: var(--primary-bg, #412c0f);
+  background-color: var(--primary-bg, #0E0B08);
 }
 
 /* Loading & Error States */
@@ -132,7 +132,7 @@ export default {
 
 .error-container i {
   font-size: 3rem;
-  color: var(--accent-color, rgb(244, 165, 96));
+  color: var(--accent-color, rgb(240, 178, 101));
   opacity: 0.8;
 }
 
@@ -140,7 +140,7 @@ export default {
   width: 50px;
   height: 50px;
   border: 3px solid rgba(255, 255, 255, 0.1);
-  border-top-color: var(--accent-color, rgb(244, 165, 96));
+  border-top-color: var(--accent-color, rgb(240, 178, 101));
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -152,13 +152,13 @@ export default {
 .retry-btn {
   margin-top: var(--spacing-md, 1rem);
   padding: 12px 24px;
-  background: var(--accent-color, rgb(244, 165, 96));
-  color: var(--primary-bg, #412c0f);
+  background: var(--accent-color, rgb(240, 178, 101));
+  color: var(--primary-bg, #0E0B08);
   border: none;
   border-radius: 25px;
   cursor: pointer;
   font-weight: bold;
-  font-family: 'Orbitron', sans-serif;
+  font-family: 'Space Grotesk', sans-serif;
   transition: all 0.3s ease;
   display: inline-flex;
   align-items: center;
@@ -167,13 +167,13 @@ export default {
 
 .retry-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 5px 20px rgba(244, 165, 96, 0.4);
+  box-shadow: 0 5px 20px rgba(240, 178, 101, 0.4);
 }
 
 .back-link {
   display: block;
   margin-top: var(--spacing-md, 1rem);
-  color: var(--accent-color, rgb(244, 165, 96));
+  color: var(--accent-color, rgb(240, 178, 101));
   text-decoration: none;
   transition: opacity 0.3s ease;
 }
@@ -194,7 +194,7 @@ export default {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  color: var(--accent-color, rgb(244, 165, 96));
+  color: var(--accent-color, rgb(240, 178, 101));
   text-decoration: none;
   font-weight: 600;
   margin-bottom: var(--spacing-lg, 1.5rem);
@@ -204,14 +204,14 @@ export default {
   border-radius: 12px;
   backdrop-filter: blur(5px);
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  font-family: 'Orbitron', sans-serif;
+  font-family: 'Space Grotesk', sans-serif;
 }
 
 .back-btn:hover {
   transform: translateX(-8px);
-  background: var(--accent-color, rgb(244, 165, 96));
-  color: var(--primary-bg, #412c0f);
-  box-shadow: 0 5px 20px rgba(244, 165, 96, 0.3);
+  background: var(--accent-color, rgb(240, 178, 101));
+  color: var(--primary-bg, #0E0B08);
+  box-shadow: 0 5px 20px rgba(240, 178, 101, 0.3);
 }
 
 /* Blog Article */
@@ -236,7 +236,7 @@ export default {
   font-size: 2.5rem;
   margin: 1rem 0;
   color: var(--primary-text, white);
-  font-family: 'Orbitron', sans-serif;
+  font-family: 'Space Grotesk', sans-serif;
   line-height: 1.3;
 }
 
@@ -266,7 +266,7 @@ export default {
 }
 
 .tag {
-  background: rgba(244, 165, 96, 0.15);
+  background: rgba(240, 178, 101, 0.15);
   color: var(--accent-color);
   padding: 4px 12px;
   border-radius: 15px;
@@ -289,7 +289,7 @@ export default {
   color: var(--primary-text, white);
   margin-top: 2rem;
   margin-bottom: 1rem;
-  font-family: 'Orbitron', sans-serif;
+  font-family: 'Space Grotesk', sans-serif;
 }
 
 .markdown-body :deep(h1) { font-size: 2rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem; }
@@ -309,7 +309,7 @@ export default {
 }
 
 .markdown-body :deep(a:hover) {
-  background: rgba(244, 165, 96, 0.1);
+  background: rgba(240, 178, 101, 0.1);
 }
 
 .markdown-body :deep(ul), 
@@ -336,7 +336,7 @@ export default {
   background: rgba(0, 0, 0, 0.3);
   padding: 0.2rem 0.4rem;
   border-radius: 4px;
-  font-family: 'Space Mono', monospace;
+  font-family: 'Inter', sans-serif;
   font-size: 0.9em;
   color: #e67e22;
 }

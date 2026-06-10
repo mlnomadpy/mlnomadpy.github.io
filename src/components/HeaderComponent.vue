@@ -82,7 +82,7 @@ const closeMobileMenu = () => {
 .logo h1 {
   font-size: 1.5rem;
   font-weight: 600;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #F0B265 0%, #46C2A8 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -104,7 +104,7 @@ const closeMobileMenu = () => {
 
 .nav-links a:hover,
 .nav-links a.router-link-active {
-  color: #667eea;
+  color: #F0B265;
 }
 
 .nav-links a::after {
@@ -114,7 +114,7 @@ const closeMobileMenu = () => {
   left: 0;
   width: 0;
   height: 2px;
-  background: #667eea;
+  background: #F0B265;
   transition: width 0.3s ease;
 }
 

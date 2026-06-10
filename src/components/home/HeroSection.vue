@@ -1,19 +1,48 @@
 <template>
-  <div class="hero-sec">
-    <video v-if="!isMobile" autoplay muted loop playsinline preload="metadata" aria-hidden="true">
+  <section class="hero" :class="{ atmosphere: isMobile }">
+    <!-- Background video (desktop/tablet); mobile falls back to atmosphere layers -->
+    <video
+      v-if="!isMobile"
+      class="hero__video"
+      autoplay
+      muted
+      loop
+      playsinline
+      preload="metadata"
+      aria-hidden="true"
+    >
       <source src="@/assets/background-video.mp4" type="video/mp4" onerror="this.parentElement.remove()">
     </video>
-    
-    <div class="center-content">
-      <div class="circle-text">
-        <h1>Taha Bouhsine</h1>
-        <p>ML Researcher &amp; Engineer</p>
-        <a href="https://linkedin.com/in/Tahabsn" target="_blank" rel="noopener noreferrer" class="join-btn">Connect</a>
-        
-        <SocialLinks />
+    <div class="hero__scrim" aria-hidden="true"></div>
+
+    <div class="hero__content">
+      <p class="hero__eyebrow">AI Researcher · Google Developer Expert · Founder @ Azetta AI</p>
+
+      <h1 class="hero__title">Taha Bouhsine</h1>
+
+      <p class="hero__sub">
+        I build interpretable, efficient neural networks — researching
+        representation learning and the geometry of how models understand the world.
+      </p>
+
+      <div class="hero__cta">
+        <router-link to="/talks" class="btn btn--primary">
+          <i class="fas fa-microphone" aria-hidden="true"></i>
+          View talks &amp; research
+        </router-link>
+        <a
+          href="https://linkedin.com/in/Tahabsn"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="btn btn--ghost"
+        >
+          Get in touch
+        </a>
       </div>
+
+      <SocialLinks />
     </div>
-  </div>
+  </section>
 </template>
 
 <script>
@@ -22,28 +51,28 @@ import { useResponsive } from '@/composables/useResponsive';
 
 export default {
   name: 'HeroSection',
-  components: {
-    SocialLinks
-  },
+  components: { SocialLinks },
   setup() {
     const { isMobile } = useResponsive();
     return { isMobile };
-  }
-}
+  },
+};
 </script>
 
 <style scoped>
-.hero-sec {
+.hero {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 0;
+  inset: 0;
   overflow: hidden;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
 }
 
-.hero-sec video {
+/* Background video */
+.hero__video {
   position: absolute;
   top: 50%;
   left: 50%;
@@ -56,212 +85,116 @@ export default {
   z-index: 0;
 }
 
-.hero-sec::before {
-  content: "";
+/* Warm scrim: darkens for legibility and vignettes the video into the
+   page so it blends with the Desert Obsidian background rather than
+   sitting in a hard black box. */
+.hero__scrim {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.6);
-  z-index: 1;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 90% at 50% 38%, rgba(14, 11, 8, 0.30), rgba(14, 11, 8, 0.82) 100%),
+    radial-gradient(60% 60% at 12% 0%, rgba(240, 178, 101, 0.10), transparent 60%),
+    linear-gradient(to bottom, rgba(14, 11, 8, 0.45), rgba(14, 11, 8, 0.80));
 }
 
-.center-content {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 2;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.circle-text {
-  width: 100%;
-  max-width: 800px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  animation: fadeIn 1s ease-in-out;
-  padding: 0 20px;
-  transform: translateY(-5vh); /* Slight adjustment to visually center */
-}
-
-.circle-text h1,
-.circle-text p {
-  margin: 10px 0;
-  text-align: center;
-  width: 100%;
-}
-
-.circle-text h1 {
-  font-size: 3rem;
-  border-right: 8px solid #fff;
-  padding-right: 5px;
-  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.7);
-  white-space: nowrap;
-  width: fit-content;
-  overflow: hidden;
-  animation: typing 1.8s steps(14, end) forwards, blink 0.8s step-end 1.8s infinite;
-  max-width: 0;
-}
-
-.circle-text p {
-  font-size: 1.4rem;
-  opacity: 0.9;
-  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.5);
-  margin: 15px 0;
-  text-align: center;
-  align-self: center;
-  width: auto;
-}
-
-.join-btn {
-  display: block;
-  width: 140px;
-  margin: 25px auto 0;
-  padding: 12px 20px;
-  background-color: rgba(2, 2, 2, 0.273);
-  color: rgb(255, 255, 255);
-  border: 2px solid white;
-  border-radius: 4px;
-  text-align: center;
-  text-decoration: none;
-  font-weight: bold;
-  font-size: 1.1rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
+.hero__content {
   position: relative;
-  overflow: hidden;
-}
-
-.join-btn::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
+  z-index: 1;
   width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.2),
-    transparent
-  );
-  transition: all 0.5s ease;
+  max-width: 760px;
+  text-align: center;
+  animation: hero-in 0.7s var(--ease) both;
 }
 
-.join-btn:hover::before {
-  left: 100%;
+.hero__eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--t-label);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 20px;
 }
 
-.join-btn:hover {
-  background-color: rgb(244, 165, 96);
-  color: #41230f;
-  transform: translateY(-3px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+.hero__title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--t-display);
+  line-height: 1.04;
+  letter-spacing: -0.02em;
+  color: var(--fg);
+  margin: 0;
 }
 
-.join-btn:active {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+.hero__sub {
+  margin: 20px auto 0;
+  max-width: 600px;
+  font-family: var(--font-body);
+  font-size: clamp(1rem, 2vw, 1.18rem);
+  line-height: 1.6;
+  color: var(--fg-dim);
 }
 
-@keyframes typing {
-  from { max-width: 0; }
-  to { max-width: 100%; }
+.hero__cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  justify-content: center;
+  margin: 32px 0 8px;
 }
 
-@keyframes blink {
-  0%, 50% {
-    border-right-color: transparent;
-  }
-  51%, 100% {
-    border-right-color: #fff;
-  }
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 13px 24px;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform var(--dur-fast) var(--ease),
+              background var(--dur-fast) var(--ease),
+              box-shadow var(--dur-fast) var(--ease),
+              border-color var(--dur-fast) var(--ease);
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.btn--primary {
+  background: var(--accent);
+  color: var(--on-accent);
+  border: 1px solid var(--accent);
+}
+.btn--primary:hover {
+  background: var(--accent-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px -10px rgba(240, 178, 101, 0.6);
 }
 
-@media (max-width: 992px) {
-  .circle-text h1 {
-    font-size: 2.5rem;
-  }
-  
-  .circle-text p {
-    font-size: 1.3rem;
-  }
+.btn--ghost {
+  background: transparent;
+  color: var(--fg);
+  border: 1px solid var(--line-strong);
+}
+.btn--ghost:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: translateY(-2px);
 }
 
-@media (max-width: 768px) {
-  .circle-text h1 {
-    font-size: 2.2rem;
-    border-right: 6px solid #fff;
-  }
-  
-  .circle-text p {
-    font-size: 1.25rem;
-  }
-  
-  .join-btn {
-    width: 140px;
-    padding: 12px 15px;
-    font-size: 1.1rem;
-  }
+.btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
 }
 
-@media (max-width: 480px) {
-  .circle-text h1 {
-    font-size: 1.9rem;
-    border-right: 4px solid #fff;
-  }
-  
-  .circle-text p {
-    font-size: 1.15rem;
-    margin: 12px 0;
-  }
-  
-  .join-btn {
-    width: 140px;
-    padding: 12px 15px;
-    margin-top: 20px;
-    font-size: 1.05rem;
-  }
+@keyframes hero-in {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-@media (max-width: 360px) {
-  .circle-text h1 {
-    font-size: 1.8rem;
-  }
-  
-  .circle-text p {
-    font-size: 1.1rem;
-    margin: 10px 0;
-  }
-  
-  .join-btn {
-    width: 130px;
-    padding: 12px 15px;
-  }
-}
-
-@media (max-height: 600px) {
-  .join-btn {
-    margin: 15px auto 0;
-    padding: 12px 15px;
-  }
+@media (max-width: 600px) {
+  .hero__cta { flex-direction: column; align-items: stretch; }
+  .btn { justify-content: center; }
 }
 </style>

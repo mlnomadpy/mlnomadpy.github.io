@@ -29,7 +29,7 @@ export default {
   padding: 50px 20px;
   background: rgba(30, 30, 30, 0.6);
   border-radius: 12px;
-  border: 1px dashed rgba(244, 165, 96, 0.3);
+  border: 1px dashed rgba(240, 178, 101, 0.3);
 }
 
 .error-icon {
@@ -48,19 +48,19 @@ export default {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: rgba(244, 165, 96, 0.15);
+  background: rgba(240, 178, 101, 0.15);
   border: none;
   color: var(--accent-color);
   padding: 12px 25px;
   border-radius: 30px;
-  font-family: "Space Mono", monospace;
+  font-family: "Inter", sans-serif;
   cursor: pointer;
   transition: all 0.3s ease;
   margin-top: 20px;
 }
 
 .retry-btn:hover {
-  background: rgba(244, 165, 96, 0.3);
+  background: rgba(240, 178, 101, 0.3);
   transform: translateY(-3px);
 }
 

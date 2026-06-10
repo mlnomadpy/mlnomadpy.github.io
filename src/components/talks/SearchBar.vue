@@ -72,18 +72,18 @@ export default {
   width: 100%;
   padding: 12px 45px;
   font-size: 1rem;
-  border: 1px solid rgba(244, 165, 96, 0.3);
+  border: 1px solid rgba(240, 178, 101, 0.3);
   border-radius: 30px;
   background: rgba(30, 30, 30, 0.6);
   color: var(--primary-text);
   outline: none;
   transition: all 0.3s ease;
-  font-family: "Space Mono", monospace;
+  font-family: "Inter", sans-serif;
 }
 
 .search-input:focus {
   border-color: var(--accent-color);
-  box-shadow: 0 0 15px rgba(244, 165, 96, 0.2);
+  box-shadow: 0 0 15px rgba(240, 178, 101, 0.2);
 }
 
 .clear-search {

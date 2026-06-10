@@ -293,7 +293,7 @@ export default {
 .search-input:focus {
   outline: none;
   border-color: var(--accent-color);
-  box-shadow: 0 0 15px rgba(244, 165, 96, 0.2);
+  box-shadow: 0 0 15px rgba(240, 178, 101, 0.2);
 }
 
 .search-icon {
@@ -467,7 +467,7 @@ export default {
 
 .blog-card:hover, .blog-card:focus {
   transform: translateY(-8px);
-  border-color: rgba(244, 165, 96, 0.3);
+  border-color: rgba(240, 178, 101, 0.3);
   box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
   background: rgba(255, 255, 255, 0.05);
   outline: none;
@@ -510,7 +510,7 @@ export default {
 .tags { display: flex; gap: 5px; }
 
 .tag-sm {
-  background: rgba(244, 165, 96, 0.1);
+  background: rgba(240, 178, 101, 0.1);
   color: var(--accent-color);
   padding: 2px 8px;
   border-radius: 10px;
@@ -522,7 +522,7 @@ export default {
   margin: 0 0 12px;
   color: var(--primary-text);
   line-height: 1.3;
-  font-family: 'Orbitron', sans-serif;
+  font-family: 'Space Grotesk', sans-serif;
 }
 
 .blog-card:hover h2 { color: var(--accent-color); }
@@ -572,7 +572,7 @@ export default {
 
 .blog-list-item:hover, .blog-list-item:focus {
   background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(244, 165, 96, 0.3);
+  border-color: rgba(240, 178, 101, 0.3);
   transform: translateX(5px);
   outline: none;
 }
@@ -583,7 +583,7 @@ export default {
   margin: 0;
   font-size: 1.1rem;
   color: var(--primary-text);
-  font-family: 'Orbitron', sans-serif;
+  font-family: 'Space Grotesk', sans-serif;
 }
 
 .blog-list-item:hover .list-title { color: var(--accent-color); }
@@ -669,7 +669,7 @@ export default {
 
 .reset-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(244, 165, 96, 0.3);
+  box-shadow: 0 5px 15px rgba(240, 178, 101, 0.3);
 }
 
 /* Transitions */

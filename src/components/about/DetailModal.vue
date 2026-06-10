@@ -120,7 +120,7 @@ export default {
   max-width: 700px;
   max-height: 85vh;
   border-radius: 16px;
-  border: 1px solid rgba(244, 165, 96, 0.2);
+  border: 1px solid rgba(240, 178, 101, 0.2);
   box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
   display: flex;
   flex-direction: column;
@@ -147,7 +147,7 @@ export default {
 }
 
 .close-btn:hover {
-  background: rgba(244, 165, 96, 0.8);
+  background: rgba(240, 178, 101, 0.8);
   color: #000;
   transform: rotate(90deg);
 }
@@ -165,7 +165,7 @@ export default {
 
 .modal-title {
   font-size: 1.8rem;
-  color: var(--accent-color, rgb(244, 165, 96));
+  color: var(--accent-color, rgb(240, 178, 101));
   margin: 0 0 0.5rem;
   line-height: 1.2;
 }
@@ -196,7 +196,7 @@ export default {
 }
 
 .meta-tag i {
-  color: var(--accent-color, rgb(244, 165, 96));
+  color: var(--accent-color, rgb(240, 178, 101));
 }
 
 .modal-body {
@@ -213,7 +213,7 @@ export default {
 }
 
 h4 {
-  color: var(--accent-color, rgb(244, 165, 96));
+  color: var(--accent-color, rgb(240, 178, 101));
   font-size: 1.1rem;
   margin-bottom: 1rem;
   text-transform: uppercase;
@@ -240,7 +240,7 @@ h4 {
 .details-list li::before,
 .sections-list li::before {
   content: "•";
-  color: var(--accent-color, rgb(244, 165, 96));
+  color: var(--accent-color, rgb(240, 178, 101));
   font-size: 1.5rem;
   position: absolute;
   left: 0;
@@ -264,8 +264,8 @@ h4 {
 }
 
 .skill-tag {
-  background: rgba(244, 165, 96, 0.1);
-  color: var(--accent-color, rgb(244, 165, 96));
+  background: rgba(240, 178, 101, 0.1);
+  color: var(--accent-color, rgb(240, 178, 101));
   padding: 6px 14px;
   border-radius: 20px;
   font-size: 0.9rem;
@@ -287,18 +287,18 @@ h4 {
   gap: 0.5rem;
   padding: 10px 20px;
   border-radius: 25px;
-  background: var(--accent-color, rgb(244, 165, 96));
+  background: var(--accent-color, rgb(240, 178, 101));
   color: #1e1e1e;
   text-decoration: none;
   font-weight: 600;
   font-size: 0.95rem;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(244, 165, 96, 0.3);
+  box-shadow: 0 4px 15px rgba(240, 178, 101, 0.3);
 }
 
 .action-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(244, 165, 96, 0.4);
+  box-shadow: 0 6px 20px rgba(240, 178, 101, 0.4);
   background: #fff;
 }
 

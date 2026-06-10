@@ -364,7 +364,7 @@ export default {
 .talk-details-header {
   padding: 30px 30px 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  background: linear-gradient(to right, rgba(65, 44, 15, 0.3), transparent);
+  background: linear-gradient(to right, rgba(14, 11, 8, 0.3), transparent);
 }
 
 .talk-details-header h2 {
@@ -461,7 +461,7 @@ export default {
 }
 
 .tab-btn.active {
-  background: rgba(244, 165, 96, 0.1);
+  background: rgba(240, 178, 101, 0.1);
   color: var(--accent-color);
   border-bottom: 2px solid var(--accent-color);
 }
@@ -506,7 +506,7 @@ export default {
 }
 
 .resource-link:hover {
-  background: rgba(244, 165, 96, 0.1);
+  background: rgba(240, 178, 101, 0.1);
   border-color: var(--accent-color);
   transform: translateX(5px);
 }

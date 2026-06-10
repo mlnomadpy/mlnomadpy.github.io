@@ -1,6 +1,6 @@
 /* Reset and Base Styles */
 :root {
-  --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --primary-gradient: linear-gradient(135deg, #F0B265 0%, #46C2A8 100%);
   --bg-dark: #0a0a0a;
   --text-light: #ffffff;
   --text-muted: #999999;
@@ -32,7 +32,7 @@ body {
 /* Accessibility */
 a:focus,
 button:focus {
-  outline: 2px solid #667eea;
+  outline: 2px solid #F0B265;
   outline-offset: 2px;
 }
 
@@ -120,7 +120,7 @@ button:focus {
 
 .spinner {
   border: 3px solid rgba(255, 255, 255, 0.1);
-  border-top-color: #667eea;
+  border-top-color: #F0B265;
   border-radius: 50%;
   width: 40px;
   height: 40px;

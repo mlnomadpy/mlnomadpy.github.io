@@ -42,7 +42,7 @@ onMounted(() => {
 .error-code {
   font-size: 8rem;
   font-weight: 700;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #F0B265 0%, #46C2A8 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -65,7 +65,7 @@ onMounted(() => {
 .btn-home {
   display: inline-block;
   padding: 0.875rem 2rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #F0B265 0%, #46C2A8 100%);
   color: #fff;
   text-decoration: none;
   border-radius: 8px;

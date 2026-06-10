@@ -116,7 +116,7 @@ export default {
 }
 
 .poetry-card:hover h3 {
-  color: var(--accent-color, rgb(244, 165, 96));
+  color: var(--accent-color, rgb(240, 178, 101));
 }
 
 .card-meta {
@@ -130,12 +130,12 @@ export default {
   font-size: 0.8rem;
   padding: 4px 10px;
   border-radius: 20px;
-  background: rgba(244, 165, 96, 0.1);
-  color: var(--accent-color, rgb(244, 165, 96));
+  background: rgba(240, 178, 101, 0.1);
+  color: var(--accent-color, rgb(240, 178, 101));
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  border: 1px solid rgba(244, 165, 96, 0.15);
+  border: 1px solid rgba(240, 178, 101, 0.15);
 }
 
 .verse-count {
@@ -177,19 +177,19 @@ export default {
 }
 
 .preview-fade {
-  color: rgba(244, 165, 96, 0.5);
+  color: rgba(240, 178, 101, 0.5);
   font-size: 0.85rem;
 }
 
 .expand-toggle {
-  color: rgba(244, 165, 96, 0.4);
+  color: rgba(240, 178, 101, 0.4);
   transition: all 0.3s ease;
   flex-shrink: 0;
   margin-top: 4px;
 }
 
 .poetry-card:hover .expand-toggle {
-  color: var(--accent-color, rgb(244, 165, 96));
+  color: var(--accent-color, rgb(240, 178, 101));
   transform: translateX(5px);
 }
 
