@@ -55,6 +55,14 @@ export const routes = [
     meta: { index: 4, isDetail: true }
   },
   {
+    // Concrete route so vite-ssg pre-renders dist/404.html.
+    // GitHub Pages serves this for any unmatched URL (deep links, typos).
+    path: '/404',
+    name: 'NotFoundPage',
+    component: () => import('../views/NotFoundView.vue'),
+    meta: { index: 99 }
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('../views/NotFoundView.vue'),

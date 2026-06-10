@@ -13,9 +13,12 @@
 </template>
 
 <script>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { useRoute } from 'vue-router'
 import MainNavbar from '@/components/Navbar.vue'
 import { useHead } from '@vueuse/head'
+
+const SITE_ORIGIN = 'https://www.tahabouhsine.com'
 
 export default {
   name: 'App',
@@ -24,8 +27,17 @@ export default {
   },
   setup() {
     const transitionName = ref('fade')
+    const route = useRoute()
 
-    useHead({
+    // Per-route absolute URL (trailing slashes trimmed, except root).
+    // Computed so it is correct during SSG pre-render AND updates on
+    // client-side navigation — no DOM hacks needed.
+    const canonicalUrl = computed(() => {
+      const path = route.path === '/' ? '/' : route.path.replace(/\/+$/, '')
+      return `${SITE_ORIGIN}${path}`
+    })
+
+    useHead(computed(() => ({
       title: 'Taha Bouhsine | ML Researcher & Google Developer Expert',
       titleTemplate: '%s | MLNomadpy',
       meta: [
@@ -39,19 +51,20 @@ export default {
         { property: 'og:site_name', content: 'MLNomadpy' },
         { property: 'og:description', content: 'Machine Learning Researcher & Engineer, Google Developer Expert in AI/ML, and CEO of MLNomads focusing on representation learning and interpretable AI models.' },
         { property: 'og:image', content: 'https://i.imgur.com/ScjU4Xr.png' },
-        { property: 'og:url', content: 'https://www.tahabouhsine.com/' },
+        { property: 'og:url', content: canonicalUrl.value },
         { property: 'og:type', content: 'website' },
 
         // Twitter Card
         { property: 'twitter:title', content: 'Taha Bouhsine | ML Researcher & Google Developer Expert' },
         { property: 'twitter:description', content: 'Machine Learning Researcher & Engineer, Google Developer Expert in AI/ML, and CEO of MLNomads.' },
         { property: 'twitter:image', content: 'https://i.imgur.com/ScjU4Xr.png' },
-        { property: 'twitter:card', content: 'summary_large_image' }
+        { property: 'twitter:card', content: 'summary_large_image' },
+        { property: 'twitter:url', content: canonicalUrl.value }
       ],
       link: [
-        { rel: 'canonical', href: 'https://www.tahabouhsine.com/' }
+        { rel: 'canonical', href: canonicalUrl.value }
       ]
-    })
+    })))
 
     return { transitionName }
   },
@@ -75,17 +88,6 @@ export default {
         this.transitionName = 'fade'
       }
     })
-
-    this.$router.afterEach((to) => {
-      try {
-        const canonicalLink = document.querySelector('link[rel="canonical"]');
-        if (canonicalLink) {
-          canonicalLink.href = `https://www.tahabouhsine.com${to.path}`;
-        }
-      } catch (e) {
-        console.error('Analytics error:', e);
-      }
-    });
   }
 }
 </script>
