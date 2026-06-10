@@ -14,8 +14,12 @@
 
       <!-- Primary destinations -->
       <ul class="nav__links">
-        <li v-for="item in items" :key="item.to">
-          <router-link :to="item.to" class="nav__link">
+        <li v-for="item in items" :key="item.label">
+          <a v-if="item.href" :href="item.href" class="nav__link">
+            <i :class="item.icon" aria-hidden="true"></i>
+            <span class="nav__label">{{ item.label }}</span>
+          </a>
+          <router-link v-else :to="item.to" class="nav__link">
             <i :class="item.icon" aria-hidden="true"></i>
             <span class="nav__label">{{ item.label }}</span>
           </router-link>
@@ -48,7 +52,8 @@ export default {
         { to: '/aboutme', label: 'About', icon: 'fas fa-user' },
         { to: '/talks', label: 'Talks', icon: 'fas fa-microphone' },
         { to: '/poetry', label: 'Poetry', icon: 'fas fa-feather-alt' },
-        { to: '/blogs', label: 'Blog', icon: 'fas fa-pen-nib' },
+        // Blog lives in a separate repo / Pages project at /blog.
+        { href: 'https://www.tahabouhsine.com/blog', label: 'Blog', icon: 'fas fa-pen-nib' },
       ],
     };
   },

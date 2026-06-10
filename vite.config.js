@@ -61,10 +61,8 @@ export default defineConfig({
         return item.id ? `/poetry/${item.id}` : null
       })
 
-      // 4. Blogs - /blogs/:id (using item.id) -> Assuming blogs.json exists
-      readData('blogs.json', (item) => {
-        return item.id ? `/blogs/${item.id}` : null
-      })
+      // Note: the blog lives in a separate repo / Pages project at /blog,
+      // with its own sitemap. It is intentionally not generated here.
 
       return paths.filter(p => !p.includes(':')).concat(extraRoutes)
     }

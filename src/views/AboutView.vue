@@ -12,7 +12,7 @@
         <div class="content-card">
           <h2>Who I Am</h2>
           <p>
-            I'm Taha Bouhsine, a Machine Learning Researcher and Engineer with a passion for
+            I'm Taha Bouhsine, an AI Researcher and Engineer with a passion for
             pushing the boundaries of AI. As a Google Developer Expert in AI/ML and CEO of MLNomads
             LLC, I focus on representation learning and interpretable AI models.
           </p>

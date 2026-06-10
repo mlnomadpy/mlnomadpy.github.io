@@ -41,7 +41,7 @@ export default {
       title: 'Taha Bouhsine | AI Researcher & Google Developer Expert',
       titleTemplate: '%s | MLNomadpy',
       meta: [
-        { name: 'description', content: 'Machine Learning Researcher & Engineer, Google Developer Expert in AI/ML, and CEO of MLNomads focusing on representation learning and interpretable AI models.' },
+        { name: 'description', content: 'AI Researcher & Engineer, Google Developer Expert in AI/ML, and CEO of MLNomads focusing on representation learning and interpretable AI models.' },
         { name: 'keywords', content: 'Machine Learning, Artificial Intelligence, AI Research, Taha Bouhsine, Google Developer Expert, MLNomads, Neural Networks, Interpretable AI' },
         { name: 'author', content: 'Taha Bouhsine' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1.0, maximum-scale=5.0' },
@@ -49,14 +49,14 @@ export default {
         // Open Graph
         { property: 'og:title', content: 'Taha Bouhsine | AI Researcher & Google Developer Expert' },
         { property: 'og:site_name', content: 'MLNomadpy' },
-        { property: 'og:description', content: 'Machine Learning Researcher & Engineer, Google Developer Expert in AI/ML, and CEO of MLNomads focusing on representation learning and interpretable AI models.' },
+        { property: 'og:description', content: 'AI Researcher & Engineer, Google Developer Expert in AI/ML, and CEO of MLNomads focusing on representation learning and interpretable AI models.' },
         { property: 'og:image', content: 'https://i.imgur.com/ScjU4Xr.png' },
         { property: 'og:url', content: canonicalUrl.value },
         { property: 'og:type', content: 'website' },
 
         // Twitter Card
         { property: 'twitter:title', content: 'Taha Bouhsine | AI Researcher & Google Developer Expert' },
-        { property: 'twitter:description', content: 'Machine Learning Researcher & Engineer, Google Developer Expert in AI/ML, and CEO of MLNomads.' },
+        { property: 'twitter:description', content: 'AI Researcher & Engineer, Google Developer Expert in AI/ML, and CEO of MLNomads.' },
         { property: 'twitter:image', content: 'https://i.imgur.com/ScjU4Xr.png' },
         { property: 'twitter:card', content: 'summary_large_image' },
         { property: 'twitter:url', content: canonicalUrl.value }
