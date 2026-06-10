@@ -180,9 +180,37 @@
 </template>
 
 <script>
+import talksData from '@/data/talks.json';
 import TalkCard from '@/components/talks/TalkCard.vue';
 import CompactList from '@/components/about/CompactList.vue';
 import { useHead } from '@vueuse/head';
+
+// Build the talks list synchronously so it is rendered during SSG
+// pre-render (not just client-side). Index-based fallback ids keep
+// server and client markup identical (no hydration mismatch).
+function buildTalks(raw) {
+  const potentialTopics = ['AI', 'ML', 'NLP', 'CV', 'Vision', 'GAN', 'RL', 'TensorFlow', 'Keras', 'JAX', 'FLAX'];
+  return raw.map((talk, index) => {
+    let tags = talk.tags;
+    if (!tags || tags.length === 0) {
+      tags = [];
+      if (talk.type) tags.push(talk.type);
+      if (talk.organization) tags.push(talk.organization.replace('@', ''));
+      potentialTopics.forEach(topic => {
+        if (talk.title.includes(topic)) tags.push(topic);
+      });
+      if (tags.length === 0) tags.push('Other');
+      tags = [...new Set(tags)];
+    }
+    return {
+      ...talk,
+      tags,
+      venue: talk.organization || talk.venue || 'Unknown venue',
+      date: talk.date || 'Unknown date',
+      id: talk.id || `talk-${index}`
+    };
+  });
+}
 
 export default {
   name: 'TalksView',
@@ -204,13 +232,14 @@ export default {
     })
   },
   data() {
+    const talks = buildTalks(talksData);
     return {
-      talks: [],
-      filteredTalks: [],
-      topics: [],
+      talks,
+      filteredTalks: talks,
+      topics: Array.from(new Set(talks.flatMap(t => t.tags || []))),
       selectedTopic: 'All',
       searchQuery: '',
-      isLoading: true,
+      isLoading: false,
       error: null,
       showFilters: false,
       viewMode: 'list', // Default to list
@@ -293,64 +322,7 @@ export default {
         const wrapper = this.$el.querySelector('.scrollable-content');
         if (wrapper) wrapper.scrollTo({ top: 0, behavior: 'smooth' });
       }
-    },
-    processTagsFromData(talksData) {
-      return talksData.map(talk => {
-        if (talk.tags && talk.tags.length > 0) {
-          return talk;
-        }
-        const tags = [];
-        if (talk.type) tags.push(talk.type);
-        if (talk.organization) {
-          const org = talk.organization.replace('@', '');
-          tags.push(org);
-        }
-        const potentialTopics = ['AI', 'ML', 'NLP', 'CV', 'Vision', 'GAN', 'RL', 'TensorFlow', 'Keras', 'JAX', 'FLAX'];
-        potentialTopics.forEach(topic => {
-          if (talk.title.includes(topic)) {
-            tags.push(topic);
-          }
-        });
-        if (tags.length === 0) tags.push('Other');
-        return {
-          ...talk,
-          tags: [...new Set(tags)]
-        };
-      });
-    },
-    async loadTalksData() {
-      try {
-        this.isLoading = true;
-        this.error = null;
-        
-        const talksData = await import('@/data/talks.json');
-        
-        const processedTalks = this.processTagsFromData(talksData.default || talksData);
-        
-        const talks = processedTalks.map(talk => ({
-          ...talk,
-          venue: talk.organization || talk.venue || 'Unknown venue',
-          date: talk.date || 'Unknown date',
-          id: talk.id || `talk-${Math.random().toString(36).substr(2, 9)}`
-        }));
-        
-        this.talks = talks;
-        this.filteredTalks = talks;
-        
-        const allTags = talks.flatMap(talk => talk.tags || []);
-        const topicsSet = new Set(allTags);
-        this.topics = Array.from(topicsSet);
-        
-        this.isLoading = false;
-      } catch (error) {
-        console.error('Error loading talks data:', error);
-        this.error = 'Failed to load talks data. Please try again later.';
-        this.isLoading = false;
-      }
     }
-  },
-  mounted() {
-    this.loadTalksData();
   }
 }
 </script>

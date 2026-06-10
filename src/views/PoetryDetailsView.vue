@@ -59,46 +59,22 @@
 </template>
 
 <script>
+import poetryData from '@/data/poetry.json';
+
 export default {
   name: 'PoetryDetailsView',
   props: ['id'],
   data() {
+    // Resolve the poem synchronously so it is rendered during SSG
+    // pre-render rather than fetched client-side after hydration.
+    const poem = poetryData.find(p => p.id === this.id) || null;
     return {
-      poem: null,
-      loading: true,
-      error: null
-    }
-  },
-  watch: {
-    id: {
-      immediate: true,
-      handler() {
-        this.loadPoem();
-      }
+      poem,
+      loading: false,
+      error: poem ? null : 'Poem not found'
     }
   },
   methods: {
-    async loadPoem() {
-      this.loading = true;
-      this.error = null;
-      try {
-        const poetryData = await import('@/data/poetry.json');
-        const poems = poetryData.default || poetryData;
-        
-        const foundPoem = poems.find(p => p.id === this.id);
-
-        if (foundPoem) {
-          this.poem = foundPoem;
-        } else {
-          this.error = 'Poem not found';
-        }
-      } catch (err) {
-        console.error('Error loading poem:', err);
-        this.error = 'Failed to load poem details';
-      } finally {
-        this.loading = false;
-      }
-    },
     isRTL(text) {
       if (!text) return false;
       const rtlRegex = /[\u0591-\u07FF\uFB1D-\uFDFD\uFE70-\uFEFC]/;
