@@ -50,6 +50,7 @@ const footerLinks = [
   { name: 'About', path: '/aboutme' },
   { name: 'Talks', path: '/talks' },
   { name: 'Poetry', path: '/poetry' },
+  { name: 'Music', path: '/music' },
 ]
 
 const socialLinks = [

@@ -52,6 +52,7 @@ export default {
         { to: '/aboutme', label: 'About', icon: 'fas fa-user' },
         { to: '/talks', label: 'Talks', icon: 'fas fa-microphone' },
         { to: '/poetry', label: 'Poetry', icon: 'fas fa-feather-alt' },
+        { to: '/music', label: 'Music', icon: 'fas fa-music' },
         // Blog lives in a separate repo / Pages project at /blog.
         { href: 'https://www.tahabouhsine.com/blog', label: 'Blog', icon: 'fas fa-pen-nib' },
       ],

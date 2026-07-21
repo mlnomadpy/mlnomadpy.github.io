@@ -42,6 +42,12 @@ export const routes = [
     meta: { index: 3, isDetail: true }
   },
   {
+    path: '/music',
+    name: 'music',
+    component: () => import('../views/MusicView.vue'),
+    meta: { index: 4 }
+  },
+  {
     // Concrete route so vite-ssg pre-renders dist/404.html.
     // GitHub Pages serves this for any unmatched URL (deep links, typos).
     path: '/404',
