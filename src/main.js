@@ -1,48 +1,29 @@
-import { ViteSSG } from 'vite-ssg'
-import { createWebHistory, createMemoryHistory } from 'vue-router'
-import App from './App.vue'
-import { routes } from './router'
-import '@fortawesome/fontawesome-free/css/all.css'
-import './assets/tokens.css'
-import './assets/styles.css'
-import './assets/styles/animations.css'
-import './assets/styles/responsive.css'
-import './assets/styles/mobile.css'
-import { Buffer } from 'buffer'
-
-// Polyfill Buffer for client-side usage (required by gray-matter)
-if (typeof window !== 'undefined') {
-  window.Buffer = Buffer;
-}
-
-const history = import.meta.env.SSR
-  ? createMemoryHistory(import.meta.env.BASE_URL)
-  : createWebHistory(import.meta.env.BASE_URL)
+import { ViteSSG } from "vite-ssg";
+import App from "./App.vue";
+import { routes } from "./router";
+import "./assets/site.css";
+import "./assets/fonts.css";
 
 export const createApp = ViteSSG(
   App,
   {
     routes,
     base: import.meta.env.BASE_URL,
-    history
+    scrollBehavior(to, from, savedPosition) {
+      if (savedPosition) return savedPosition;
+      if (to.path === from.path && to.fullPath !== from.fullPath && !to.hash)
+        return false;
+      if (to.hash) return { el: to.hash, top: 24 };
+      return { top: 0 };
+    },
   },
-  ({ app, router, routes, isClient, initialState }) => {
-    if (isClient) {
-      router.afterEach(() => {
-        // Reset all scrollable containers
-        const scrollables = document.querySelectorAll('.scrollable-content, .section-content, .tab-content-area')
-        scrollables.forEach(el => {
-          el.scrollTop = 0
-        })
-
-        // Move focus to main content for keyboard/screen reader users
-        requestAnimationFrame(() => {
-          const main = document.getElementById('main-content')
-          if (main) {
-            main.focus({ preventScroll: true })
-          }
-        })
-      })
-    }
-  }
-)
+  ({ router, isClient }) => {
+    if (isClient)
+      router.afterEach((to, from) => {
+        if (to.path === from.path) return;
+        requestAnimationFrame(() =>
+          document.querySelector("main")?.focus({ preventScroll: true }),
+        );
+      });
+  },
+);

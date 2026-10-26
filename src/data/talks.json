@@ -8,7 +8,7 @@
     "thumbnail": "https://i.imgur.com/xtJhx5A.jpeg",
     "description": "<p>A hands-on workshop on representation learning for computer vision using Keras and TensorFlow. Attendees learn how pretrained backbones, embeddings, and transfer learning turn raw pixels into powerful, reusable feature representations for downstream vision tasks like classification and retrieval.</p>",
     "kaggle_notebook": "",
-    "github_gist": "<script src='https://gist.github.com/skywolfmo/2e6d605ae4083b185d06975d5c28c35f.js'></script>"
+    "github_gist": "<script src='https://gist.github.com/mlnomadpy/2e6d605ae4083b185d06975d5c28c35f.js'></script>"
   },
   {
     "title": "ML Ascent 2 - Representation Learning Computer Vision",
@@ -18,7 +18,7 @@
     "type": "MLAscent",
     "thumbnail": "https://i.ytimg.com/vi/wJm57WV7uOE/maxresdefault.jpg",
     "description": "<p>An introduction to representation learning for computer vision: how deep neural networks learn compact, transferable feature embeddings from images. Covers feature extraction, transfer learning, and why high-quality representations are the foundation of modern computer-vision systems.</p>",
-    "kaggle_notebook": "https://www.kaggle.com/embed/skywolfmo/mlascent-2-cv-representation-learning"
+    "kaggle_notebook": "https://www.kaggle.com/code/skywolfmo/mlascent-2-cv-representation-learning"
   },
   {
     "title": "MLAscent 1 - Pretraining Deep Learning Models Computer Vision",
@@ -28,7 +28,7 @@
     "type": "MLAscent",
     "thumbnail": "https://i.imgur.com/AmMg4MN.png",
     "description": "<p>The opening session of the ML Ascent series on pretraining deep learning models for computer vision. Explores how large-scale pretraining and transfer learning with TensorFlow and Keras give vision models a head start, reducing data requirements while boosting accuracy.</p>",
-    "kaggle_notebook": "https://www.kaggle.com/embed/skywolfmo/mlascent-cv-pretraining-deep-learning-models?kernelSessionId=158069817"
+    "kaggle_notebook": "https://www.kaggle.com/code/skywolfmo/mlascent-cv-pretraining-deep-learning-models"
   },
   {
     "title": "ML in Depth - Picture-Perfect Phrases Contrastive Learning in AI Visual-Language Alignment",
@@ -38,27 +38,27 @@
     "type": "MLinDepth",
     "thumbnail": "https://i.imgur.com/uC9bqDO.png",
     "description": "<p>Explore the frontier of multimodal AI with contrastive learning for visual-language alignment. This talk unpacks how models like CLIP learn a shared image-text embedding space through contrastive objectives, powering zero-shot classification, semantic image search, and text-to-image retrieval.</p>",
-    "kaggle_notebook": "https://www.kaggle.com/embed/skywolfmo/ml-in-depth-contrastive-learning-visual-language"
+    "kaggle_notebook": "https://www.kaggle.com/code/skywolfmo/ml-in-depth-contrastive-learning-visual-language"
   },
   {
     "title": "ML in Depth 7 - Generative AI Fine-tuning LLMs with LoRA",
     "organization": "@DevMENA",
-    "link": "https://www.youtube.com/embed/Vc-6_VGp6uI",
+    "link": "https://www.youtube.com/embed/fqwOjLxrUcA",
     "slides": "https://docs.google.com/presentation/d/e/2PACX-1vS4VfEWOjThN3yjrOch8zPsZLNjrmY7Dc2btgiq_nCH84qg9PW-8dvk1Ayr_CjdbkZ2UywxskeLcrry/embed?start=false&loop=false&delayms=3000",
     "type": "MLinDepth",
     "thumbnail": "https://i.imgur.com/nk5r5wL.jpg",
     "description": "<p>Master parameter-efficient fine-tuning of Large Language Models with LoRA (Low-Rank Adaptation). Learn how LoRA adapts LLMs to custom tasks using a fraction of the compute and memory, plus practical guidance on training, merging adapters, and deploying fine-tuned generative AI models.</p>",
-    "kaggle_notebook": "https://www.kaggle.com/embed/skywolfmo/ml-in-depth-7-fine-tuning-llms-with-lora-devmena"
+    "kaggle_notebook": "https://www.kaggle.com/code/skywolfmo/ml-in-depth-7-fine-tuning-llms-with-lora-devmena"
   },
   {
     "title": "ML in Depth - Generative AI A Look into Transformers",
     "organization": "@DevMENA",
-    "link": "https://www.youtube.com/embed/Vc-6_VGp6uI",
+    "link": "https://www.youtube.com/embed/LKgnuzgYv6w",
     "slides": "https://docs.google.com/presentation/d/e/2PACX-1vSVwhAzzhqLPh7B7HNS_LWiVqK2wHKDN9XQJa9LlJ9yyEuerx65NK3ZOWhvFcNfyRa70iX7zWeHg8ds/embed?start=false&loop=false&delayms=3000",
     "type": "MLinDepth",
     "thumbnail": "https://i.imgur.com/IKdBhuV.jpeg",
     "description": "<p>A deep dive into the Transformer architecture that powers modern generative AI. Covers self-attention, multi-head attention, positional encoding, and the encoder-decoder design behind today's Large Language Models, explaining why Transformers revolutionized NLP and beyond.</p>",
-    "kaggle_notebook": "https://www.kaggle.com/embed/skywolfmo/ml-in-depth-7-fine-tuning-llms-with-lora-devmena"
+    "kaggle_notebook": "https://www.kaggle.com/code/skywolfmo/ml-in-depth-7-fine-tuning-llms-with-lora-devmena"
   },
   {
     "title": "ML in Depth 6 - Generative AI How to train your GAN",
@@ -68,7 +68,7 @@
     "type": "MLinDepth",
     "thumbnail": "https://i.imgur.com/NSZBUwh.jpeg",
     "description": "<p>A practical guide to Generative Adversarial Networks (GANs). Learn how the generator and discriminator compete during training, common failure modes like mode collapse, and hands-on techniques for training stable GANs to synthesize realistic images with TensorFlow.</p>",
-    "kaggle_notebook": "https://www.kaggle.com/embed/skywolfmo/ml-in-depth-generative-ai-how-to-train-your-gan?kernelSessionId=139819883"
+    "kaggle_notebook": "https://www.kaggle.com/code/skywolfmo/ml-in-depth-generative-ai-how-to-train-your-gan"
   },
   {
     "title": "ML in Depth Extra - Beyond Model.fit",
@@ -78,7 +78,7 @@
     "type": "MLinDepth",
     "thumbnail": "https://i.imgur.com/SZ8vqmA.jpg",
     "description": "<p>Go beyond Keras Model.fit and take full control of model training. This session covers custom training loops with tf.GradientTape, custom losses and metrics, and advanced TensorFlow workflows for when the high-level API isn't enough.</p>",
-    "kaggle_notebook": "https://www.kaggle.com/embed/skywolfmo/ml-in-depth-beyond-model-fit-devmena?kernelSessionId=136959246"
+    "kaggle_notebook": "https://www.kaggle.com/code/skywolfmo/ml-in-depth-beyond-model-fit-devmena"
   },
   {
     "title": "ML in Depth 4 - Deploying ML Models",
@@ -89,7 +89,7 @@
     "thumbnail": "https://i.imgur.com/Ctoto50.jpg",
     "description": "<p>A practical session on deploying machine learning models to production. Covers model serialization, serving with TensorFlow, building API endpoints, optimizing for inference, and the MLOps practices that move a trained model from notebook to real-world application.</p>",
     "kaggle_notebook": "",
-    "github_gist": "<script src='https://gist.github.com/skywolfmo/4c1641f40709c1bf70f6b44477231c5b.js'></script>"
+    "github_gist": "<script src='https://gist.github.com/mlnomadpy/4c1641f40709c1bf70f6b44477231c5b.js'></script>"
   },
   {
     "title": "ML In Depth: 3 - Deep Computer Vision - Object Detection",
@@ -99,7 +99,7 @@
     "type": "MLinDepth",
     "thumbnail": "https://i.imgur.com/ApFzdX5.jpg",
     "description": "<p>A hands-on workshop on deep computer vision for object detection. Learn how detectors locate and classify multiple objects in an image, the role of bounding boxes and anchors, and how to implement object detection models with TensorFlow and Keras.</p>",
-    "kaggle_notebook": "https://www.kaggle.com/embed/skywolfmo/menadd-ml-in-depth-3-deep-computer-vision?kernelSessionId=130446862"
+    "kaggle_notebook": "https://www.kaggle.com/code/skywolfmo/menadd-ml-in-depth-3-deep-computer-vision"
   },
   {
     "title": "ML In Depth: 2 - Deep Computer Vision - Segmentation",
@@ -109,7 +109,7 @@
     "type": "MLinDepth",
     "thumbnail": "https://i.imgur.com/IV5I3sI.jpg",
     "description": "<p>A practical deep-dive into image segmentation with deep learning. Covers semantic and instance segmentation, encoder-decoder architectures such as U-Net, and how to train pixel-level computer-vision models for applications like medical imaging and scene understanding using TensorFlow.</p>",
-    "kaggle_notebook": "https://www.kaggle.com/embed/skywolfmo/menadd-ml-in-depth-2-deep-computer-vision?kernelSessionId=123548732"
+    "kaggle_notebook": "https://www.kaggle.com/code/skywolfmo/menadd-ml-in-depth-2-deep-computer-vision"
   },
   {
     "title": "ML In Depth 1 - Deep Computer Vision - Classification",
@@ -119,7 +119,7 @@
     "type": "MLinDepth",
     "thumbnail": "https://i.imgur.com/DlOQI3x.jpg",
     "description": "<p>The foundations of deep computer vision for image classification. Learn how convolutional neural networks (CNNs) extract features from images, how to build and train classifiers with TensorFlow and Keras, and best practices for data augmentation and model evaluation.</p>",
-    "kaggle_notebook": "https://www.kaggle.com/embed/skywolfmo/menadd-ml-in-depth-1-deep-computer-vision?kernelSessionId=120520799"
+    "kaggle_notebook": "https://www.kaggle.com/code/skywolfmo/menadd-ml-in-depth-1-deep-computer-vision"
   },
   {
     "title": "BlaBlaConf 22  ML for Production - The Art of MLOps in the TensorFlow Ecosystem",
@@ -179,7 +179,7 @@
     "type": "MENADD",
     "thumbnail": "https://i.imgur.com/yRY7FT4.jpg",
     "description": "<p>A hands-on workshop building a brain tumor classifier with TensorFlow. Participants work through loading medical MRI imagery, preprocessing, and training a convolutional neural network to classify tumors, a practical introduction to deep learning for medical image analysis.</p>",
-    "kaggle_notebook": "https://www.kaggle.com/embed/skywolfmo/gdscweek-brain-tumor-classification-with-tf?kernelSessionId=112085967"
+    "kaggle_notebook": "https://www.kaggle.com/code/skywolfmo/gdscweek-brain-tumor-classification-with-tf"
   },
   {
     "title": "MENADD - Land Cover Classification using Multispectral Sentinel-2 Satellite Imagery, Google Earth Engine, and TensorFlow",
@@ -189,7 +189,7 @@
     "type": "MENADD",
     "thumbnail": "https://i.imgur.com/Q08zCzD.jpg",
     "description": "<p>A practical talk on remote sensing and machine learning: classifying land cover from multispectral Sentinel-2 satellite imagery using Google Earth Engine and TensorFlow. Covers working with geospatial data and spectral bands to train models for Earth observation.</p>",
-    "kaggle_notebook": "https://www.kaggle.com/embed/skywolfmo/menadd-land-cover-classification-using-tensorflow?kernelSessionId=112419776"
+    "kaggle_notebook": "https://www.kaggle.com/code/skywolfmo/menadd-land-cover-classification-using-tensorflow"
   },
   {
     "title": "30DaysofML - #MLReady WCV1: Image Classification with Dense NN TF",
@@ -199,7 +199,7 @@
     "type": "GDSC",
     "thumbnail": "https://i.imgur.com/56nw6kL.jpg",
     "description": "<p>Part of the 30DaysofML #MLReady series: build your first image classifier with a dense neural network in TensorFlow. A beginner-friendly walkthrough of loading image data, designing a fully-connected network, and training and evaluating a classification model.</p>",
-    "kaggle_notebook": "https://www.kaggle.com/embed/skywolfmo/mlready-wcv1-image-classification-with-dense-nn?kernelSessionId=92299884"
+    "kaggle_notebook": "https://www.kaggle.com/code/skywolfmo/mlready-wcv1-image-classification-with-dense-nn"
   },
   {
     "title": "30DaysofML - #MLReady WTS2: Time Series Forecasting with TF",
@@ -249,7 +249,7 @@
     "type": "GDSC",
     "thumbnail": "https://i.imgur.com/qVejNXw.jpg",
     "description": "<p>Part of the 30DaysofML #MLReady series: hands-on sentiment analysis with TensorFlow. Build a model that classifies text as positive or negative, covering text vectorization, word embeddings, and recurrent and dense architectures for real-world NLP classification.</p>",
-    "kaggle_notebook": "https://www.kaggle.com/code/skywolfmo/30daysofml-wnlp1-2-sentimental-analysis-with-tf?kernelSessionId=94163238"
+    "kaggle_notebook": "https://www.kaggle.com/code/skywolfmo/30daysofml-wnlp1-2-sentimental-analysis-with-tf"
   },
   {
     "title": "30DaysofML - #MLStart Intro to EDA",

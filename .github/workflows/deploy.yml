@@ -36,6 +36,9 @@ jobs:
       - name: Build (static pre-render of every route)
         run: npm run build
 
+      - name: Check generated pages
+        run: npm run check
+
       - name: Add CNAME and .nojekyll
         run: |
           cp CNAME dist/CNAME

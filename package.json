@@ -2,7 +2,7 @@
   "name": "mlnomadpy-personal-site",
   "version": "1.0.0",
   "private": true,
-  "description": "Personal website for Taha Bouhsine (MLNomadpy) showcasing research, talks, publications and professional experience in machine learning and AI",
+  "description": "Taha Bouhsine’s personal space for research, poems, talks, and music",
   "author": "Taha Bouhsine",
   "license": "MIT",
   "homepage": "https://www.tahabouhsine.com",
@@ -23,29 +23,27 @@
   "scripts": {
     "dev": "vite",
     "build": "vite-ssg build",
-    "serve": "vite preview"
+    "serve": "vite preview",
+    "check": "node scripts/check-build.mjs && npm run check:schema && npm run check:seo",
+    "check:seo": "node --test scripts/search-meta.test.mjs && node scripts/check-seo.mjs",
+    "check:schema": "node --test scripts/schema.test.mjs && node scripts/check-schema.mjs"
   },
   "dependencies": {
-    "@fortawesome/fontawesome-free": "^6.7.2",
     "@vueuse/head": "^2.0.0",
-    "buffer": "^6.0.3",
-    "core-js": "^3.8.3",
-    "gray-matter": "^4.0.3",
-    "markdown-it": "^14.1.0",
-    "markdown-it-katex": "^2.0.3",
     "vue": "^3.2.13",
     "vue-router": "^4.5.1"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.0",
+    "parse5": "^7.3.0",
     "vite": "^5.0.0",
-    "vite-ssg": "^0.23.0",
-    "vite-ssg-sitemap": "^0.10.0"
+    "vite-ssg": "^0.23.0"
   },
   "browserslist": [
     "> 1%",
     "last 2 versions",
     "not dead",
     "not ie 11"
-  ]
+  ],
+  "type": "module"
 }

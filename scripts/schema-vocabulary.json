@@ -1,0 +1,368 @@
+{
+  "source": "https://schema.org/version/latest/schemaorg-current-https.jsonld",
+  "retrieved": "2026-10-26",
+  "types": {
+    "Person": [
+      "Thing"
+    ],
+    "Thing": [],
+    "WebSite": [
+      "CreativeWork"
+    ],
+    "CreativeWork": [
+      "Thing"
+    ],
+    "WebPage": [
+      "CreativeWork"
+    ],
+    "CollectionPage": [
+      "WebPage"
+    ],
+    "ProfilePage": [
+      "WebPage"
+    ],
+    "ScholarlyArticle": [
+      "Article"
+    ],
+    "Article": [
+      "CreativeWork"
+    ],
+    "PresentationDigitalDocument": [
+      "DigitalDocument"
+    ],
+    "DigitalDocument": [
+      "CreativeWork"
+    ],
+    "VideoObject": [
+      "MediaObject"
+    ],
+    "MediaObject": [
+      "CreativeWork"
+    ],
+    "MusicPlaylist": [
+      "CreativeWork"
+    ],
+    "MusicRecording": [
+      "CreativeWork"
+    ],
+    "ItemList": [
+      "Intangible"
+    ],
+    "Intangible": [
+      "Thing"
+    ],
+    "ListItem": [
+      "Intangible"
+    ],
+    "BreadcrumbList": [
+      "ItemList"
+    ]
+  },
+  "properties": {
+    "url": {
+      "domains": [
+        "Thing"
+      ],
+      "ranges": [
+        "URL"
+      ]
+    },
+    "name": {
+      "domains": [
+        "Thing"
+      ],
+      "ranges": [
+        "Text"
+      ]
+    },
+    "description": {
+      "domains": [
+        "Thing"
+      ],
+      "ranges": [
+        "Text",
+        "TextObject"
+      ]
+    },
+    "isPartOf": {
+      "domains": [
+        "CreativeWork"
+      ],
+      "ranges": [
+        "CreativeWork",
+        "URL"
+      ]
+    },
+    "author": {
+      "domains": [
+        "CreativeWork",
+        "Rating"
+      ],
+      "ranges": [
+        "Organization",
+        "Person"
+      ]
+    },
+    "inLanguage": {
+      "domains": [
+        "BroadcastService",
+        "CommunicateAction",
+        "CreativeWork",
+        "Event",
+        "LinkRole",
+        "PronounceableText",
+        "WriteAction"
+      ],
+      "ranges": [
+        "Language",
+        "Text"
+      ]
+    },
+    "mainEntity": {
+      "domains": [
+        "CreativeWork"
+      ],
+      "ranges": [
+        "Thing"
+      ]
+    },
+    "about": {
+      "domains": [
+        "Certification",
+        "CommunicateAction",
+        "CreativeWork",
+        "DefinedTerm",
+        "DefinedTermSet",
+        "Event"
+      ],
+      "ranges": [
+        "Thing"
+      ]
+    },
+    "alternateName": {
+      "domains": [
+        "Thing"
+      ],
+      "ranges": [
+        "Text"
+      ]
+    },
+    "image": {
+      "domains": [
+        "Thing"
+      ],
+      "ranges": [
+        "ImageObject",
+        "URL"
+      ]
+    },
+    "email": {
+      "domains": [
+        "ContactPoint",
+        "Organization",
+        "Person"
+      ],
+      "ranges": [
+        "Text"
+      ]
+    },
+    "sameAs": {
+      "domains": [
+        "Thing"
+      ],
+      "ranges": [
+        "URL"
+      ]
+    },
+    "publisher": {
+      "domains": [
+        "CreativeWork",
+        "FinancialIncentive"
+      ],
+      "ranges": [
+        "Organization",
+        "Person"
+      ]
+    },
+    "breadcrumb": {
+      "domains": [
+        "WebPage"
+      ],
+      "ranges": [
+        "BreadcrumbList",
+        "Text"
+      ]
+    },
+    "itemListElement": {
+      "domains": [
+        "ItemList"
+      ],
+      "ranges": [
+        "ListItem",
+        "Text",
+        "Thing"
+      ]
+    },
+    "position": {
+      "domains": [
+        "CreativeWork",
+        "ListItem"
+      ],
+      "ranges": [
+        "Integer",
+        "Text"
+      ]
+    },
+    "item": {
+      "domains": [
+        "DataFeedItem",
+        "ListItem"
+      ],
+      "ranges": [
+        "Thing"
+      ]
+    },
+    "numberOfItems": {
+      "domains": [
+        "ItemList"
+      ],
+      "ranges": [
+        "Integer"
+      ]
+    },
+    "genre": {
+      "domains": [
+        "BroadcastChannel",
+        "CreativeWork",
+        "MusicGroup"
+      ],
+      "ranges": [
+        "DefinedTerm",
+        "Text",
+        "URL"
+      ]
+    },
+    "text": {
+      "domains": [
+        "CreativeWork"
+      ],
+      "ranges": [
+        "Text"
+      ]
+    },
+    "mainEntityOfPage": {
+      "domains": [
+        "Thing"
+      ],
+      "ranges": [
+        "CreativeWork",
+        "URL"
+      ]
+    },
+    "video": {
+      "domains": [
+        "CreativeWork"
+      ],
+      "ranges": [
+        "Clip",
+        "VideoObject"
+      ]
+    },
+    "thumbnailUrl": {
+      "domains": [
+        "CreativeWork"
+      ],
+      "ranges": [
+        "URL"
+      ]
+    },
+    "uploadDate": {
+      "domains": [
+        "MediaObject"
+      ],
+      "ranges": [
+        "Date",
+        "DateTime"
+      ]
+    },
+    "duration": {
+      "domains": [
+        "Audiobook",
+        "Episode",
+        "Event",
+        "MediaObject",
+        "Movie",
+        "MusicRecording",
+        "MusicRelease",
+        "QuantitativeValueDistribution",
+        "Schedule",
+        "ServicePeriod"
+      ],
+      "ranges": [
+        "Duration",
+        "QuantitativeValue"
+      ]
+    },
+    "embedUrl": {
+      "domains": [
+        "MediaObject"
+      ],
+      "ranges": [
+        "URL"
+      ]
+    },
+    "hasPart": {
+      "domains": [
+        "CreativeWork"
+      ],
+      "ranges": [
+        "CreativeWork"
+      ]
+    },
+    "headline": {
+      "domains": [
+        "CreativeWork"
+      ],
+      "ranges": [
+        "Text"
+      ]
+    },
+    "citation": {
+      "domains": [
+        "CreativeWork"
+      ],
+      "ranges": [
+        "CreativeWork",
+        "Text"
+      ]
+    },
+    "mentions": {
+      "domains": [
+        "CreativeWork"
+      ],
+      "ranges": [
+        "Thing"
+      ]
+    },
+    "creator": {
+      "domains": [
+        "CreativeWork",
+        "UserComments"
+      ],
+      "ranges": [
+        "Organization",
+        "Person"
+      ]
+    },
+    "track": {
+      "domains": [
+        "MusicGroup",
+        "MusicPlaylist"
+      ],
+      "ranges": [
+        "ItemList",
+        "MusicRecording"
+      ]
+    }
+  }
+}

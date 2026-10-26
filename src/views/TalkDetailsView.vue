@@ -1,634 +1,116 @@
 <template>
-  <div class="talk-details-view view-container">
-    <div class="section-content scrollable-content smooth-scroll">
-      <div v-if="loading" class="loading-container">
-        <div class="loader"></div>
-        <p>Loading talk details...</p>
+  <article v-if="talk" class="collection-page wrap talk-detail">
+    <p class="back-link">
+      <router-link to="/talks">Back to all talks</router-link>
+    </p>
+    <header class="detail-heading">
+      <p class="small muted">
+        {{ talk.organization }} / {{ talk.type }}
+        <span v-if="recording">
+          ·
+          <time :datetime="recording.uploadDate"
+            >Recording published {{ publicationDay }}</time
+          ></span
+        >
+      </p>
+      <h1>{{ talk.title }}</h1>
+    </header>
+    <div class="talk-detail-grid">
+      <div v-if="youtubeEmbed" class="recording-panel">
+        <iframe
+          :src="youtubeEmbed"
+          :title="talk.title + ' — video recording'"
+          loading="lazy"
+          referrerpolicy="strict-origin-when-cross-origin"
+          allow="encrypted-media; fullscreen; picture-in-picture"
+          allowfullscreen
+        ></iframe>
       </div>
-      
-      <div v-else-if="error" class="error-container">
-        <i class="fas fa-exclamation-circle"></i>
-        <h3>{{ error }}</h3>
-        <button @click="loadTalk" class="retry-btn">Retry</button>
-        <router-link to="/talks" class="back-link">Back to Talks</router-link>
-      </div>
-      
-      <div v-else-if="talk" class="talk-details-content">
-        <!-- Back Button -->
-        <router-link to="/talks" class="back-btn">
-          <i class="fas fa-arrow-left"></i> Back to Talks
-        </router-link>
-        
-        <!-- Hero Section with Video/Image -->
-        <div class="talk-hero">
-          <div class="media-container">
-            <iframe 
-              v-if="talk.link && talk.link.includes('youtube')" 
-              :src="talk.link" 
-              frameborder="0" 
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-              allowfullscreen
-              class="hero-video"
-            ></iframe>
-            <img 
-              v-else 
-              :src="talk.thumbnail" 
-              :alt="talk.title" 
-              class="hero-image"
-            />
-          </div>
-        </div>
-        
-        <!-- Title and Meta -->
-        <div class="talk-header">
-          <h1>{{ talk.title }}</h1>
-          <div class="meta-info">
-            <span class="organization">
-              <i class="fas fa-building"></i> {{ talk.organization }}
-            </span>
-            <span class="type" v-if="talk.type">
-              <i class="fas fa-tag"></i> {{ talk.type }}
-            </span>
-          </div>
-        </div>
-
-        <!-- Content Section -->
-        <div class="content-container">
-          <div class="description-card glass-card" v-if="hasDescription">
-            <h2>About this Talk</h2>
-            <div class="description-text" v-html="talk.description"></div>
-          </div>
-          
-          <div class="resources-card glass-card" v-if="hasResources">
-            <h2>Resources</h2>
-            <div class="links-grid">
-              <a v-if="talk.slides" :href="talk.slides" target="_blank" class="resource-link slides">
-                <i class="fas fa-file-powerpoint"></i>
-                <span>Slides</span>
-              </a>
-              <a v-if="talk.kaggle_notebook" :href="talk.kaggle_notebook" target="_blank" class="resource-link kaggle">
-                <i class="fab fa-kaggle"></i>
-                <span>Kaggle Notebook</span>
-              </a>
-              <a v-if="talk.github_gist" :href="extractGistUrl(talk.github_gist)" target="_blank" class="resource-link github">
-                <i class="fab fa-github"></i>
-                <span>Gist / Code</span>
-              </a>
-              <a v-if="talk.link && !talk.link.includes('youtube')" :href="talk.link" target="_blank" class="resource-link external">
-                <i class="fas fa-external-link-alt"></i>
-                <span>Watch Video</span>
-              </a>
-            </div>
-          </div>
-        </div>
+      <div class="session-notes">
+        <h2>About the session</h2>
+        <p>{{ plainText(talk.description) }}</p>
+        <h2 v-if="resources.length">Resources</h2>
+        <ul class="session-resources" v-if="resources.length">
+          <li v-for="resource in resources" :key="resource.href">
+            <a :href="resource.href">{{ resource.label }}</a>
+          </li>
+        </ul>
+        <p v-if="!talk.link && !resources.length" class="small muted">
+          No recording or resources archived yet.
+        </p>
       </div>
     </div>
-  </div>
+  </article>
+  <NotFoundView v-else />
 </template>
-
 <script setup>
-import { computed } from 'vue';
-import { useHead } from '@vueuse/head';
-import { useRoute } from 'vue-router';
-import talksData from '@/data/talks.json';
-
-const props = defineProps(['id']);
-const route = useRoute();
-
-// Resolve the talk synchronously from the static data so it is fully
-// rendered during SSG pre-render (not loaded client-side after hydration).
-const talk = computed(() => {
-  const slug = props.id;
-  return talksData.find(t => {
-    const tSlug = t.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
-    return tSlug === slug;
-  }) || null;
+import { computed } from "vue";
+import talks from "@/data/talks.json";
+import talkArt from "@/data/talk-art.json";
+import { talkSlug, plainText, gistUrl } from "@/utils/content";
+import { talkSearchTitle, searchExcerpt } from "@/utils/searchMeta";
+import { talkDetail } from "@/utils/structuredData";
+import videoMetadata from "@/data/video-metadata.json";
+import { usePageMeta } from "@/composables/usePageMeta";
+import NotFoundView from "./NotFoundView.vue";
+const props = defineProps({ id: String });
+const talk = computed(() => talks.find((t) => talkSlug(t.title) === props.id));
+const recording = computed(() => {
+  const id = talk.value?.link?.match(
+    /^https:\/\/www\.youtube\.com\/embed\/([\w-]+)$/,
+  )?.[1];
+  return id ? videoMetadata[id] : null;
 });
-const loading = computed(() => false);
-const error = computed(() => (talk.value ? null : 'Talk not found'));
-
-// Computeds
-const hasResources = computed(() => {
+const publicationDay = computed(() =>
+  recording.value
+    ? new Intl.DateTimeFormat("en", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        timeZone: "UTC",
+      }).format(
+        new Date(recording.value.uploadDate.slice(0, 10) + "T00:00:00Z"),
+      )
+    : "",
+);
+const youtubeEmbed = computed(() =>
+  talk.value?.link?.startsWith("https://www.youtube.com/embed/")
+    ? talk.value.link.replace("www.youtube.com", "www.youtube-nocookie.com")
+    : "",
+);
+const watchUrl = computed(() =>
+  talk.value?.link?.replace("/embed/", "/watch?v="),
+);
+const resources = computed(() => {
   const t = talk.value;
-  return t && (t.slides || t.kaggle_notebook || t.github_gist || (t.link && !t.link.includes('youtube')));
+  if (!t) return [];
+  return [
+    {
+      label: "Watch on YouTube",
+      href: youtubeEmbed.value ? watchUrl.value : "",
+    },
+    { label: "Slides", href: t.slides },
+    { label: "Kaggle notebook", href: t.kaggle_notebook },
+    { label: "Code on GitHub Gist", href: gistUrl(t.github_gist) },
+    { label: "Recording", href: !youtubeEmbed.value ? t.link : "" },
+  ].filter((r) => r.href);
 });
-
-const hasDescription = computed(() => {
-  const t = talk.value;
-  if (!t || !t.description) return false;
-  const desc = t.description.trim();
-  return desc !== '' && desc !== '.' && desc !== 'TBD' && desc !== '<p>.</p>';
-});
-
-// SEO
-const stripHtml = (html) => (html || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-const youtubeId = (link) => {
-  if (!link || !link.includes('/embed/')) return null;
-  const id = link.split('/embed/')[1].split(/[?&/]/)[0];
-  return id || null;
-};
-
-const pageTitle = computed(() => (talk.value ? talk.value.title : 'Talk Details'));
-
-// Full, HTML-stripped description (for JSON-LD and og:description).
-const fullDescription = computed(() => {
-  const t = talk.value;
-  if (!t) return 'A talk by Taha Bouhsine on AI and Machine Learning.';
-  const d = stripHtml(t.description);
-  if (d && d !== '.') return d;
-  return `${t.title}, a talk by Taha Bouhsine${t.organization ? ' at ' + t.organization : ''} on AI and Machine Learning.`;
-});
-
-// Search-snippet length cap (~160 chars) for the meta description tag.
-const metaDescription = computed(() => {
-  const d = fullDescription.value;
-  return d.length > 160 ? d.slice(0, 157).trimEnd() + '…' : d;
-});
-
-const pageImage = computed(() => (talk.value ? talk.value.thumbnail : null));
-const talkUrl = computed(() => `https://www.tahabouhsine.com/talks/${props.id}`);
-
-const keywords = computed(() => {
-  const t = talk.value;
-  const base = ['Taha Bouhsine', 'Machine Learning', 'Artificial Intelligence', 'AI talk', 'tech talk'];
-  if (!t) return base.join(', ');
-  const extra = [];
-  if (t.type) extra.push(t.type);
-  if (t.organization) extra.push(t.organization.replace('@', ''));
-  ['TensorFlow', 'Keras', 'JAX', 'NLP', 'Computer Vision', 'GAN', 'LLM', 'Reinforcement Learning', 'MLOps']
-    .forEach(k => { if (t.title.toLowerCase().includes(k.toLowerCase())) extra.push(k); });
-  return [...new Set([...base, ...extra])].join(', ');
-});
-
-// VideoObject structured data — drives video rich results in search.
-const videoLd = computed(() => {
-  const t = talk.value;
-  if (!t) return null;
-  const ld = {
-    '@context': 'https://schema.org',
-    '@type': 'VideoObject',
-    name: t.title,
-    description: fullDescription.value,
-    url: talkUrl.value,
-    author: { '@type': 'Person', name: 'Taha Bouhsine', url: 'https://www.tahabouhsine.com' },
-    publisher: { '@type': 'Person', name: 'Taha Bouhsine', url: 'https://www.tahabouhsine.com' },
-  };
-  if (t.thumbnail) ld.thumbnailUrl = [t.thumbnail];
-  if (t.link) ld.embedUrl = t.link;
-  const yid = youtubeId(t.link);
-  if (yid) ld.contentUrl = `https://www.youtube.com/watch?v=${yid}`;
-  return ld;
-});
-
-useHead(computed(() => ({
-  title: pageTitle.value,
-  meta: [
-    { name: 'description', content: metaDescription.value },
-    { name: 'keywords', content: keywords.value },
-    // Open Graph (og:url/canonical handled globally in App.vue per route)
-    { property: 'og:title', content: pageTitle.value },
-    { property: 'og:description', content: metaDescription.value },
-    { property: 'og:image', content: pageImage.value },
-    { property: 'og:type', content: 'video.other' },
-    // Twitter Card
-    { property: 'twitter:card', content: 'summary_large_image' },
-    { property: 'twitter:title', content: pageTitle.value },
-    { property: 'twitter:description', content: metaDescription.value },
-    { property: 'twitter:image', content: pageImage.value },
-  ],
-  script: videoLd.value
-    ? [{ type: 'application/ld+json', children: JSON.stringify(videoLd.value) }]
-    : [],
-})));
-
-function extractGistUrl(gistHtml) {
-  // Extract URL from gist embed script tag
-  if (!gistHtml) return '#';
-  const match = gistHtml.match(/src=['"]([^'"]+)['"]/);
-  if (match) {
-    return match[1].replace('.js', '');
-  }
-  return '#';
-}
+usePageMeta(
+  computed(() => (talk.value ? talkSearchTitle(talk.value) : "Talk not found")),
+  computed(
+    () =>
+      searchExcerpt(talk.value?.description) ||
+      "Talks and workshops by Taha Bouhsine.",
+  ),
+  {
+    image: computed(() => (talk.value ? talkArt[talk.value.title] : undefined)),
+    imageAlt: computed(() =>
+      talk.value ? `Session artwork: ${talk.value.title}` : undefined,
+    ),
+    noindex: computed(() => !talk.value),
+    structuredData: computed(() =>
+      talkDetail(talk.value, talkArt, videoMetadata),
+    ),
+  },
+);
 </script>
-
-<script>
-export default {
-  name: 'TalkDetailsView'
-}
-</script>
-
-<style scoped>
-/* Use global CSS variables for consistency */
-.talk-details-view {
-  background-color: var(--primary-bg, #0E0B08);
-  min-height: 100%;
-}
-
-.view-container {
-  height: 100%;
-  width: 100%;
-  position: relative;
-  overflow: hidden;
-}
-
-.scrollable-content {
-  height: 100%;
-  width: 100%;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: var(--spacing-lg, 1.5rem);
-  background-color: var(--primary-bg, #0E0B08);
-}
-
-/* Loading & Error States */
-.loading-container, .error-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 60vh;
-  color: var(--primary-text, white);
-  gap: var(--spacing-md, 1rem);
-  animation: fadeIn 0.5s ease-out;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.error-container i {
-  font-size: 3rem;
-  color: var(--accent-color, rgb(240, 178, 101));
-  opacity: 0.8;
-}
-
-.loader {
-  width: 50px;
-  height: 50px;
-  border: 3px solid rgba(255, 255, 255, 0.1);
-  border-top-color: var(--accent-color, rgb(240, 178, 101));
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.retry-btn {
-  margin-top: var(--spacing-md, 1rem);
-  padding: 12px 24px;
-  background: var(--accent-color, rgb(240, 178, 101));
-  color: var(--primary-bg, #0E0B08);
-  border: none;
-  border-radius: 25px;
-  cursor: pointer;
-  font-weight: bold;
-  font-family: 'Space Grotesk', sans-serif;
-  transition: all 0.3s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.retry-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 20px rgba(240, 178, 101, 0.4);
-}
-
-.back-link {
-  display: block;
-  margin-top: var(--spacing-md, 1rem);
-  color: var(--accent-color, rgb(240, 178, 101));
-  text-decoration: none;
-  transition: opacity 0.3s ease;
-}
-
-.back-link:hover {
-  opacity: 0.8;
-}
-
-/* Main Content */
-.talk-details-content {
-  max-width: 1000px;
-  margin: 0 auto;
-  padding-bottom: 60px;
-  animation: fadeIn 0.6s ease-out;
-}
-
-.back-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--accent-color, rgb(240, 178, 101));
-  text-decoration: none;
-  font-weight: 600;
-  margin-bottom: var(--spacing-lg, 1.5rem);
-  padding: 12px 20px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  backdrop-filter: blur(5px);
-  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  font-family: 'Space Grotesk', sans-serif;
-}
-
-.back-btn:hover {
-  transform: translateX(-8px);
-  background: var(--accent-color, rgb(240, 178, 101));
-  color: var(--primary-bg, #0E0B08);
-  box-shadow: 0 5px 20px rgba(240, 178, 101, 0.3);
-}
-
-/* Hero Section with Video/Image */
-.talk-hero {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16/9;
-  border-radius: 20px;
-  overflow: hidden;
-  margin-bottom: var(--spacing-xl, 2rem);
-  box-shadow: 0 15px 50px rgba(0,0,0,0.4);
-  background: linear-gradient(135deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.media-container {
-  width: 100%;
-  height: 100%;
-  position: relative;
-}
-
-.hero-video, .hero-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.5s ease;
-}
-
-.talk-hero:hover .hero-image {
-  transform: scale(1.02);
-}
-
-/* Title and Meta */
-.talk-header {
-  margin-bottom: var(--spacing-xl, 2rem);
-  padding-bottom: var(--spacing-lg, 1.5rem);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.talk-header h1 {
-  font-size: var(--font-size-h1, 2.5rem);
-  margin-bottom: var(--spacing-md, 1rem);
-  color: var(--primary-text, white);
-  font-family: 'Space Grotesk', sans-serif;
-  line-height: 1.3;
-  background: linear-gradient(135deg, #fff 0%, var(--accent-color, rgb(240, 178, 101)) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.meta-info {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--spacing-lg, 1.5rem);
-  font-size: 1rem;
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.meta-info span {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 16px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.meta-info span i {
-  color: var(--accent-color, rgb(240, 178, 101));
-}
-
-/* Glass Cards */
-.glass-card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border-radius: 20px;
-  padding: var(--spacing-xl, 2rem);
-  margin-bottom: var(--spacing-xl, 2rem);
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-  transition: all 0.3s ease;
-}
-
-.glass-card:hover {
-  border-color: rgba(240, 178, 101, 0.2);
-  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
-}
-
-.glass-card h2 {
-  color: var(--accent-color, rgb(240, 178, 101));
-  margin-bottom: var(--spacing-lg, 1.5rem);
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: var(--font-size-h3, 1.5rem);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding-bottom: var(--spacing-md, 1rem);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.glass-card h2::before {
-  content: '';
-  width: 4px;
-  height: 24px;
-  background: var(--accent-color, rgb(240, 178, 101));
-  border-radius: 2px;
-}
-
-.description-text {
-  line-height: 1.9;
-  font-size: 1.05rem;
-  color: rgba(255, 255, 255, 0.9);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-}
-
-.description-text :deep(p) {
-  margin-bottom: var(--spacing-md, 1rem);
-}
-
-.description-text :deep(a) {
-  color: var(--accent-color, rgb(240, 178, 101));
-  text-decoration: none;
-  border-bottom: 1px solid transparent;
-  transition: border-color 0.3s ease;
-}
-
-.description-text :deep(a:hover) {
-  border-bottom-color: var(--accent-color, rgb(240, 178, 101));
-}
-
-/* Resource Links Grid */
-.links-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: var(--spacing-md, 1rem);
-}
-
-.resource-link {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 16px 20px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  color: var(--primary-text, white);
-  text-decoration: none;
-  font-weight: 600;
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 0.9rem;
-  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  position: relative;
-  overflow: hidden;
-}
-
-.resource-link::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(135deg, var(--accent-color, rgb(240, 178, 101)) 0%, #e67e22 100%);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  z-index: 0;
-}
-
-.resource-link i, .resource-link span {
-  position: relative;
-  z-index: 1;
-}
-
-.resource-link i {
-  font-size: 1.2rem;
-  transition: transform 0.3s ease;
-}
-
-.resource-link:hover {
-  transform: translateY(-4px);
-  border-color: var(--accent-color, rgb(240, 178, 101));
-  box-shadow: 0 10px 30px rgba(240, 178, 101, 0.2);
-}
-
-.resource-link:hover::before {
-  opacity: 1;
-}
-
-.resource-link:hover {
-  color: var(--primary-bg, #0E0B08);
-}
-
-.resource-link:hover i {
-  transform: scale(1.1);
-}
-
-/* Specific resource link colors on hover */
-.resource-link.slides:hover {
-  border-color: #e74c3c;
-  box-shadow: 0 10px 30px rgba(231, 76, 60, 0.2);
-}
-
-.resource-link.kaggle:hover {
-  border-color: #20beff;
-  box-shadow: 0 10px 30px rgba(32, 190, 255, 0.2);
-}
-
-.resource-link.github:hover {
-  border-color: #6e5494;
-  box-shadow: 0 10px 30px rgba(110, 84, 148, 0.2);
-}
-
-/* Responsive Design */
-@media (max-width: 992px) {
-  .talk-header h1 {
-    font-size: var(--font-size-h2, 2rem);
-  }
-  
-  .glass-card {
-    padding: var(--spacing-lg, 1.5rem);
-  }
-}
-
-@media (max-width: 768px) {
-  .scrollable-content {
-    padding: var(--spacing-md, 1rem);
-  }
-  
-  .talk-header h1 {
-    font-size: var(--font-size-h3, 1.6rem);
-    -webkit-text-fill-color: var(--primary-text, white);
-    background: none;
-  }
-  
-  .talk-hero {
-    border-radius: 12px;
-    margin-bottom: var(--spacing-lg, 1.5rem);
-  }
-  
-  .glass-card {
-    padding: var(--spacing-md, 1rem);
-    border-radius: 12px;
-  }
-  
-  .meta-info {
-    gap: var(--spacing-sm, 0.5rem);
-  }
-  
-  .meta-info span {
-    font-size: 0.9rem;
-    padding: 6px 12px;
-  }
-  
-  .links-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-  
-  .resource-link {
-    padding: 12px 16px;
-    font-size: 0.85rem;
-  }
-  
-  .back-btn {
-    padding: 10px 16px;
-    font-size: 0.9rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .talk-header h1 {
-    font-size: 1.4rem;
-  }
-  
-  .links-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .meta-info {
-    flex-direction: column;
-    gap: var(--spacing-sm, 0.5rem);
-  }
-  
-  .meta-info span {
-    width: 100%;
-    justify-content: center;
-  }
-}
-</style>

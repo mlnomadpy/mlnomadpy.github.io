@@ -139,3 +139,6 @@ dist
 *.njsproj
 *.sln
 *.sw?
+# Generated structured-data validation fixtures and reports
+.schema-validation/
+.seo-audit/

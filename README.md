@@ -1,261 +1,53 @@
-# MLNomadpy Personal Website
+# Taha Bouhsine’s personal site
 
-[![Vue.js](https://img.shields.io/badge/Vue.js-3.x-4FC08D?style=for-the-badge&logo=vue.js&logoColor=white)](https://vuejs.org/)
-[![Vite](https://img.shields.io/badge/Vite-7.x-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/Tests-Passing-success?style=for-the-badge)](https://github.com/mlnomadpy/mlnomadpy.github.io)
+Research, poems, talks, music, and a little about the person behind them.
 
-A modern, SEO-optimized personal portfolio and research website for Taha Bouhsine (MLNomadpy), showcasing machine learning research, talks, publications, and professional experience.
+The site uses Vue 3 and Vite SSG. Every public route, including each poem and talk, is generated as HTML. The blog is a separate project at `/blog/`; this repository links to it.
 
-## 🌐 Website
+## Develop
 
-Visit the live website at [https://mlnomadpy.github.io](https://mlnomadpy.github.io)
+Use Node 20 or newer.
 
-## ✨ Features
+```sh
+npm ci
+npm run dev
+```
 
-### Core Features
-- **Professional Portfolio**: Showcasing research, projects, and professional background
-- **Publications & Research**: Display of academic papers and research contributions
-- **Talks & Presentations**: Collection of past and upcoming talks and presentations
-- **Life Events Timeline**: Interactive timeline of important life events
-- **Interactive UI**: Modern, responsive design with smooth animations
+## Verify and preview
 
-### Technical Features
-- **Modern Architecture**: Built with Vue.js 3 Composition API
-- **Modular Design**: Reusable components and composables
-- **SEO Optimized**: 
-  - Enhanced meta tags (title, description, keywords)
-  - Open Graph and Twitter Cards for social sharing
-  - Structured data (JSON-LD schema)
-  - XML sitemap and robots.txt
-  - Semantic HTML with proper heading hierarchy
-- **Performance Optimized**:
-  - Lazy loading for routes and components
-  - Code splitting and tree shaking
-  - Optimized bundle sizes
-  - Efficient asset caching
-- **Accessibility**: WCAG 2.1 compliant with ARIA labels and keyboard navigation
-- **Testing**: Comprehensive unit tests with Vitest
-- **Code Quality**: ESLint and Prettier for consistent code style
-- **CI/CD**: Automated testing and deployment with GitHub Actions
-
-## 🛠️ Technologies
-
-- **Frontend Framework**: Vue.js 3 with Composition API
-- **Build Tool**: Vite 7
-- **Routing**: Vue Router 4
-- **Testing**: Vitest with Vue Test Utils
-- **Linting**: ESLint 9
-- **Formatting**: Prettier
-- **Deployment**: GitHub Pages
-- **CI/CD**: GitHub Actions
-
-## 🚀 Setup & Development
-
-### Prerequisites
-
-- Node.js (v18 or higher)
-- npm (v9 or higher)
-
-### Installation
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/mlnomadpy/mlnomadpy.github.io.git
-   cd mlnomadpy.github.io/vue-app
-   ```
-
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Run the development server:
-   ```bash
-   npm run dev
-   ```
-
-The site will be available at `http://localhost:5173/`
-
-### Building for Production
-
-```bash
+```sh
 npm run build
+npm run check
+npm run serve
 ```
 
-The built files will be in the `dist` folder, ready to be deployed.
+`check` verifies generated pages, internal links, asset references, metadata, complete poem text, discoverable lazy-loaded recording players, and every page’s JSON-LD. Schema checks use a reviewed subset of the official Schema.org vocabulary and check the rendered content as well as the graph. They also run in the existing deploy workflow. See [structured-data validation](docs/structured-data-validation.md) for coverage and external test results.
 
-### Running Tests
+SEO checks also verify unique search metadata, social previews, image and font assets, fragment links, sitemap coverage, and discovery within three clicks. Run `npm run check:seo` against an existing build. See the [SEO audit](docs/seo-audit.md) for the Search Console baseline, fixes, and production follow-up.
 
-```bash
-# Run tests once
-npm test
+Before shipping, also inspect desktop and mobile layouts, keyboard navigation, search, browser Back, and the CV print layout.
 
-# Run tests in watch mode
-npm run test:watch
+## Edit content
 
-# Generate coverage report
-npm run test:coverage
-```
+- `src/data/poetry.json`: poems. Preserve the original wording, line breaks, dates, and language labels.
+- `src/data/talk-art.json`: local thumbnail paths for the recording library; artwork is in `public/talk-art/`.
+- `src/utils/searchMeta.js`: concise search titles and complete snippet excerpts; original session names and URLs stay in `talks.json`.
+- `src/data/talks.json`: talk descriptions and resource links. Existing title-derived URLs are preserved; changing a title also changes its URL, so add a redirect when renaming.
+- `src/data/video-metadata.json`: verified recording upload timestamps and durations, with YouTube source URLs and verification dates. When adding a recording, check its original upload metadata rather than guessing from the talk date.
+- `src/data/publications.json`: papers shown on Research.
+- `src/data/about-me-data.js`: CV experience, education, and credentials.
+- `src/data/reading.js`: selected blog articles.
+- `src/views/AboutMeView.vue`: personal introduction. Use real details rather than inventing biographical scenes.
+- `src/assets/site.css`: layout, typography, and visual styles.
+- `src/assets/fonts.css`: self-hosted Arabic and Tifinagh fonts with `font-display: swap`; original font licenses are in `public/fonts/`.
+- `src/utils/structuredData.js`: shared page-specific JSON-LD builders. Keep entities consistent with the visible content; run `npm run build && npm run check` after changes.
 
-### Code Quality
+Recording pages include native lazy-loaded YouTube privacy-enhanced players so crawlers can discover the video without clicking. They do not autoplay; a visit to a recording page can contact YouTube. Spotify loads after a visitor requests its player. The homepage film and its poster are served locally; playback respects reduced-motion preferences and has a pause control. The original source video is retained in `src/assets/background-video.mp4`, and the smaller delivery copy is in `public/background-video.mp4`. The portrait appears on About. Navigation uses ordinary links and the document scrolls normally.
 
-```bash
-# Lint code
-npm run lint
+## Deploy
 
-# Fix linting issues
-npm run lint:fix
+The existing GitHub Actions workflow builds and publishes pushes to `master`. The custom domain is configured in `CNAME`. Run build and content checks before pushing. The site has not been deployed by making local changes.
 
-# Format code
-npm run format
-```
+`public/sitemap-index.xml` also references standalone projects on the same domain; preserve those entries when changing the portfolio sitemap.
 
-## 📁 Project Structure
-
-```
-mlnomadpy.github.io/
-├── .github/
-│   └── workflows/
-│       └── deploy.yml       # CI/CD workflow
-├── vue-app/                 # Source code
-│   ├── public/              # Static files
-│   │   └── index.html       # HTML template with SEO meta tags
-│   ├── src/
-│   │   ├── assets/          # Global CSS and assets
-│   │   │   └── main.css     # Global styles
-│   │   ├── components/      # Reusable Vue components
-│   │   │   ├── HeaderComponent.vue
-│   │   │   └── FooterComponent.vue
-│   │   ├── composables/     # Vue composables for reusable logic
-│   │   │   ├── useResponsive.js
-│   │   │   ├── useIntersectionObserver.js
-│   │   │   └── useMeta.js
-│   │   ├── router/          # Vue Router configuration
-│   │   │   └── index.js
-│   │   ├── utils/           # Utility functions
-│   │   │   └── helpers.js
-│   │   ├── views/           # Page components
-│   │   │   ├── HomeView.vue
-│   │   │   ├── AboutView.vue
-│   │   │   ├── ResearchView.vue
-│   │   │   ├── TalksView.vue
-│   │   │   ├── LifeView.vue
-│   │   │   └── NotFoundView.vue
-│   │   ├── App.vue          # Root component
-│   │   └── main.js          # Application entry point
-│   ├── tests/
-│   │   ├── setup.js         # Test setup and mocks
-│   │   └── unit/            # Unit tests
-│   ├── .eslintrc.json       # ESLint configuration
-│   ├── .prettierrc          # Prettier configuration
-│   ├── vite.config.js       # Vite build configuration
-│   ├── vitest.config.js     # Vitest test configuration
-│   ├── package.json         # Dependencies and scripts
-│   └── README.md            # Vue app documentation
-├── robots.txt               # Search engine crawling instructions
-├── sitemap.xml              # XML sitemap for SEO
-├── CNAME                    # Custom domain configuration
-├── favicon.ico              # Website favicon
-└── README.md                # This file
-```
-
-## 🧩 Components
-
-The website consists of several main views:
-
-- **HomeView**: Landing page with hero section and highlights
-- **AboutView**: Personal information, story, education, and professional experience
-- **ResearchView**: Research papers and academic contributions
-- **TalksView**: Talks, presentations, and workshops
-- **LifeView**: Timeline of important life events
-- **NotFoundView**: 404 error page
-
-### Reusable Components
-
-- **HeaderComponent**: Navigation header with responsive mobile menu
-- **FooterComponent**: Footer with links and social media
-
-### Composables
-
-- **useResponsive**: Handle responsive behavior and screen sizes
-- **useIntersectionObserver**: Implement lazy loading and scroll animations
-- **useMeta**: Manage SEO meta tags dynamically
-
-## 🎯 Best Practices Implemented
-
-### Code Organization
-- ✅ Composition API for better code reusability
-- ✅ Single Responsibility Principle in components
-- ✅ Separation of concerns (views, components, composables, utils)
-- ✅ DRY (Don't Repeat Yourself) principle
-
-### Performance
-- ✅ Lazy loading routes with dynamic imports
-- ✅ Code splitting for vendor and app code
-- ✅ Optimized bundle sizes
-- ✅ Tree shaking for unused code elimination
-
-### Testing
-- ✅ Unit tests for components and utilities
-- ✅ Test coverage for critical functionality
-- ✅ Mocking for browser APIs
-
-### Code Quality
-- ✅ ESLint for code linting
-- ✅ Prettier for consistent formatting
-- ✅ JSDoc comments for documentation
-- ✅ Meaningful variable and function names
-
-### SEO & Accessibility
-- ✅ Semantic HTML elements
-- ✅ Proper heading hierarchy
-- ✅ ARIA labels for screen readers
-- ✅ Meta tags for search engines and social media
-- ✅ Structured data (JSON-LD)
-- ✅ Sitemap and robots.txt
-
-### Security
-- ✅ No hardcoded secrets
-- ✅ Safe external links (noopener noreferrer)
-- ✅ Input validation where applicable
-
-## 🔄 CI/CD Pipeline
-
-The project includes a GitHub Actions workflow that:
-
-1. Runs on push to master or pull requests
-2. Installs dependencies
-3. Runs linting checks
-4. Executes all unit tests
-5. Builds the production bundle
-6. Deploys to GitHub Pages (on master branch)
-
-## 🤝 Contributing
-
-Contributions are welcome! Please follow these guidelines:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes
-4. Run tests and linting (`npm test && npm run lint`)
-5. Commit your changes (`git commit -m 'Add amazing feature'`)
-6. Push to the branch (`git push origin feature/amazing-feature`)
-7. Open a Pull Request
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 👤 Author
-
-**Taha Bouhsine**
-- GitHub: [@mlnomadpy](https://github.com/mlnomadpy)
-- LinkedIn: [Taha Bouhsine](https://linkedin.com/in/Tahabsn)
-- Website: [MLNomadpy](https://mlnomadpy.github.io)
-
-## 🙏 Acknowledgments
-
-- Vue.js team for the amazing framework
-- Vite team for the blazing-fast build tool
-- Open source community for inspiration and tools
+`scripts/generate-sitemap.mjs` derives `dist/sitemap.xml` from the generated HTML canonicals, excluding errors and deduplicating aliases. It deliberately omits `lastmod` until trustworthy per-page modification dates are available.
