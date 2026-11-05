@@ -1,0 +1,173 @@
+{
+  "version": 1,
+  "posts": [
+    {
+      "id": "writeups/a-degree-two-kids-and-a-dacia",
+      "approvedBy": "Taha Bouhsine",
+      "approvedOn": "2026-11-05",
+      "sourceRevision": "91097822996155d168932edef65c6a89836b5369",
+      "contentSha256": "9b8ef4c8329be40ae7f97aa9b9632152cd6155163109d97b38b9aa873cca0488"
+    },
+    {
+      "id": "writeups/ai-illiteracy-pt1",
+      "approvedBy": "Taha Bouhsine",
+      "approvedOn": "2026-11-05",
+      "sourceRevision": "91097822996155d168932edef65c6a89836b5369",
+      "contentSha256": "aa577ca5719adacfd4b823bc25a535e18f9c4bcb11a302176081af052e7dd739"
+    },
+    {
+      "id": "writeups/am-i-building-the-ship-or-the-flood",
+      "approvedBy": "Taha Bouhsine",
+      "approvedOn": "2026-11-05",
+      "sourceRevision": "91097822996155d168932edef65c6a89836b5369",
+      "contentSha256": "68d1b0cd3b6ccf05f8c0e132f5c172f9f386bbf58e476e1af49d06cee42ad11d"
+    },
+    {
+      "id": "writeups/building-spaceships-and-surviving-floods",
+      "approvedBy": "Taha Bouhsine",
+      "approvedOn": "2026-11-05",
+      "sourceRevision": "91097822996155d168932edef65c6a89836b5369",
+      "contentSha256": "27ebcbe6a91d26e6702bcee5844e1731f3c66ff016640001ab866ba285c1286c"
+    },
+    {
+      "id": "writeups/changing-wells",
+      "approvedBy": "Taha Bouhsine",
+      "approvedOn": "2026-11-05",
+      "sourceRevision": "91097822996155d168932edef65c6a89836b5369",
+      "contentSha256": "33783720cd48754c1568e73135eb5b4bc58cc7a42e196af213d266abf714bce7"
+    },
+    {
+      "id": "writeups/generation-zero",
+      "approvedBy": "Taha Bouhsine",
+      "approvedOn": "2026-11-05",
+      "sourceRevision": "91097822996155d168932edef65c6a89836b5369",
+      "contentSha256": "a9ca69e4b6453626ea8ef1628fbae1ee75658f371811c98d8a8ef68bd1bfbbb7"
+    },
+    {
+      "id": "writeups/getting-zucked-a-nonprofit-story",
+      "approvedBy": "Taha Bouhsine",
+      "approvedOn": "2026-11-05",
+      "sourceRevision": "91097822996155d168932edef65c6a89836b5369",
+      "contentSha256": "28fcdebaad30f79bc54bc0630d185aae2d28a13605d2e0c570f9ed9b1bd1abb7"
+    },
+    {
+      "id": "writeups/how-to-die-digitally",
+      "approvedBy": "Taha Bouhsine",
+      "approvedOn": "2026-11-05",
+      "sourceRevision": "91097822996155d168932edef65c6a89836b5369",
+      "contentSha256": "ff7715f5082a2388c353ef813fedb4ca2556bc8d25abed95834a6dddf594f202"
+    },
+    {
+      "id": "writeups/i-already-failed-at-football",
+      "approvedBy": "Taha Bouhsine",
+      "approvedOn": "2026-11-05",
+      "sourceRevision": "91097822996155d168932edef65c6a89836b5369",
+      "contentSha256": "0aa92f6a48742b012555368108702896b3c11e7c5b7c7bff7310b326c3e980f3"
+    },
+    {
+      "id": "writeups/i-had-to-teach-it-before-i-could-understand-it",
+      "approvedBy": "Taha Bouhsine",
+      "approvedOn": "2026-11-05",
+      "sourceRevision": "91097822996155d168932edef65c6a89836b5369",
+      "contentSha256": "389af1766c4a0e89c0c789ab56821ba0731607a9e44831a451c20becec9cf489"
+    },
+    {
+      "id": "writeups/i-never-felt-qualified-so-i-learned-to-speak-anyway",
+      "approvedBy": "Taha Bouhsine",
+      "approvedOn": "2026-11-05",
+      "sourceRevision": "91097822996155d168932edef65c6a89836b5369",
+      "contentSha256": "04b69fc3ed850984e367069497d72b10bf6c81cb5998e49623a9263d0366b85e"
+    },
+    {
+      "id": "writeups/poem-0-1",
+      "approvedBy": "Taha Bouhsine",
+      "approvedOn": "2026-11-05",
+      "sourceRevision": "91097822996155d168932edef65c6a89836b5369",
+      "contentSha256": "4d8036f70e1e552e6719ad1139bd71f4b3e1779bba84f62d23df93dba3d325f3"
+    },
+    {
+      "id": "writeups/san-francisco-dreams-delulu-messiah",
+      "approvedBy": "Taha Bouhsine",
+      "approvedOn": "2026-11-05",
+      "sourceRevision": "91097822996155d168932edef65c6a89836b5369",
+      "contentSha256": "7d69d409a02d1daee89bac92f40c68820dc2336dba86b1e8a6c548143a0fc1d8"
+    },
+    {
+      "id": "writeups/support-has-a-timestamp",
+      "approvedBy": "Taha Bouhsine",
+      "approvedOn": "2026-11-05",
+      "sourceRevision": "91097822996155d168932edef65c6a89836b5369",
+      "contentSha256": "1e33c1e2c47bc14f4471f9e5cbd8583fed5aef2ba24606be17353fa1cff8b1fc"
+    },
+    {
+      "id": "writeups/the-ancestors-we-were-taught-to-forget",
+      "approvedBy": "Taha Bouhsine",
+      "approvedOn": "2026-11-05",
+      "sourceRevision": "91097822996155d168932edef65c6a89836b5369",
+      "contentSha256": "0d8e5a48719b1a93e655f7b4c3e0bf5262f390143e95df5428d4f4fc230dfcc8"
+    },
+    {
+      "id": "writeups/the-language-i-could-speak-but-couldnt-think-in",
+      "approvedBy": "Taha Bouhsine",
+      "approvedOn": "2026-11-05",
+      "sourceRevision": "91097822996155d168932edef65c6a89836b5369",
+      "contentSha256": "83552ed70f6bc87a65b70f113048e4ecbd44eb19ad50d10a73d614dcf7b0776b"
+    },
+    {
+      "id": "writeups/the-life-i-thought-i-was-leaving",
+      "approvedBy": "Taha Bouhsine",
+      "approvedOn": "2026-11-05",
+      "sourceRevision": "91097822996155d168932edef65c6a89836b5369",
+      "contentSha256": "cb4a2e40a4dbf5994f2da6dab8da3e68176b6ecc8d96b9ce1f0e4ba76dc20ce0"
+    },
+    {
+      "id": "writeups/the-price-of-belonging",
+      "approvedBy": "Taha Bouhsine",
+      "approvedOn": "2026-11-05",
+      "sourceRevision": "91097822996155d168932edef65c6a89836b5369",
+      "contentSha256": "a392dadfb8945c3dea5ca025038258ec8582da417df54db9d13a7a8f64adb21c"
+    },
+    {
+      "id": "writeups/the-universe-is-the-better-teacher",
+      "approvedBy": "Taha Bouhsine",
+      "approvedOn": "2026-11-05",
+      "sourceRevision": "91097822996155d168932edef65c6a89836b5369",
+      "contentSha256": "711a27a8a220d78036baf3570d1f3537482367a200f1d9b14b24dcad9d64c94c"
+    },
+    {
+      "id": "writeups/validation-peers-and-the-mentor-trap",
+      "approvedBy": "Taha Bouhsine",
+      "approvedOn": "2026-11-05",
+      "sourceRevision": "91097822996155d168932edef65c6a89836b5369",
+      "contentSha256": "1cfec047f82dbe31c67606520d29e865a430ce16d76243c7b860e107237ded51"
+    },
+    {
+      "id": "writeups/wasted-potential",
+      "approvedBy": "Taha Bouhsine",
+      "approvedOn": "2026-11-05",
+      "sourceRevision": "91097822996155d168932edef65c6a89836b5369",
+      "contentSha256": "e8902797c079a72280816591f1f86ad5fa524a4a5619b5d9afc2d7e907199bfc"
+    },
+    {
+      "id": "writeups/what-am-i-if-not-the-things-i-make",
+      "approvedBy": "Taha Bouhsine",
+      "approvedOn": "2026-11-05",
+      "sourceRevision": "91097822996155d168932edef65c6a89836b5369",
+      "contentSha256": "c78a6fa170f466bf25004d630fcccad145235835460aa4d77169db5d35ae78a9"
+    },
+    {
+      "id": "writeups/what-keeps-me-motivated",
+      "approvedBy": "Taha Bouhsine",
+      "approvedOn": "2026-11-05",
+      "sourceRevision": "91097822996155d168932edef65c6a89836b5369",
+      "contentSha256": "ad7a90a2925448507c0bc5eb16e44196aa2f57d72fc3ceffaa8681ffadc7911c"
+    },
+    {
+      "id": "writeups/what-would-count-as-proof",
+      "approvedBy": "Taha Bouhsine",
+      "approvedOn": "2026-11-05",
+      "sourceRevision": "91097822996155d168932edef65c6a89836b5369",
+      "contentSha256": "0577c8ed548aaf7693286e2d22358919379809f3533f06b9593f148c1e96597d"
+    }
+  ]
+}

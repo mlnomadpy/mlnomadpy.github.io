@@ -142,3 +142,8 @@ dist
 # Generated structured-data validation fixtures and reports
 .schema-validation/
 .seo-audit/
+# Local editorial inventory and decisions; never part of the published site.
+.blog-review/
+.writing-dist/
+writing/.astro/
+.astro/

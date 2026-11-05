@@ -1,5 +1,5 @@
 import { computed, unref } from "vue";
-import { useHead } from "@vueuse/head";
+import { useHead } from "@unhead/vue";
 import { useRoute } from "vue-router";
 import {
   buildPageGraph,
@@ -27,7 +27,7 @@ export function usePageMeta(title, description, options = {}) {
             type: unref(options.noindex)
               ? "application/json"
               : "application/ld+json",
-            children: unref(options.noindex)
+            innerHTML: unref(options.noindex)
               ? "{}"
               : serializeStructuredData(
                   buildPageGraph({

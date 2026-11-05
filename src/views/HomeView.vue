@@ -50,6 +50,19 @@
         </header>
         <div class="landing-spread">
           <div class="landing-notes">
+            <a v-if="!reading.length" class="landing-note" href="/research">
+              <img
+                src="/sketch-kernel.svg"
+                alt=""
+                width="160"
+                height="110"
+                loading="lazy"
+              />
+              <div>
+                <h3>The shape of what we learn.</h3>
+                <p>Neural networks, kernels, and the questions between them.</p>
+              </div>
+            </a>
             <article v-for="(post, index) in reading" :key="post.url">
               <a class="landing-note" :href="post.url" :aria-label="post.title">
                 <img
@@ -67,11 +80,7 @@
                 </div>
               </a>
             </article>
-            <a
-              class="landing-blog-link"
-              href="https://www.tahabouhsine.com/blog/"
-              >Records of the !mmortal Data Scientist</a
-            >
+            <a class="landing-blog-link" href="/blog/">Notes along the way</a>
           </div>
           <aside class="landing-leaf" aria-labelledby="poem-title">
             <p class="leaf-date">English &amp; Arabic / 2018–2023</p>
@@ -138,6 +147,7 @@
 </template>
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from "vue";
+import { useHead } from "@unhead/vue";
 import { reading } from "@/data/reading";
 import talks from "@/data/talks.json";
 import talkArt from "@/data/talk-art.json";
@@ -150,17 +160,51 @@ const backgroundVideo = ref(null);
 const paused = ref(true);
 const videoUnavailable = ref(false);
 let motionQuery;
+let visibilityObserver;
+let heroVisible = false;
+let manuallyPaused = false;
+let userRequestedPlayback = false;
+let readyToPlay = false;
+let disposed = false;
+let paintFrame;
 const pauseForReducedMotion = () => {
-  if (motionQuery?.matches) backgroundVideo.value?.pause();
+  if (motionQuery?.matches) userRequestedPlayback = false;
+  syncPlayback();
 };
 const play = () =>
   backgroundVideo.value?.play().catch(() => {
     paused.value = true;
   });
+const syncPlayback = () => {
+  const preferenceAllowsPlayback =
+    userRequestedPlayback ||
+    (!motionQuery?.matches && !navigator.connection?.saveData);
+  if (
+    !disposed &&
+    readyToPlay &&
+    heroVisible &&
+    !document.hidden &&
+    !manuallyPaused &&
+    preferenceAllowsPlayback &&
+    !videoUnavailable.value
+  )
+    play();
+  else backgroundVideo.value?.pause();
+};
+const startAfterPaint = () => {
+  paintFrame = requestAnimationFrame(() => {
+    paintFrame = requestAnimationFrame(() => {
+      readyToPlay = true;
+      syncPlayback();
+    });
+  });
+};
 const togglePlayback = () => {
   const shouldPause = !backgroundVideo.value?.paused;
-  if (shouldPause) backgroundVideo.value?.pause();
-  else play();
+  manuallyPaused = shouldPause;
+  userRequestedPlayback = !shouldPause;
+  readyToPlay = true;
+  syncPlayback();
   try {
     sessionStorage.setItem("portfolio-film-paused", String(shouldPause));
   } catch {
@@ -170,17 +214,43 @@ const togglePlayback = () => {
 onMounted(() => {
   motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
   motionQuery.addEventListener("change", pauseForReducedMotion);
-  let manuallyPaused = false;
   try {
     manuallyPaused = sessionStorage.getItem("portfolio-film-paused") === "true";
   } catch {
     /* Respect the motion preference even without storage. */
   }
-  if (!motionQuery.matches && !manuallyPaused) play();
+  document.addEventListener("visibilitychange", syncPlayback);
+  navigator.connection?.addEventListener("change", syncPlayback);
+  if ("IntersectionObserver" in window) {
+    visibilityObserver = new IntersectionObserver(([entry]) => {
+      heroVisible = entry.isIntersecting;
+      syncPlayback();
+    });
+    visibilityObserver.observe(backgroundVideo.value.closest(".home-intro"));
+  } else heroVisible = true;
+  if (document.readyState === "complete") startAfterPaint();
+  else window.addEventListener("load", startAfterPaint, { once: true });
 });
-onBeforeUnmount(() =>
-  motionQuery?.removeEventListener("change", pauseForReducedMotion),
-);
+onBeforeUnmount(() => {
+  disposed = true;
+  backgroundVideo.value?.pause();
+  visibilityObserver?.disconnect();
+  cancelAnimationFrame(paintFrame);
+  window.removeEventListener("load", startAfterPaint);
+  document.removeEventListener("visibilitychange", syncPlayback);
+  navigator.connection?.removeEventListener("change", syncPlayback);
+  motionQuery?.removeEventListener("change", pauseForReducedMotion);
+});
+useHead({
+  link: [
+    {
+      rel: "preload",
+      as: "image",
+      href: "/background-poster.webp",
+      fetchpriority: "high",
+    },
+  ],
+});
 usePageMeta(
   "Research, poems & the long road",
   "Taha Bouhsine’s personal space for neural networks, research, poems in English, Arabic and Darija, talks, and music.",

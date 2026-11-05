@@ -1,0 +1,45 @@
+---
+title: The Universe Is the Better Teacher
+description: What can correct a model besides our approval? A question about training signals, human knowledge, and learning from a world that can prove us wrong.
+pubDate: '2026-06-24'
+tags:
+- ai
+- philosophy
+- universal-approximation
+- intelligence
+- physics
+- notes
+draft: false
+updatedDate: '2026-11-05'
+hasMath: false
+---
+
+There is a theorem that sounds like a promise. Give a neural network enough width and it can approximate any continuous function. In [Cybenko's 1989 result](https://doi.org/10.1007/BF02551274), the functions live on a unit cube and the network uses a continuous sigmoidal activation. The approximation can be made uniformly as close as we like.
+
+It is tempting to shorten that to: the network can learn anything.
+
+But a function being representable does not tell us how to learn it from the data we have. The theorem does not supply the observations, find the weights, or tell us whether the resulting network will work beyond what we have observed. It certainly does not choose what we should ask the network to do.
+
+That is the question I want to stay with. When we train a model, what is the function on the other side of the equals sign?
+
+Much of what we offer a model is something a person has already said, written, labeled, or preferred. There is an enormous amount of knowledge in that record. There are also the things we agree to repeat, the mistakes we have not noticed, and the answers that sound right to us before we have checked them.
+
+It would be too easy to turn this into a claim that a model trained on human work can never surpass a human. There is no such ceiling in the approximation theorem. A dataset made by many people is not the output of one human mind, and predicting its contents is not the same task as reproducing a person's every ability. Human origins alone do not settle what a learner can discover or how well it can perform.
+
+Still, I am uneasy with making our approval the final test. An answer can satisfy us and be wrong. What else gets a chance to correct it?
+
+[AlphaGo Zero](https://www.nature.com/articles/nature24270) gives one answer. It learned through self-play, using the rules and outcomes of Go rather than a dataset of human games, and surpassed the earlier version of AlphaGo that had defeated a human champion. A move did not have to look like something a master would play. It had to survive what happened next on the board.
+
+That is the part that interests me. There was a way for an unfamiliar answer to prove itself without first obtaining our agreement.
+
+But I cannot turn every scientific success into the same story. [AlphaFold's structure-prediction system](https://pmc.ncbi.nlm.nih.gov/articles/PMC8371605/) learned from experimentally determined protein structures as well as sequence data, with physical and biological knowledge built into its design. It was not simply handed the laws of physics and left to discover proteins. The people who measured those structures helped make the learning possible. Human knowledge and evidence from the world were working together.
+
+So “let the universe teach” cannot mean removing people from the process. We choose what to measure, which experiment to run, what to simulate, and which error to penalize. Even a simulator can only correct a model within the assumptions we have put into it. Calling its answer reality does not make those assumptions disappear.
+
+Nor do I need to call the universe intelligent to want to learn from it. A protein does not have to be solving a problem in the way I solve one. The useful difference is that the physical result does not change because I prefer another answer. Our account of it can fail.
+
+I want models to have more contact with that possibility: predictions checked against measurements, proposals tested by experiment, behavior corrected by outcomes. These are ways of learning, not a proof that a general intelligence will follow. And outside a game, obtaining an outcome may be slow, expensive, ambiguous, or something we cannot responsibly try.
+
+The question becomes harder there. Go gives us rules and a winner. The world does not arrive with one score for everything we want to understand.
+
+Where can we give a model a way to find out that an answer we liked was wrong? And where are we still calling our own judgment the universe's reply?

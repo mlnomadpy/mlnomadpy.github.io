@@ -3,12 +3,16 @@ import { readFileSync, readdirSync, mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve, relative } from "node:path";
 import { parse } from "parse5";
 import { validateGraph } from "./lib/schema-validator.mjs";
+import { approvedPosts } from "../writing/lib/publication.mjs";
 import {
   SITE_ORIGIN,
   PERSON_ID,
   WEBSITE_ID,
 } from "../src/utils/structuredData.js";
 const root = resolve("dist");
+const publishedWritingUrls = new Set(
+  approvedPosts().map((post) => SITE_ORIGIN + post.url),
+);
 const walk = function* (n) {
   yield n;
   for (const c of n.childNodes || []) yield* walk(c);
@@ -125,6 +129,8 @@ for (const file of htmlFiles(root)) {
         "MusicRecording",
         "MusicPlaylist",
         "VideoObject",
+        "BlogPosting",
+        "Article",
       ].includes(entity["@type"])
     )
       assert.ok(
@@ -141,11 +147,32 @@ for (const file of htmlFiles(root)) {
         "Do not turn a submission/presentation date into publication metadata",
       );
     }
+    const publishedWriting =
+      ["Article", "BlogPosting", "CreativeWork"].includes(entity["@type"]) &&
+      publishedWritingUrls.has(entity.url);
+    if (
+      ["BlogPosting", "Article"].includes(entity["@type"]) ||
+      publishedWriting
+    ) {
+      assert.equal(entity.author["@id"], PERSON_ID);
+      assert.equal(entity.mainEntityOfPage, entity.url);
+      for (const date of [entity.datePublished, entity.dateModified].filter(
+        Boolean,
+      ))
+        if (url === entity.url)
+          assert.ok(
+            nodes.some(
+              (n) => n.tagName === "time" && attr(n, "datetime") === date,
+            ),
+            `${file}: article date must match visible time metadata`,
+          );
+    }
     if (entity.genre === "Poetry") {
-      assert.ok(
-        !entity.datePublished && !entity.dateCreated,
-        "Year-only poetry labels must not become fabricated complete dates",
-      );
+      if (!publishedWriting)
+        assert.ok(
+          !entity.datePublished && !entity.dateCreated,
+          "Year-only poetry labels must not become fabricated complete dates",
+        );
       if (entity.text)
         assert.ok(
           visible.includes(normalize(entity.text)),
@@ -257,7 +284,7 @@ for (const file of htmlFiles(root)) {
 }
 assert.equal(
   canonicalPages.size,
-  44,
+  46 + approvedPosts().length,
   "All canonical content pages must be covered",
 );
 assert.equal(notFoundPages, 1, "The generated 404 must be excluded");

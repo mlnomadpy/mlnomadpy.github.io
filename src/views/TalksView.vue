@@ -42,7 +42,7 @@
               v-if="talk.thumbnail"
               :src="talkArt[talk.title] || talk.thumbnail"
               :srcset="recordingSrcset(talkArt[talk.title])"
-              sizes="(max-width: 720px) 100vw, (max-width: 950px) 50vw, 33vw"
+              sizes="(max-width: 380px) 82px, (max-width: 720px) 105px, (max-width: 950px) 100px, 132px"
               alt=""
               :loading="index < 3 ? 'eager' : 'lazy'"
               :fetchpriority="index === 0 ? 'high' : undefined"

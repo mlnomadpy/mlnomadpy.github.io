@@ -1,0 +1,67 @@
+---
+import { render } from "astro:content";
+import { publishedPosts } from "../../lib/posts";
+import SiteLayout from "../layouts/SiteLayout.astro";
+import { writingGraph } from "../../lib/schema.mjs";
+import { postSection, writingSections } from "../../lib/sections.mjs";
+export async function getStaticPaths() {
+  return (await publishedPosts()).map((post) => ({
+    params: { slug: post.id.replace(/^blog\//, "") },
+    props: { post },
+  }));
+}
+const { post } = Astro.props;
+const section = postSection(post);
+const collection = writingSections[section];
+const { Content } = await render(post);
+// Math fonts/CSS are article-specific. No code/math font families on the index.
+const mathCSS = post.data.hasMath
+  ? (await import("katex/dist/katex.min.css?url")).default
+  : null;
+---
+
+<SiteLayout
+  title={post.data.title}
+  description={post.data.description}
+  graph={writingGraph([], post)}
+  image={post.data.image}
+  imageAlt={post.data.imageAlt}
+  article
+  section={section}
+>
+  {mathCSS && <link slot="head" rel="stylesheet" href={mathCSS} />}
+  <article class="writing-article reading-width">
+    <header class="article-heading">
+      <a class="back-link" href={collection.path}>
+        {section === "blog" ? "All blog posts" : "All writeups"}
+      </a>
+      <h1>{post.data.title}</h1>
+      <p class="article-byline">
+        <a href="/aboutme">Taha Bouhsine</a> <span> / </span>
+        <time datetime={post.data.pubDate}>
+          {new Date(post.data.pubDate).toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+            timeZone: "UTC",
+          })}
+        </time>
+      </p>
+      {post.data.updatedDate && (
+        <p class="article-byline">
+          Revised{" "}
+          <time datetime={post.data.updatedDate}>
+            {post.data.updatedDate.slice(0, 10)}
+          </time>
+        </p>
+      )}
+      {section === "blog" && <p class="lede">{post.data.description}</p>}
+    </header>
+    <div class="writing-prose">
+      <Content />
+    </div>
+    <footer class="article-foot">
+      <a href={collection.path}>Back to {collection.title.toLowerCase()}</a>
+    </footer>
+  </article>
+</SiteLayout>

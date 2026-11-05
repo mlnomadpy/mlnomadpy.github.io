@@ -16,7 +16,7 @@ export const gistUrl = (html) =>
   (html?.match(/src=['"]([^'"]+)['"]/)?.[1] || "").replace(/\.js$/, "");
 export const recordingSrcset = (image) =>
   image?.endsWith("-960.webp")
-    ? `${image.replace("-960.webp", "-480.webp")} 480w, ${image} 960w`
+    ? `${image.replace("-960.webp", "-320.webp")} 320w, ${image.replace("-960.webp", "-480.webp")} 480w, ${image} 960w`
     : undefined;
 
 // Keep the archive easy to scan; the complete description stays on the talk page.

@@ -56,7 +56,7 @@
       <section class="desk-notebook" aria-labelledby="notes-title">
         <div class="desk-section-heading">
           <h2 id="notes-title">Notebook</h2>
-          <a href="https://www.tahabouhsine.com/blog/">All writing</a>
+          <a href="/blog/">All writing</a>
         </div>
         <article class="notebook-entry" v-for="post in reading" :key="post.url">
           <h3>
@@ -64,6 +64,9 @@
           </h3>
           <p>{{ post.note }}</p>
         </article>
+        <p v-if="!reading.length" class="muted">
+          Notes on the questions behind the papers, taking shape.
+        </p>
         <nav class="desk-links" aria-label="Research elsewhere">
           <router-link to="/talks">Workshops &amp; recordings</router-link
           ><a href="https://github.com/mlnomadpy">Code on GitHub</a>

@@ -9,7 +9,7 @@ import {
 } from "node:fs";
 import { join, resolve } from "node:path";
 import { parse } from "parse5";
-import { SITE_ORIGIN } from "../src/utils/structuredData.js";
+import { SITE_ORIGIN, canonicalUrl } from "../src/utils/structuredData.js";
 
 const root = resolve("dist");
 const walk = function* (n) {
@@ -166,6 +166,7 @@ for (const file of files(root)) {
       `${canonical}: review long title (${title.length} characters)`,
     );
   documents.set(canonical, {
+    file,
     nodes,
     ids,
     title,
@@ -176,9 +177,8 @@ for (const file of files(root)) {
 }
 
 // Follow real HTML anchors, including same-origin absolute links and fragments.
-// Other repositories hosted below /blog and other project paths are external to this build.
+// Other Pages projects remain external. Writing now belongs to this build.
 const sharedProjects = [
-  "/blog",
   "/awesome-kernels",
   "/flaxdocs",
   "/localllm",
@@ -201,9 +201,11 @@ for (const [url, page] of documents) {
       )
     )
       continue;
-    const canonical =
-      SITE_ORIGIN +
-      (target.pathname === "/" ? "/" : target.pathname.replace(/\/$/, ""));
+    const canonical = canonicalUrl(target.pathname);
+    if (/\.(xml|json)$/.test(target.pathname)) {
+      localAsset(target.href, url);
+      continue;
+    }
     assert.ok(documents.has(canonical), `${url}: broken content link ${href}`);
     if (target.hash)
       assert.ok(
@@ -284,14 +286,7 @@ const report = {
     descriptionLength: page.description.length,
     clickDepth: depths.get(url),
     socialImage: page.image,
-    htmlBytes: statSync(
-      join(
-        root,
-        new URL(url).pathname === "/"
-          ? "index.html"
-          : new URL(url).pathname + ".html",
-      ),
-    ).size,
+    htmlBytes: statSync(page.file).size,
   })),
 };
 mkdirSync(".seo-audit", { recursive: true });

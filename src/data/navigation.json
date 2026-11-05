@@ -1,0 +1,20 @@
+{
+  "main": [
+    { "to": "/aboutme", "label": "About" },
+    { "to": "/research", "label": "Research" },
+    { "to": "/talks", "label": "Talks" },
+    { "to": "/poetry", "label": "Poetry" },
+    { "to": "/music", "label": "Music" },
+    { "to": "/blog/", "label": "Writing", "document": true }
+  ],
+  "elsewhere": [
+    { "to": "mailto:contact@tahabouhsine.com", "label": "Email me" },
+    { "to": "https://github.com/mlnomadpy", "label": "GitHub" },
+    {
+      "to": "https://scholar.google.com/citations?user=IsBjb3EAAAAJ",
+      "label": "Scholar"
+    },
+    { "to": "https://linkedin.com/in/Tahabsn", "label": "LinkedIn" },
+    { "to": "/cv", "label": "CV" }
+  ]
+}

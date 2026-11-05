@@ -7,7 +7,7 @@
 <script setup>
 import { computed } from "vue";
 import { useRoute } from "vue-router";
-import { useHead } from "@vueuse/head";
+import { useHead } from "@unhead/vue";
 import MainNavbar from "./components/Navbar.vue";
 import SiteFooter from "./components/FooterComponent.vue";
 import { canonicalUrl } from "./utils/structuredData";

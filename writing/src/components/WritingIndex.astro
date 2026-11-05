@@ -1,0 +1,75 @@
+---
+import { publishedPosts } from "../../lib/posts";
+import SiteLayout from "../layouts/SiteLayout.astro";
+import { writingGraph } from "../../lib/schema.mjs";
+import { postPath } from "../../lib/publication.mjs";
+import { writingSections } from "../../lib/sections.mjs";
+const { section } = Astro.props;
+const info = writingSections[section];
+const posts = (await publishedPosts(section)).sort(
+  (a, b) => Date.parse(b.data.pubDate) - Date.parse(a.data.pubDate),
+);
+---
+
+<SiteLayout
+  title={info.title}
+  description={info.description}
+  graph={writingGraph(posts, undefined, section)}
+  section={section}
+>
+  <div class="wrap writing-page">
+    <header class="writing-heading">
+      <h1>{info.title}</h1>
+      <p>{info.intro}</p>
+    </header>
+    {posts.length ? (
+      <section class="writing-register" aria-label={info.title}>
+        {posts.map((post) => (
+          <article>
+            <time datetime={post.data.pubDate}>
+              {new Date(post.data.pubDate).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+                timeZone: "UTC",
+              })}
+            </time>
+            <div>
+              <h2>
+                <a href={postPath(post.id)}>{post.data.title}</a>
+              </h2>
+              <p>{post.data.description}</p>
+            </div>
+          </article>
+        ))}
+      </section>
+    ) : (
+      <section class="quiet-notebook" aria-labelledby="notebook-title">
+        <svg class="notebook-sketch" viewBox="0 0 240 180" aria-hidden="true">
+          <g fill="none" stroke="currentColor" stroke-width="1.2">
+            <path d="M26 38q45-12 89 4v106q-44-16-89-4Zm89 4q44-16 89-4v106q-45-12-89 4M38 28q38-8 77 8 39-16 77-8" />
+            <path
+              d="m50 67 43 2m-43 18 36 2m57-18 40-4m-40 21 30-3"
+              opacity=".35"
+            />
+          </g>
+        </svg>
+        <div>
+          <h2 id="notebook-title">{info.emptyTitle}</h2>
+          <p>{info.emptyText}</p>
+          <p class="notebook-elsewhere">
+            For now, there are <a href="/research">open questions</a> and{" "}
+            <a href="/poetry">poems</a>.
+          </p>
+        </div>
+      </section>
+    )}
+    {posts.length > 0 && (
+      <p class="writing-feed">
+        <a href={info.path + "rss.xml"}>
+          Follow {info.title.toLowerCase()} by RSS
+        </a>
+      </p>
+    )}
+  </div>
+</SiteLayout>

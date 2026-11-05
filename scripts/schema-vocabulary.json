@@ -1,6 +1,6 @@
 {
   "source": "https://schema.org/version/latest/schemaorg-current-https.jsonld",
-  "retrieved": "2026-10-26",
+  "retrieved": "2026-11-01",
   "types": {
     "Person": [
       "Thing"
@@ -56,6 +56,15 @@
     ],
     "BreadcrumbList": [
       "ItemList"
+    ],
+    "Blog": [
+      "CreativeWork"
+    ],
+    "SocialMediaPosting": [
+      "Article"
+    ],
+    "BlogPosting": [
+      "SocialMediaPosting"
     ]
   },
   "properties": {
@@ -362,6 +371,33 @@
       "ranges": [
         "ItemList",
         "MusicRecording"
+      ]
+    },
+    "blogPost": {
+      "domains": [
+        "Blog"
+      ],
+      "ranges": [
+        "BlogPosting"
+      ]
+    },
+    "datePublished": {
+      "domains": [
+        "CreativeWork"
+      ],
+      "ranges": [
+        "Date",
+        "DateTime"
+      ]
+    },
+    "dateModified": {
+      "domains": [
+        "CreativeWork",
+        "DataFeedItem"
+      ],
+      "ranges": [
+        "Date",
+        "DateTime"
       ]
     }
   }

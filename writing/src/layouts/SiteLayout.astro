@@ -1,0 +1,110 @@
+---
+import navigation from "../../../src/data/navigation.json";
+import "../../../src/assets/site.css";
+import "../../../src/assets/fonts.css";
+import "../styles/writing.css";
+import { writingSections } from "../../lib/sections.mjs";
+import {
+  canonicalUrl,
+  serializeStructuredData,
+  SITE_ORIGIN,
+} from "../../../src/utils/structuredData.js";
+const {
+  title,
+  description,
+  graph,
+  image = "/social.png",
+  imageAlt = "Taha Bouhsine — research, poems, and the long road",
+  article = false,
+  section = "blog",
+} = Astro.props;
+const canonical = canonicalUrl(Astro.url.pathname);
+const fullTitle = title + " | Taha Bouhsine";
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#171512" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <link rel="canonical" href={canonical} />
+    <link
+      rel="alternate"
+      type="application/rss+xml"
+      title={writingSections[section].title + " by Taha Bouhsine"}
+      href={writingSections[section].path + "rss.xml"}
+    />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:type" content={article ? "article" : "website"} />
+    <meta property="og:site_name" content="Taha Bouhsine" />
+    <meta property="og:image" content={SITE_ORIGIN + image} />
+    <meta property="og:image:alt" content={imageAlt} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:url" content={canonical} />
+    <meta name="twitter:image" content={SITE_ORIGIN + image} />
+    <meta name="twitter:image:alt" content={imageAlt} />
+    <script
+      is:inline
+      id="portfolio-schema"
+      type="application/ld+json"
+      set:html={serializeStructuredData(graph)}
+    />
+    <slot name="head" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">
+      Skip to content
+    </a>
+    <header class="site-header">
+      <nav class="site-nav wrap" aria-label="Main navigation">
+        <a class="wordmark" href="/" aria-label="Taha Bouhsine, home">
+          Taha Bouhsine<span class="wordmark-note"> / MLNomadpy</span>
+        </a>
+        <ul class="nav-links">
+          {navigation.main.map((item) => (
+            <li>
+              <a
+                href={item.to}
+                aria-current={item.document ? "page" : undefined}
+              >
+                {item.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </header>
+    <main id="main-content" tabindex="-1">
+      <nav class="writing-sections wrap" aria-label="Writing sections">
+        {Object.entries(writingSections).map(([key, info]) => (
+          <a
+            href={info.path}
+            aria-current={key === section ? "page" : undefined}
+          >
+            {info.title}
+          </a>
+        ))}
+      </nav>
+      <slot />
+    </main>
+    <footer class="site-footer wrap">
+      <p>
+        Taha Bouhsine <span class="muted">/ MLNomadpy</span>
+      </p>
+      <nav aria-label="Elsewhere">
+        {navigation.elsewhere.map((item) => (
+          <a href={item.to}>{item.label}</a>
+        ))}
+      </nav>
+    </footer>
+  </body>
+</html>

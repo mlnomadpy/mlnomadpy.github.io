@@ -7,6 +7,10 @@ export const ref = (id) => ({ "@id": id });
 export const absoluteUrl = (path) => new URL(path, `${SITE_ORIGIN}/`).href;
 export function canonicalUrl(path = "/") {
   const pathname = path.split(/[?#]/)[0] || "/";
+  // Astro emits writing as directories; keep canonicals on the served URL,
+  // preserving the old article paths without a redirect to a slashless alias.
+  if (pathname === "/blog" || pathname.startsWith("/blog/"))
+    return SITE_ORIGIN + pathname.replace(/\/+$/, "") + "/";
   return SITE_ORIGIN + (pathname === "/" ? "/" : pathname.replace(/\/+$/, ""));
 }
 export function serializeStructuredData(graph) {

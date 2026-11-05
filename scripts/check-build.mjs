@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { parse } from "parse5";
+import { canonicalUrl } from "../src/utils/structuredData.js";
+import { approvedPosts } from "../writing/lib/publication.mjs";
 
 const root = resolve("dist");
 const json = (name) =>
@@ -28,6 +30,9 @@ const output = (path) =>
       );
 const expected = [
   "/",
+  "/blog",
+  "/blog/writeups",
+  ...approvedPosts().map((post) => post.url.replace(/\/$/, "")),
   "/aboutme",
   "/research",
   "/cv",
@@ -57,7 +62,7 @@ for (const path of expected) {
       (n) =>
         n.tagName === "link" &&
         attr(n, "rel") === "canonical" &&
-        attr(n, "href") === "https://www.tahabouhsine.com" + path,
+        attr(n, "href") === canonicalUrl(path),
     ),
     `${path}: canonical`,
   );
@@ -80,7 +85,12 @@ for (const path of expected) {
       !href.startsWith("//")
     ) {
       const target = href.split("#")[0].split("?")[0] || path;
-      assert.ok(output(target), `${path}: broken internal link ${href}`);
+      assert.ok(
+        /\.(xml|json)$/.test(target)
+          ? existsSync(join(root, target))
+          : output(target),
+        `${path}: broken internal link ${href}`,
+      );
     }
     for (const key of ["src", "href"]) {
       const value = attr(node, key);

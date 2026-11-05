@@ -29,6 +29,11 @@ const validTimestamp = (value) => {
     probe.getUTCDate() === day
   );
 };
+const validDate = (value) =>
+  typeof value === "string" &&
+  /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+  !Number.isNaN(Date.parse(value)) &&
+  new Date(value + "T00:00:00Z").toISOString().slice(0, 10) === value;
 export function validateGraph(document, { pageUrl } = {}) {
   const errors = [];
   const fail = (message) => errors.push(message);
@@ -66,6 +71,7 @@ export function validateGraph(document, { pageUrl } = {}) {
       return typeof value === "number" && Number.isFinite(value);
     if (range === "Boolean") return typeof value === "boolean";
     if (range === "DateTime") return validTimestamp(value);
+    if (range === "Date") return validDate(value);
     if (range === "Duration")
       return (
         typeof value === "string" &&
@@ -131,6 +137,15 @@ export function validateGraph(document, { pageUrl } = {}) {
         )
           fail(`${label}: Google video required property ${field} is missing`);
       if (!object.embedUrl) fail(`${label}: recording needs an embedUrl`);
+    }
+    if (types.includes("BlogPosting") || types.includes("Article")) {
+      for (const field of ["headline", "datePublished", "author"])
+        if (!object[field]) fail(`${label}: article needs ${field}`);
+      if (
+        object.dateModified &&
+        Date.parse(object.dateModified) < Date.parse(object.datePublished)
+      )
+        fail(`${label}: modification date precedes publication`);
     }
     if (types.includes("ItemList") || types.includes("BreadcrumbList")) {
       if (!Array.isArray(object.itemListElement))

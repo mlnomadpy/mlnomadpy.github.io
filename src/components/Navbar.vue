@@ -7,20 +7,14 @@
         ></router-link
       >
       <ul class="nav-links">
-        <li v-for="item in links" :key="item.to">
-          <router-link :to="item.to">{{ item.label }}</router-link>
+        <li v-for="item in navigation.main" :key="item.to">
+          <a v-if="item.document" :href="item.to">{{ item.label }}</a>
+          <router-link v-else :to="item.to">{{ item.label }}</router-link>
         </li>
-        <li><a href="https://www.tahabouhsine.com/blog/">Blog</a></li>
       </ul>
     </nav>
   </header>
 </template>
 <script setup>
-const links = [
-  { to: "/aboutme", label: "About" },
-  { to: "/research", label: "Research" },
-  { to: "/talks", label: "Talks" },
-  { to: "/poetry", label: "Poetry" },
-  { to: "/music", label: "Music" },
-];
+import navigation from "@/data/navigation.json";
 </script>

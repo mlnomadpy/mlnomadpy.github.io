@@ -2,12 +2,15 @@
   <footer class="site-footer wrap">
     <p>Taha Bouhsine <span class="muted">/ MLNomadpy</span></p>
     <nav aria-label="Elsewhere">
-      <a href="mailto:contact@tahabouhsine.com">Email me</a
-      ><a href="https://github.com/mlnomadpy">GitHub</a
-      ><a href="https://scholar.google.com/citations?user=IsBjb3EAAAAJ"
-        >Scholar</a
-      ><a href="https://linkedin.com/in/Tahabsn">LinkedIn</a
-      ><router-link to="/cv">CV</router-link>
+      <template v-for="item in navigation.elsewhere" :key="item.to">
+        <router-link v-if="item.to.startsWith('/')" :to="item.to">{{
+          item.label
+        }}</router-link>
+        <a v-else :href="item.to">{{ item.label }}</a>
+      </template>
     </nav>
   </footer>
 </template>
+<script setup>
+import navigation from "@/data/navigation.json";
+</script>
