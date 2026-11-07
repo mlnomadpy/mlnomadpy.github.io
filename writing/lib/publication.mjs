@@ -4,7 +4,7 @@ import { resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 export const writingRoot = fileURLToPath(new URL("../", import.meta.url));
-export const postPath = (id) => "/blog/" + id.replace(/^blog\//, "") + "/";
+export const postPath = (id) => "/" + id + "/";
 
 export function approvedPosts(root = writingRoot) {
   const manifest = JSON.parse(
@@ -44,4 +44,14 @@ export function approvedPosts(root = writingRoot) {
       throw new Error("Content changed since approval: " + entry.id);
     return { ...entry, path, url: postPath(entry.id) };
   });
+}
+
+export function writeupRedirects(posts = approvedPosts()) {
+  const destinations = [
+    "/writeups/",
+    ...posts.filter((p) => p.id.startsWith("writeups/")).map((p) => p.url),
+  ];
+  return Object.fromEntries(
+    destinations.map((path) => ["/blog" + path.slice(0, -1), path]),
+  );
 }

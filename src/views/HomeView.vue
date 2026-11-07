@@ -80,7 +80,7 @@
                 </div>
               </a>
             </article>
-            <a class="landing-blog-link" href="/blog/">Notes along the way</a>
+            <a class="landing-blog-link" href="/writeups/">Read the writeups</a>
           </div>
           <aside class="landing-leaf" aria-labelledby="poem-title">
             <p class="leaf-date">English &amp; Arabic / 2018–2023</p>

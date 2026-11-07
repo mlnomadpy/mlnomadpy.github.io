@@ -4,6 +4,7 @@ import "../../../src/assets/site.css";
 import "../../../src/assets/fonts.css";
 import "../styles/writing.css";
 import { writingSections } from "../../lib/sections.mjs";
+import WritingNavigation from "../components/WritingNavigation.astro";
 import {
   canonicalUrl,
   serializeStructuredData,
@@ -60,7 +61,7 @@ const fullTitle = title + " | Taha Bouhsine";
     />
     <slot name="head" />
   </head>
-  <body>
+  <body class="writing-site">
     <a class="skip-link" href="#main-content">
       Skip to content
     </a>
@@ -74,7 +75,13 @@ const fullTitle = title + " | Taha Bouhsine";
             <li>
               <a
                 href={item.to}
-                aria-current={item.document ? "page" : undefined}
+                aria-current={
+                  item.to === writingSections[section].path
+                    ? article
+                      ? "location"
+                      : "page"
+                    : undefined
+                }
               >
                 {item.label}
               </a>
@@ -84,16 +91,7 @@ const fullTitle = title + " | Taha Bouhsine";
       </nav>
     </header>
     <main id="main-content" tabindex="-1">
-      <nav class="writing-sections wrap" aria-label="Writing sections">
-        {Object.entries(writingSections).map(([key, info]) => (
-          <a
-            href={info.path}
-            aria-current={key === section ? "page" : undefined}
-          >
-            {info.title}
-          </a>
-        ))}
-      </nav>
+      <WritingNavigation section={section} article={article} />
       <slot />
     </main>
     <footer class="site-footer wrap">

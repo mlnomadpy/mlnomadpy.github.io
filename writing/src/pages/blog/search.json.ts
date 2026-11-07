@@ -1,5 +1,5 @@
-import { publishedPosts } from "../../lib/posts";
-import { postPath } from "../../lib/publication.mjs";
+import { publishedPosts } from "../../../lib/posts";
+import { postPath } from "../../../lib/publication.mjs";
 export async function GET() {
   const posts = await publishedPosts();
   return new Response(

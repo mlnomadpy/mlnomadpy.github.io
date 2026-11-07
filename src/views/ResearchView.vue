@@ -56,7 +56,7 @@
       <section class="desk-notebook" aria-labelledby="notes-title">
         <div class="desk-section-heading">
           <h2 id="notes-title">Notebook</h2>
-          <a href="/blog/">All writing</a>
+          <a href="/blog/">Technical blog</a>
         </div>
         <article class="notebook-entry" v-for="post in reading" :key="post.url">
           <h3>

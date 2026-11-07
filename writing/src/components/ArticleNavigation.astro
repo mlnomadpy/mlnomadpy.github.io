@@ -1,0 +1,37 @@
+---
+import { postPath } from "../../lib/publication.mjs";
+import { formatDate } from "../../lib/presentation.mjs";
+const { earlier, later, collection } = Astro.props;
+---
+
+<footer class="article-foot">
+  {(earlier || later) && (
+    <nav class="article-neighbors" aria-label="More writing">
+      {earlier && (
+        <a class="article-neighbor" href={postPath(earlier.id)} rel="prev">
+          <span class="neighbor-direction">Previous</span>
+          <span class="neighbor-title">{earlier.data.title}</span>
+          <time datetime={earlier.data.pubDate}>
+            {formatDate(earlier.data.pubDate, { month: "short" })}
+          </time>
+        </a>
+      )}
+      {later && (
+        <a
+          class="article-neighbor article-neighbor--later"
+          href={postPath(later.id)}
+          rel="next"
+        >
+          <span class="neighbor-direction">Next</span>
+          <span class="neighbor-title">{later.data.title}</span>
+          <time datetime={later.data.pubDate}>
+            {formatDate(later.data.pubDate, { month: "short" })}
+          </time>
+        </a>
+      )}
+    </nav>
+  )}
+  <a class="article-return" href={collection.path}>
+    All {collection.title.toLowerCase()}
+  </a>
+</footer>

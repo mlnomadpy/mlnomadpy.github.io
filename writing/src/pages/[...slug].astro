@@ -4,13 +4,24 @@ import { publishedPosts } from "../../lib/posts";
 import SiteLayout from "../layouts/SiteLayout.astro";
 import { writingGraph } from "../../lib/schema.mjs";
 import { postSection, writingSections } from "../../lib/sections.mjs";
+import { newestFirst } from "../../lib/presentation.mjs";
+import ArticleDetails from "../components/ArticleDetails.astro";
+import ArticleNavigation from "../components/ArticleNavigation.astro";
+import PostLink from "../components/PostLink.astro";
 export async function getStaticPaths() {
-  return (await publishedPosts()).map((post) => ({
-    params: { slug: post.id.replace(/^blog\//, "") },
-    props: { post },
-  }));
+  const posts = newestFirst(await publishedPosts());
+  return posts.map((post) => {
+    const siblings = posts.filter(
+      (item) => postSection(item) === postSection(post),
+    );
+    const index = siblings.findIndex((item) => item.id === post.id);
+    return {
+      params: { slug: post.id },
+      props: { post, earlier: siblings[index + 1], later: siblings[index - 1] },
+    };
+  });
 }
-const { post } = Astro.props;
+const { post, earlier, later } = Astro.props;
 const section = postSection(post);
 const collection = writingSections[section];
 const { Content } = await render(post);
@@ -30,38 +41,24 @@ const mathCSS = post.data.hasMath
   section={section}
 >
   {mathCSS && <link slot="head" rel="stylesheet" href={mathCSS} />}
-  <article class="writing-article reading-width">
+  <article class="writing-article wrap">
     <header class="article-heading">
       <a class="back-link" href={collection.path}>
         {section === "blog" ? "All blog posts" : "All writeups"}
       </a>
       <h1>{post.data.title}</h1>
-      <p class="article-byline">
-        <a href="/aboutme">Taha Bouhsine</a> <span> / </span>
-        <time datetime={post.data.pubDate}>
-          {new Date(post.data.pubDate).toLocaleDateString("en-US", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-            timeZone: "UTC",
-          })}
-        </time>
-      </p>
-      {post.data.updatedDate && (
-        <p class="article-byline">
-          Revised{" "}
-          <time datetime={post.data.updatedDate}>
-            {post.data.updatedDate.slice(0, 10)}
-          </time>
-        </p>
-      )}
       {section === "blog" && <p class="lede">{post.data.description}</p>}
     </header>
-    <div class="writing-prose">
-      <Content />
+    <div class="article-margin">
+      <ArticleDetails post={post} />
     </div>
-    <footer class="article-foot">
-      <a href={collection.path}>Back to {collection.title.toLowerCase()}</a>
-    </footer>
+    <div class="writing-prose">
+      <Content components={{ a: PostLink }} />
+    </div>
+    <ArticleNavigation
+      earlier={earlier}
+      later={later}
+      collection={collection}
+    />
   </article>
 </SiteLayout>

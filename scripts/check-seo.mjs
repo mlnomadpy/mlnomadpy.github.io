@@ -1,3 +1,4 @@
+import { writeupRedirects } from "../writing/lib/publication.mjs";
 import assert from "node:assert/strict";
 import {
   existsSync,
@@ -12,6 +13,9 @@ import { parse } from "parse5";
 import { SITE_ORIGIN, canonicalUrl } from "../src/utils/structuredData.js";
 
 const root = resolve("dist");
+const redirects = new Set(
+  Object.keys(writeupRedirects()).map((path) => join(root, path, "index.html")),
+);
 const walk = function* (n) {
   yield n;
   for (const c of n.childNodes || []) yield* walk(c);
@@ -49,6 +53,7 @@ const localAsset = (url, label) => {
   );
 };
 for (const file of files(root)) {
+  if (redirects.has(file)) continue;
   const nodes = [...walk(parse(readFileSync(file, "utf8")))];
   const meta = (name) =>
     attr(

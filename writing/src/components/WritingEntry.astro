@@ -1,0 +1,25 @@
+---
+import { postPath } from "../../lib/publication.mjs";
+import { formatDate } from "../../lib/presentation.mjs";
+const { post } = Astro.props;
+const titleId = `entry-${post.id.replace(/\//g, "-")}`;
+---
+
+<li class="writing-entry">
+  <a
+    class="writing-entry-link"
+    href={postPath(post.id)}
+    aria-labelledby={titleId}
+  >
+    <time
+      datetime={post.data.pubDate}
+      aria-label={formatDate(post.data.pubDate)}
+    >
+      {formatDate(post.data.pubDate, { year: undefined, month: "short" })}
+    </time>
+    <div class="writing-entry-copy">
+      <h3 id={titleId}>{post.data.title}</h3>
+      <p class="writing-entry-note">{post.data.description}</p>
+    </div>
+  </a>
+</li>

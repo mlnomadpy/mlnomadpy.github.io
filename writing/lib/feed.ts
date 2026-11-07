@@ -31,7 +31,12 @@ export async function sectionFeed(section: "blog" | "writeups") {
       posts
         .map((p) => {
           const url = canonicalUrl(postPath(p.id));
-          return `<item><title>${escape(p.data.title)}</title><link>${url}</link><guid isPermaLink="true">${url}</guid><description>${escape(p.data.description)}</description><pubDate>${new Date(p.data.pubDate).toUTCString()}</pubDate></item>`;
+          // Keep existing subscriber IDs stable when the essay URL moves.
+          const guid =
+            section === "writeups"
+              ? SITE_ORIGIN + "/blog" + postPath(p.id)
+              : url;
+          return `<item><title>${escape(p.data.title)}</title><link>${url}</link><guid isPermaLink="true">${guid}</guid><description>${escape(p.data.description)}</description><pubDate>${new Date(p.data.pubDate).toUTCString()}</pubDate></item>`;
         })
         .join("") +
       "</channel></rss>",

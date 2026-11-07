@@ -2,11 +2,15 @@ import assert from "node:assert/strict";
 import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { join, resolve, relative } from "node:path";
 import { parse } from "parse5";
-import { approvedPosts } from "../writing/lib/publication.mjs";
+import {
+  approvedPosts,
+  writeupRedirects,
+} from "../writing/lib/publication.mjs";
 import { reading } from "../src/data/reading.js";
 import { SITE_ORIGIN, canonicalUrl } from "../src/utils/structuredData.js";
 
 const approved = approvedPosts();
+const redirects = writeupRedirects(approved);
 const urls = new Set(approved.map((p) => canonicalUrl(p.url)));
 const root = resolve("dist");
 const files = (dir) =>
@@ -20,12 +24,14 @@ const walk = function* (n) {
 const attr = (n, k) => n.attrs?.find((a) => a.name === k)?.value;
 const allowedHTML = new Set([
   "blog/index.html",
-  "blog/writeups/index.html",
-  ...approved.map(
-    (p) => "blog/" + p.url.replace(/^\/blog\//, "") + "index.html",
-  ),
+  "writeups/index.html",
+  ...approved.map((p) => p.url.slice(1) + "index.html"),
+  ...Object.keys(redirects).map((path) => path.slice(1) + "/index.html"),
 ]);
-for (const file of files(join(root, "blog"))) {
+for (const file of [
+  ...files(join(root, "blog")),
+  ...files(join(root, "writeups")),
+]) {
   if (file.endsWith(".html"))
     assert.ok(
       allowedHTML.has(relative(root, file)),
@@ -33,6 +39,28 @@ for (const file of files(join(root, "blog"))) {
     );
   assert.ok(!/\.(mdx?|map)$/.test(file), `Do not ship source content: ${file}`);
 }
+for (const [from, to] of Object.entries(redirects)) {
+  const file = join(root, from, "index.html");
+  const nodes = [...walk(parse(readFileSync(file, "utf8")))];
+  const redirect = nodes.find(
+    (n) => n.tagName === "meta" && attr(n, "http-equiv") === "refresh",
+  );
+  const canonical = nodes.find(
+    (n) => n.tagName === "link" && attr(n, "rel") === "canonical",
+  );
+  assert.equal(attr(redirect, "content"), "0;url=" + to, file);
+  assert.equal(attr(canonical, "href"), canonicalUrl(to), file);
+  assert.ok(
+    nodes.some((n) => n.tagName === "a" && attr(n, "href") === to),
+    file,
+  );
+  assert.ok(existsSync(join(root, to, "index.html")), file);
+}
+assert.equal(
+  readFileSync(join(root, "blog/writeups/rss.xml"), "utf8"),
+  readFileSync(join(root, "writeups/rss.xml"), "utf8"),
+  "Existing Writeups subscriptions must still work",
+);
 for (const post of reading)
   assert.ok(
     urls.has(canonicalUrl(new URL(post.url, SITE_ORIGIN).pathname)),
@@ -44,10 +72,7 @@ assert.deepEqual(
   [...urls].sort(),
 );
 for (const section of ["blog", "writeups"]) {
-  const rss = readFileSync(
-    join(root, section === "blog" ? "blog/rss.xml" : "blog/writeups/rss.xml"),
-    "utf8",
-  );
+  const rss = readFileSync(join(root, section + "/rss.xml"), "utf8");
   const sectionUrls = approved
     .filter((p) => p.id.startsWith(section + "/"))
     .map((p) => canonicalUrl(p.url));
@@ -55,12 +80,28 @@ for (const section of ["blog", "writeups"]) {
   const feedUrls = [
     ...rss.matchAll(/<guid isPermaLink="true">([^<]+)<\/guid>/g),
   ].map((m) => m[1]);
-  assert.deepEqual(feedUrls.sort(), sectionUrls.sort());
+  assert.deepEqual(
+    feedUrls.sort(),
+    sectionUrls
+      .map((url) =>
+        section === "writeups"
+          ? url.replace(SITE_ORIGIN, SITE_ORIGIN + "/blog")
+          : url,
+      )
+      .sort(),
+  );
+  const itemLinks = [...rss.matchAll(/<item>.*?<link>([^<]+)<\/link>/g)].map(
+    (m) => m[1],
+  );
+  assert.deepEqual(itemLinks.sort(), sectionUrls.sort());
 }
 const sitemap = readFileSync(join(root, "blog/sitemap-0.xml"), "utf8");
 assert.deepEqual(
   [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]).sort(),
-  [canonicalUrl("/blog"), canonicalUrl("/blog/writeups"), ...urls].sort(),
+  [
+    canonicalUrl("/blog"),
+    ...[...urls].filter((url) => url.startsWith(SITE_ORIGIN + "/blog/")),
+  ].sort(),
 );
 
 for (const file of files(root).filter((f) => f.endsWith(".html"))) {
@@ -69,10 +110,12 @@ for (const file of files(root).filter((f) => f.endsWith(".html"))) {
     nodes.find((n) => n.tagName === "link" && attr(n, "rel") === "canonical"),
     "href",
   );
-  const isArticle = urls.has(canonical);
-  if (
-    [canonicalUrl("/blog"), canonicalUrl("/blog/writeups")].includes(canonical)
-  )
+  const isArticle =
+    urls.has(canonical) &&
+    !nodes.some(
+      (n) => n.tagName === "meta" && attr(n, "http-equiv") === "refresh",
+    );
+  if ([canonicalUrl("/blog"), canonicalUrl("/writeups")].includes(canonical))
     assert.equal(
       nodes.filter((n) => n.tagName === "script" && attr(n, "src")).length,
       0,
@@ -84,14 +127,14 @@ for (const file of files(root).filter((f) => f.endsWith(".html"))) {
       const target = new URL(href, SITE_ORIGIN);
       if (
         target.origin === SITE_ORIGIN &&
-        target.pathname.startsWith("/blog/")
+        /^\/(blog|writeups)(?:\/|$)/.test(target.pathname)
       ) {
         if (
           [
             "/blog/",
             "/blog/rss.xml",
-            "/blog/writeups/",
-            "/blog/writeups/rss.xml",
+            "/writeups/",
+            "/writeups/rss.xml",
           ].includes(target.pathname)
         )
           continue;
@@ -124,8 +167,8 @@ assert.ok(
   "Use reviewed imports instead of an unfiltered writing public directory",
 );
 assert.ok(
-  !existsSync("public/blog"),
-  "Do not bypass the writing build with public/blog",
+  !existsSync("public/blog") && !existsSync("public/writeups"),
+  "Do not bypass the writing build with public routes",
 );
 console.log(
   `Writing: ${approved.length} approved posts; routes, links, schema, RSS, search, sitemap, and zero-JS index verified.`,

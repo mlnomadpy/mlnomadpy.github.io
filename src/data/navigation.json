@@ -5,7 +5,8 @@
     { "to": "/talks", "label": "Talks" },
     { "to": "/poetry", "label": "Poetry" },
     { "to": "/music", "label": "Music" },
-    { "to": "/blog/", "label": "Writing", "document": true }
+    { "to": "/writeups/", "label": "Writeups", "document": true },
+    { "to": "/blog/", "label": "Blog", "document": true }
   ],
   "elsewhere": [
     { "to": "mailto:contact@tahabouhsine.com", "label": "Email me" },

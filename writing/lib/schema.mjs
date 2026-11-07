@@ -11,7 +11,7 @@ import { postPath } from "./publication.mjs";
 import { writingSections, postSection } from "./sections.mjs";
 
 const blogId = canonicalUrl("/blog") + "#blog";
-const writeupsId = canonicalUrl("/blog/writeups") + "#webpage";
+const writeupsId = canonicalUrl(writingSections.writeups.path) + "#webpage";
 export function articleEntity(post) {
   const url = canonicalUrl(postPath(post.id));
   const personal = postSection(post) === "writeups";

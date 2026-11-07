@@ -1,0 +1,9 @@
+---
+const { href, ...attributes } = Astro.props;
+// Resolve links from approved manuscripts at render time.
+const target = href?.replace(/^\/blog(?=\/writeups(?:[/?#]|$))/, "");
+---
+
+<a href={target} {...attributes}>
+  <slot />
+</a>

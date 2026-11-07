@@ -3,13 +3,19 @@ import { readFileSync, readdirSync, mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve, relative } from "node:path";
 import { parse } from "parse5";
 import { validateGraph } from "./lib/schema-validator.mjs";
-import { approvedPosts } from "../writing/lib/publication.mjs";
+import {
+  approvedPosts,
+  writeupRedirects,
+} from "../writing/lib/publication.mjs";
 import {
   SITE_ORIGIN,
   PERSON_ID,
   WEBSITE_ID,
 } from "../src/utils/structuredData.js";
 const root = resolve("dist");
+const redirects = new Set(
+  Object.keys(writeupRedirects()).map((path) => join(root, path, "index.html")),
+);
 const publishedWritingUrls = new Set(
   approvedPosts().map((post) => SITE_ORIGIN + post.url),
 );
@@ -41,6 +47,7 @@ let videoPages = 0,
 const schemaOutput = resolve(".schema-validation");
 mkdirSync(schemaOutput, { recursive: true });
 for (const file of htmlFiles(root)) {
+  if (redirects.has(file)) continue;
   const html = readFileSync(file, "utf8");
   const nodes = [...walk(parse(html))];
   const scripts = nodes.filter(

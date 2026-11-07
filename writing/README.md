@@ -2,7 +2,7 @@
 
 The writing workspace generates static `/blog/` pages using Astro + MDX, the portfolio's actual CSS, and the shared navigation JSON. It uses the same www canonical origin and Person/WebSite IDs. The 24 reviewed personal writeups have been imported with owner approval; technical drafts and visualization collections remain outside publication inputs. No client router, Latin web fonts, analytics, or runtime JavaScript is loaded by the writing index.
 
-The main navigation uses **Writing** as an umbrella. **Blog** (`/blog/`) holds technical posts; **Writeups** (`/blog/writeups/`) holds personal essays. Each section has its own listing, metadata, RSS feed and article breadcrumbs. The shared search index can cover both.
+**Blog** (`/blog/`) and **Writeups** (`/writeups/`) have separate main navigation links, listings, RSS feeds and article breadcrumbs. The legacy `/blog/writeups/` pages redirect to the corresponding canonical pages. The old RSS endpoint remains available with the same item IDs. The search index covers both sections.
 
 `approved-posts.json` records **24 approved writeups**, authorized by Taha on November 5, 2026. Keep the separate review checkout and `.blog-review/` outside publication inputs. A legacy `draft: false` is never approval, and `SHOW_DRAFTS` has no effect here. The manifest filters the MDX loader before compilation, so excluded posts do not generate client components or routes.
 
@@ -22,4 +22,4 @@ The empty Blog index has a CollectionPage, Blog, empty ItemList, BreadcrumbList,
 
 ## Production ownership
 
-The portfolio owns `/blog/`, including the approved writeups. The separate `mlnomadpy/blog` Pages project must be disabled during cutover so it cannot shadow this build. Its source, history and deployment branch are retained. See `docs/writeups-publication.md` for publication scope and rollback details. The generated `/blog/sitemap-0.xml` preserves the existing sitemap address with only the new collection's approved URLs.
+The portfolio owns `/blog/` and `/writeups/`. The separate `mlnomadpy/blog` Pages project must be disabled during cutover so it cannot shadow this build. Its source, history and deployment branch are retained. See `docs/writeups-publication.md` for publication scope and rollback details. The generated `/blog/sitemap-0.xml` preserves the existing sitemap address with only technical blog URLs. The main sitemap includes both sections.

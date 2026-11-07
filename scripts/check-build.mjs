@@ -31,7 +31,7 @@ const output = (path) =>
 const expected = [
   "/",
   "/blog",
-  "/blog/writeups",
+  "/writeups",
   ...approvedPosts().map((post) => post.url.replace(/\/$/, "")),
   "/aboutme",
   "/research",

@@ -1,9 +1,9 @@
 import { cpSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { generateSitemap } from "./generate-sitemap.mjs";
 
-if (!existsSync(".writing-dist/index.html"))
+if (!existsSync(".writing-dist/blog/index.html"))
   throw new Error("Writing build is missing");
-cpSync(".writing-dist", "dist/blog", { recursive: true });
+cpSync(".writing-dist", "dist", { recursive: true });
 generateSitemap("dist");
 // Keep the old blog sitemap address usable, containing only current approved URLs.
 const sitemap = readFileSync("dist/sitemap.xml", "utf8");

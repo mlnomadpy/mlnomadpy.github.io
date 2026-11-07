@@ -87,7 +87,7 @@ test("empty blog has no invented articles; article graph preserves dates and aut
   const personalGraph = writingGraph([], personal);
   assert.deepEqual(
     validateGraph(personalGraph, {
-      pageUrl: "https://www.tahabouhsine.com/blog/writeups/fixture/",
+      pageUrl: "https://www.tahabouhsine.com/writeups/fixture/",
     }),
     [],
   );
@@ -188,18 +188,20 @@ test(
           file,
         );
       }
-      const html = readFileSync(join(out, "fixture/index.html"), "utf8");
+      const html = readFileSync(join(out, "blog/fixture/index.html"), "utf8");
       assert.match(html, /APPROVED_FIXTURE_BODY/);
       assert.match(html, /class="katex"/);
       assert.match(html, /BlogPosting/);
       assert.ok(!files(out).some((p) => p.includes("/unapproved/")));
-      const search = JSON.parse(readFileSync(join(out, "search.json"), "utf8"));
+      const search = JSON.parse(
+        readFileSync(join(out, "blog/search.json"), "utf8"),
+      );
       assert.equal(search.length, 2);
       assert.deepEqual(search.map((p) => p.url).sort(), [
         "/blog/fixture/",
-        "/blog/writeups/fixture/",
+        "/writeups/fixture/",
       ]);
-      const technicalIndex = readFileSync(join(out, "index.html"), "utf8");
+      const technicalIndex = readFileSync(join(out, "blog/index.html"), "utf8");
       const personalIndex = readFileSync(
         join(out, "writeups/index.html"),
         "utf8",
@@ -218,18 +220,24 @@ test(
       );
       assert.match(personalHTML, /"@type":"Article"/);
       assert.ok(!personalHTML.includes('"@type":"BlogPosting"'));
+      const legacy = readFileSync(
+        join(out, "blog/writeups/fixture/index.html"),
+        "utf8",
+      );
+      assert.ok(legacy.includes('content="0;url=/writeups/fixture/"'));
+      assert.ok(!legacy.includes("PERSONAL_FIXTURE_BODY"));
       assert.ok(
         readFileSync(join(out, "writeups/rss.xml"), "utf8").includes(
           "Personal essay test fixture",
         ),
       );
       assert.ok(
-        !readFileSync(join(out, "rss.xml"), "utf8").includes(
+        !readFileSync(join(out, "blog/rss.xml"), "utf8").includes(
           "Personal essay test fixture",
         ),
       );
       assert.equal(
-        (readFileSync(join(out, "rss.xml"), "utf8").match(/<item>/g) || [])
+        (readFileSync(join(out, "blog/rss.xml"), "utf8").match(/<item>/g) || [])
           .length,
         1,
       );
@@ -255,10 +263,12 @@ test(
       );
       assert.ok(!files(out).some((p) => p.endsWith("/fixture/index.html")));
       assert.deepEqual(
-        JSON.parse(readFileSync(join(out, "search.json"), "utf8")),
+        JSON.parse(readFileSync(join(out, "blog/search.json"), "utf8")),
         [],
       );
-      assert.ok(!readFileSync(join(out, "rss.xml"), "utf8").includes("<item>"));
+      assert.ok(
+        !readFileSync(join(out, "blog/rss.xml"), "utf8").includes("<item>"),
+      );
       for (const file of files(out))
         assert.ok(
           !/APPROVED_FIXTURE_BODY|PERSONAL_FIXTURE_BODY/.test(

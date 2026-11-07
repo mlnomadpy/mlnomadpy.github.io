@@ -1,0 +1,21 @@
+---
+import { formatDate } from "../../lib/presentation.mjs";
+const { post } = Astro.props;
+---
+
+<div class="article-details">
+  <a class="article-author" href="/aboutme">
+    Taha Bouhsine
+  </a>
+  <time class="article-published" datetime={post.data.pubDate}>
+    {formatDate(post.data.pubDate)}
+  </time>
+  {post.data.updatedDate && (
+    <small class="article-revised">
+      Revised{" "}
+      <time datetime={post.data.updatedDate}>
+        {formatDate(post.data.updatedDate, { month: "short" })}
+      </time>
+    </small>
+  )}
+</div>

@@ -2,7 +2,7 @@
 
 Research, poems, talks, music, and a little about the person behind them.
 
-The portfolio uses Vue 3 and Vite SSG; the writing workspace uses Astro and MDX. One build assembles both into static HTML in `dist/`, with shared navigation, styles, and author identity. Writing contains separate Blog (`/blog/`) and Writeups (`/blog/writeups/`) sections; the 24 reviewed writeups are approved for publication, while technical blog drafts remain unpublished.
+The portfolio uses Vue 3 and Vite SSG; the writing workspace uses Astro and MDX. One build assembles both into static HTML in `dist/`, with shared navigation, styles, and author identity. Writing contains separate Blog (`/blog/`) and Writeups (`/writeups/`) sections; the 24 reviewed writeups are approved for publication, while technical blog drafts remain unpublished.
 
 ## Develop
 
@@ -56,7 +56,7 @@ The existing GitHub Actions workflow builds both workspaces, validates the combi
 
 ## Curated writing integration
 
-`npm run dev` runs Astro on port 4321 and proxies `/blog/` through Vite. `npm run build` builds both workspaces, assembles the writing into `dist/blog/`, and regenerates the canonical sitemap. `npm run serve` previews the complete artifact.
+`npm run dev` runs Astro on port 4321 and proxies `/blog/` and `/writeups/` through Vite. `npm run build` builds both workspaces, assembles both writing sections into `dist/`, and regenerates the canonical sitemap. `npm run serve` previews the complete artifact.
 
 See [writing publication rules](writing/README.md) before importing any article. `writing/approved-posts.json` records the owner’s November 5, 2026 approval of all 24 reviewed writeups, with their original publication dates. Old `draft: false` flags and `SHOW_DRAFTS` do not approve publication. The portfolio now owns the complete `/blog/` output. See [the publication record](docs/writeups-publication.md) for cutover and rollback details.
 
