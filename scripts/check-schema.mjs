@@ -117,6 +117,68 @@ for (const file of htmlFiles(root)) {
     )
     .join(" ");
   const content = visible + " " + normalize(labels);
+  const writingIndex = [
+    SITE_ORIGIN + "/blog/",
+    SITE_ORIGIN + "/writeups/",
+  ].includes(url);
+  const writingDetail = publishedWritingUrls.has(url);
+  if (writingIndex || writingDetail) {
+    const trail = entities.get(page.breadcrumb?.["@id"]).itemListElement;
+    const sectionUrl =
+      SITE_ORIGIN +
+      (new URL(url).pathname.startsWith("/writeups/")
+        ? "/writeups/"
+        : "/blog/");
+    assert.deepEqual(
+      trail.map((entry) => entry.item),
+      writingDetail
+        ? [SITE_ORIGIN + "/", sectionUrl, url]
+        : [SITE_ORIGIN + "/", sectionUrl],
+      `${file}: breadcrumb hierarchy must use canonical section URLs`,
+    );
+    const nav = nodes.find(
+      (n) => n.tagName === "nav" && attr(n, "aria-label") === "Breadcrumb",
+    );
+    assert.ok(nav, `${file}: visible breadcrumbs missing`);
+    const crumbs = [...walk(nav)].filter((n) => n.tagName === "li");
+    assert.equal(crumbs.length, trail.length, file);
+    for (const [index, crumb] of crumbs.entries()) {
+      const item = trail[index];
+      assert.equal(normalize(text(crumb)), item.name, file);
+      const link = [...walk(crumb)].find((n) => n.tagName === "a");
+      if (index < crumbs.length - 1) {
+        assert.equal(new URL(attr(link, "href"), url).href, item.item, file);
+      } else {
+        assert.ok(
+          !link &&
+            [...walk(crumb)].some((n) => attr(n, "aria-current") === "page"),
+          file,
+        );
+      }
+    }
+    if (writingIndex) {
+      const list = entities.get(page.mainEntity["@id"]);
+      const listed = list.itemListElement.map(
+        ({ item }) => entities.get(item["@id"]).url,
+      );
+      const linked = nodes
+        .filter(
+          (n) => n.tagName === "a" && attr(n, "class") === "writing-entry-link",
+        )
+        .map((n) => new URL(attr(n, "href"), url).href);
+      assert.deepEqual(
+        listed,
+        linked,
+        `${file}: archive list must match its rendered links`,
+      );
+      assert.ok(
+        ![...entities.values()].some((entity) =>
+          ["Article", "BlogPosting"].includes(entity["@type"]),
+        ),
+        `${file}: article markup belongs to the detail pages`,
+      );
+    }
+  }
   const references = nodes.flatMap((n) =>
     (n.attrs || [])
       .filter((a) => ["href", "src"].includes(a.name))
@@ -162,7 +224,36 @@ for (const file of htmlFiles(root)) {
       publishedWriting
     ) {
       assert.equal(entity.author["@id"], PERSON_ID);
-      assert.equal(entity.mainEntityOfPage, entity.url);
+      if (publishedWriting) {
+        assert.equal(entity.url, url, file);
+        assert.deepEqual(entity.mainEntityOfPage, { "@id": page["@id"] }, file);
+        assert.deepEqual(page.mainEntity, { "@id": entity["@id"] }, file);
+        assert.equal(
+          entity.headline,
+          normalize(text(nodes.find((n) => n.tagName === "h1"))),
+          file,
+        );
+        assert.equal(
+          entity.datePublished,
+          attr(
+            nodes.find((n) => attr(n, "class") === "article-published"),
+            "datetime",
+          ),
+          file,
+        );
+        if (entity.image) {
+          assert.ok(
+            nodes.some(
+              (n) =>
+                n.tagName === "img" &&
+                new URL(attr(n, "src"), url).href === entity.image,
+            ),
+            `${file}: article image must appear on the page`,
+          );
+        }
+      } else {
+        assert.equal(entity.mainEntityOfPage, entity.url);
+      }
       for (const date of [entity.datePublished, entity.dateModified].filter(
         Boolean,
       ))

@@ -21,6 +21,9 @@ const {
 } = Astro.props;
 const canonical = canonicalUrl(Astro.url.pathname);
 const fullTitle = title + " | Taha Bouhsine";
+const breadcrumbs = graph["@graph"].find(
+  (node) => node["@id"] === canonical + "#breadcrumbs",
+).itemListElement;
 ---
 
 <!doctype html>
@@ -91,7 +94,7 @@ const fullTitle = title + " | Taha Bouhsine";
       </nav>
     </header>
     <main id="main-content" tabindex="-1">
-      <WritingNavigation section={section} article={article} />
+      <WritingNavigation section={section} breadcrumbs={breadcrumbs} />
       <slot />
     </main>
     <footer class="site-footer wrap">

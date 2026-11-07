@@ -1,21 +1,22 @@
 ---
 import { writingSections } from "../../lib/sections.mjs";
-const { section, article = false } = Astro.props;
+const { section, breadcrumbs } = Astro.props;
 const info = writingSections[section];
 ---
 
 <div class="writing-bar wrap">
-  <nav class="writing-sections" aria-label="Writing sections">
-    {Object.entries(writingSections).map(([key, item]) => (
-      <a
-        href={item.path}
-        aria-current={
-          key === section ? (article ? "location" : "page") : undefined
-        }
-      >
-        {item.title}
-      </a>
-    ))}
+  <nav class="writing-breadcrumbs" aria-label="Breadcrumb">
+    <ol role="list">
+      {breadcrumbs.map((crumb, index) => (
+        <li>
+          {index === breadcrumbs.length - 1 ? (
+            <span aria-current="page">{crumb.name}</span>
+          ) : (
+            <a href={new URL(crumb.item).pathname}>{crumb.name}</a>
+          )}
+        </li>
+      ))}
+    </ol>
   </nav>
   <a
     class="writing-rss"

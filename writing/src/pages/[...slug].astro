@@ -43,9 +43,6 @@ const mathCSS = post.data.hasMath
   {mathCSS && <link slot="head" rel="stylesheet" href={mathCSS} />}
   <article class="writing-article wrap">
     <header class="article-heading">
-      <a class="back-link" href={collection.path}>
-        {section === "blog" ? "All blog posts" : "All writeups"}
-      </a>
       <h1>{post.data.title}</h1>
       {section === "blog" && <p class="lede">{post.data.description}</p>}
     </header>
