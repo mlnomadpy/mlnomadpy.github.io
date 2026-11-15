@@ -1,0 +1,85 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 380 } = Astro.props;
+---
+<figure data-min-width="720" class="viz initmatters" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+// Saved example-seeded and noise-seeded Yat centers. Report both accuracies;
+// their visual difference does not establish a general initialization effect.
+import { defineViz } from './engine/vizkit.js';
+
+import protosImageUrl from '../../../assets/yat-fmnist/protos.png?url';
+import randomImageUrl from '../../../assets/yat-fmnist/random.png?url';
+import metaDataUrl from '../../../assets/yat-fmnist/meta.json?url';
+const loadImg = (src) => new Promise((res) => { const im = new Image(); im.onload = () => res(im); im.onerror = () => res(null); im.src = src; });
+
+defineViz('initmatters', {
+  title: 'Saved centers after two different initializations',
+  height: 380,
+  controls: [{ type: 'readout', name: 'rd' }],
+
+  setup(api) {
+    api.state = { ready: false };
+    Promise.all([
+      loadImg(protosImageUrl),
+      loadImg(randomImageUrl),
+      fetch(metaDataUrl).then((r) => r.json()),
+    ]).then(([data, rand, meta]) => {
+      if (!api.state) return;
+      Object.assign(api.state, { ready: true, data, rand, meta });
+      api.render();
+    });
+  },
+
+  draw(api) {
+    const { ctx, colors, size, state: st } = api;
+    const W = size.W, H = size.H;
+    if (W === 0 || !st) return;
+    ctx.clearRect(0, 0, W, H);
+    if (!st.ready) {
+      ctx.fillStyle = colors.muted; ctx.font = '12px ui-monospace, monospace';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('loading…', W / 2, H / 2); return;
+    }
+    const meta = st.meta, K = meta.K, cols = 10, rows = Math.ceil(K / cols);
+    const pad = 10, gap = 22, header = 44, footer = 30;
+    const panelW = (W - pad * 2 - gap) / 2;
+    const availH = H - pad - header - footer, cg = 3;
+    const cell = Math.min((panelW - (cols - 1) * cg) / cols, (availH - (rows - 1) * cg) / rows);
+    const gw = cols * cell + (cols - 1) * cg, gh = rows * cell + (rows - 1) * cg;
+    const gy = pad + header + (availH - gh) / 2;
+
+    const panel = (img, x0, title, acc, good) => {
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top'; ctx.fillStyle = colors.fg; ctx.font = '12px ui-sans-serif, system-ui';
+      ctx.fillText(title, x0 + gw / 2, pad);
+      ctx.font = 'bold 22px ui-sans-serif, system-ui'; ctx.fillStyle = good ? colors.accent : colors.muted;
+      ctx.fillText(`${acc}%`, x0 + gw / 2, pad + 16);
+      ctx.imageSmoothingEnabled = true;
+      for (let k = 0; k < K; k++) {
+        const c = k % cols, r = Math.floor(k / cols);
+        ctx.drawImage(img, (k % 10) * 28, Math.floor(k / 10) * 28, 28, 28, x0 + c * (cell + cg), gy + r * (cell + cg), cell, cell);
+      }
+      ctx.strokeStyle = colors.border; ctx.lineWidth = 1; ctx.strokeRect(x0 - 4.5, gy - 4.5, gw + 8, gh + 8);
+    };
+
+    const lx = pad + (panelW - gw) / 2, rx = pad + panelW + gap + (panelW - gw) / 2;
+    panel(st.data, lx, 'prototypes initialized from examples', meta.yatAcc, true);
+    panel(st.rand, rx, 'prototypes initialized from noise', meta.randomAcc, false);
+
+    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillStyle = colors.fg; ctx.font = '12px ui-sans-serif, system-ui';
+    ctx.fillText('Example-seeded and noise-seeded centers from the saved runs.', W / 2, H - 14);
+    ctx.fillStyle = colors.muted; ctx.font = '11px ui-sans-serif, system-ui';
+    ctx.fillText('The gallery shows appearance, not a semantic or causal certificate.', W / 2, H - 2);
+
+    api.readout('rd', `saved test accuracy: example-seeded ${meta.yatAcc}% · noise-seeded ${meta.randomAcc}%`);
+  },
+});
+</script>

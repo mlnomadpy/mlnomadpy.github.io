@@ -1,0 +1,75 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 340 } = Astro.props;
+---
+<figure data-min-width="440" class="viz marginrob" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+import { defineViz } from './engine/vizkit.js';
+import { panel, dot, cross, text } from './engine/draw.js';
+
+// Wish 2: separation buys robustness. Two class clouds whose centroids sit at an
+// adjustable angle. Live noise jitters every point each frame; a point is
+// misclassified when noise carries it across the boundary. Wide angle → almost
+// nothing crosses. Narrow angle → the clouds bleed together. Play = live noise.
+const M = 80, NOISE = 0.26;
+const randn = () => { const u = Math.random() || 1e-9, v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+
+defineViz('marginrob', {
+  title: 'Wish 2, separate them (and stay separated under noise)',
+  height: 340, stepsPerFrame: 1,
+  controls: [
+    { type: 'play', }, { type: 'step' }, { type: 'speed' },
+    { type: 'newrow' },
+    { type: 'range', name: 'deg', label: 'angle between classes', min: 20, max: 175, step: 1, value: 60, fmt: v => v + '°' },
+    { type: 'readout', name: 'rd' },
+  ],
+  setup(api) { api.state.seed = 0; api.state.tick = 0; },
+  step(api) { api.state.tick++; },
+  draw(api) {
+    const { ctx, colors, size, state } = api;
+    const box = { x: 6, y: 4, w: size.W - 12, h: size.H - 8 };
+    const m = panel(ctx, box, colors, { header: 18 });
+    const th = api.get('deg') * Math.PI / 180;
+    // two centroid directions, symmetric about the +y axis
+    const c0 = [Math.sin(-th / 2), Math.cos(-th / 2)], c1 = [Math.sin(th / 2), Math.cos(th / 2)];
+    const R0 = 0.66;
+    const C0 = [c0[0] * R0, c0[1] * R0], C1 = [c1[0] * R0, c1[1] * R0];
+    // boundary = perpendicular bisector through origin: direction along (C1-C0) is normal
+    const nx = C1[0] - C0[0], ny = C1[1] - C0[1];
+    // draw boundary line (perp to normal, through origin)
+    const bx = -ny, by = nx, bn = Math.hypot(bx, by) || 1;
+    ctx.strokeStyle = colors.faint; ctx.setLineDash([4, 4]); ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(...m.map([-bx / bn * 1.1, -by / bn * 1.1])); ctx.lineTo(...m.map([bx / bn * 1.1, by / bn * 1.1])); ctx.stroke(); ctx.setLineDash([]);
+    // deterministic-ish noise that refreshes when playing
+    let rs = 1234 + state.tick * 7;
+    const rnd = () => { rs = (rs * 1103515245 + 12345) & 0x7fffffff; return rs / 0x7fffffff; };
+    const gn = () => { const u = rnd() || 1e-9, v = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+    let wrong = 0;
+    for (let cls = 0; cls < 2; cls++) {
+      const C = cls === 0 ? C0 : C1, col = cls === 0 ? colors.accent : colors.blue;
+      for (let i = 0; i < M; i++) {
+        const p = [C[0] + gn() * NOISE, C[1] + gn() * NOISE];
+        // classify by nearest centroid
+        const d0 = (p[0] - C0[0]) ** 2 + (p[1] - C0[1]) ** 2, d1 = (p[0] - C1[0]) ** 2 + (p[1] - C1[1]) ** 2;
+        const pred = d0 < d1 ? 0 : 1, bad = pred !== cls; if (bad) wrong++;
+        const [px, py] = m.map(p);
+        if (bad) cross(ctx, px, py, 3.2, colors.red || '#c2553a');
+        else { ctx.globalAlpha = 0.62; dot(ctx, px, py, 2.5, col); ctx.globalAlpha = 1; }
+      }
+    }
+    // centroids
+    [[C0, colors.accent], [C1, colors.blue]].forEach(([C, col]) => { const [px, py] = m.map(C); ctx.beginPath(); ctx.arc(px, py, 6, 0, 2 * Math.PI); ctx.fillStyle = col; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = colors.bg; ctx.stroke(); });
+    const acc = 100 * (1 - wrong / (2 * M));
+    text(ctx, 'nearest-centroid classifier under fixed noise', box.x + 8, box.y + 3, colors, { size: 11.5, color: colors.fg });
+    text(ctx, `accuracy ${acc.toFixed(0)}% · ✕ = crossed the boundary`, box.x + 8, box.y + box.h - 15, colors, { size: 10.5, mono: true, color: colors.muted });
+    api.readout('rd', `angle ${api.get('deg')}°`);
+  },
+});
+</script>

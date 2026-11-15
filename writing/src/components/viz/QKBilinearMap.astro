@@ -1,0 +1,130 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 420 } = Astro.props;
+---
+<figure data-min-width="880" class="viz qkbilinear" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+import { defineViz } from './engine/vizkit.js';
+import { panel, text, PALETTE, parseColor } from './engine/draw.js';
+import { np, nn, withJax, drawJaxLoading } from './engine/jax.js';
+
+const TOKENS = ['the', 'cat', 'chased', 'mouse', '.'];
+const X = [
+  [-0.82,  0.12],
+  [-0.32,  0.78],
+  [ 0.04, -0.58],
+  [ 0.68,  0.62],
+  [ 0.88, -0.28],
+];
+
+function mat(theta, sx, sy) {
+  const c = Math.cos(theta), s = Math.sin(theta);
+  return [[c * sx, -s * sy], [s * sx, c * sy]];
+}
+
+function mv(M, v) {
+  return [M[0][0] * v[0] + M[0][1] * v[1], M[1][0] * v[0] + M[1][1] * v[1]];
+}
+
+function dot(a, b) { return a[0] * b[0] + a[1] * b[1]; }
+
+function blend(c0, c1, t) {
+  return `rgb(${Math.round(c0[0] + (c1[0] - c0[0]) * t)},${Math.round(c0[1] + (c1[1] - c0[1]) * t)},${Math.round(c0[2] + (c1[2] - c0[2]) * t)})`;
+}
+
+defineViz('qkbilinear', {
+  title: 'Q and K turn a dot product into a learned bilinear relation',
+  height: 420,
+  controls: [
+    { type: 'select', name: 'mode', label: 'score', value: 'separate', reset: false,
+      options: [
+        { value: 'raw', label: 'raw dot: x_i · x_j' },
+        { value: 'shared', label: 'shared projection: x_iᵀWWᵀx_j' },
+        { value: 'separate', label: 'Q/K projections: x_iᵀW_QW_Kᵀx_j' },
+      ] },
+    { type: 'range', name: 'angle', label: 'K rotation', min: -1.4, max: 1.4, step: 0.02, value: 0.85, fmt: v => v.toFixed(2) },
+    { type: 'range', name: 'query', label: 'Q selectivity', min: 0.4, max: 1.8, step: 0.02, value: 1.05, fmt: v => v.toFixed(2) },
+    { type: 'readout', name: 'rd' },
+  ],
+  setup(api) {
+    withJax(api);
+  },
+  draw(api) {
+    if (!api.state.jaxReady) return drawJaxLoading(api);
+    const { ctx, colors, size } = api;
+    const box = { x: 6, y: 4, w: size.W - 12, h: size.H - 8 };
+    panel(ctx, box, colors, {});
+    const mode = api.get('mode');
+    const Wq = mode === 'raw' ? [[1, 0], [0, 1]] : mat(-0.35, api.get('query'), 0.72);
+    const Wk = mode === 'raw' ? [[1, 0], [0, 1]] : mode === 'shared' ? Wq : mat(api.get('angle'), 0.82, 1.34);
+    const Xj = np.array(X);
+    const Wqj = np.swapaxes(np.array(Wq), 0, 1);
+    const Wkj = np.swapaxes(np.array(Wk), 0, 1);
+    const Qj = np.matmul(Xj.ref, Wqj);
+    const Kj = np.matmul(Xj, Wkj);
+    const Sraw = np.matmul(Qj.ref, np.swapaxes(Kj.ref, 0, 1));
+    const Q = Qj.ref.js();
+    const K = Kj.ref.js();
+    const S = Sraw.ref.js();
+    const A = nn.softmax(Sraw.mul(1 / 0.75), -1).js();
+    let asym = 0;
+    for (let i = 0; i < X.length; i++) for (let j = 0; j < X.length; j++) asym = Math.max(asym, Math.abs(S[i][j] - S[j][i]));
+
+    const left = { x: box.x + 12, y: box.y + 34, w: box.w * 0.43, h: box.h - 58 };
+    const mid = { x: box.x + box.w * 0.48, y: box.y + 42, w: box.w * 0.24, h: box.h - 82 };
+    const right = { x: box.x + box.w * 0.75, y: box.y + 42, w: box.w * 0.22, h: box.h - 82 };
+    text(ctx, 'residual tokens: one vector, two roles', left.x, box.y + 10, colors, { size: 12, weight: '600', color: colors.fg });
+
+    const cx = left.x + left.w / 2, cy = left.y + left.h / 2, R = Math.min(left.w, left.h) * 0.40;
+    const xy = p => [cx + p[0] * R, cy - p[1] * R];
+    ctx.strokeStyle = colors.border; ctx.beginPath(); ctx.arc(cx, cy, Math.max(0, R), 0, Math.PI * 2); ctx.stroke();
+    for (let i = 0; i < X.length; i++) {
+      const [x, y] = xy(X[i]);
+      const [qx, qy] = xy([X[i][0] + Q[i][0] * 0.28, X[i][1] + Q[i][1] * 0.28]);
+      const [kx, ky] = xy([X[i][0] + K[i][0] * 0.28, X[i][1] + K[i][1] * 0.28]);
+      ctx.strokeStyle = colors.accent; ctx.globalAlpha = 0.65; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(qx, qy); ctx.stroke();
+      ctx.strokeStyle = colors.blue; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(kx, ky); ctx.stroke();
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = PALETTE[i % PALETTE.length]; ctx.beginPath(); ctx.arc(x, y, 6.5, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = colors.bg; ctx.lineWidth = 1.6; ctx.stroke();
+      text(ctx, TOKENS[i], x, y + 12, colors, { align: 'center', size: 9.5, color: colors.muted });
+    }
+    text(ctx, 'orange: query role · blue: key role', left.x, box.y + box.h - 20, colors, { size: 10, mono: true, color: colors.muted });
+
+    const drawMatrix = (matr, target, title, signed) => {
+      panel(ctx, target, colors, {});
+      text(ctx, title, target.x + 8, target.y + 6, colors, { size: 11, weight: '600', color: colors.fg });
+      const n = TOKENS.length;
+      const side = Math.min(target.w - 24, target.h - 60);
+      const ox = target.x + (target.w - side) / 2, oy = target.y + 34, cs = side / n;
+      const bg = parseColor(colors.cellBg), hi = parseColor(colors.accent), neg = parseColor(colors.blue);
+      const mx = Math.max(1e-6, ...matr.flat().map(v => Math.abs(v)));
+      for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+        const v = matr[i][j];
+        const t = signed ? Math.min(1, Math.abs(v) / mx) : Math.min(1, v);
+        ctx.fillStyle = signed ? blend(bg, v < 0 ? neg : hi, t) : blend(bg, hi, t);
+        ctx.fillRect(ox + j * cs, oy + i * cs, cs + 0.5, cs + 0.5);
+      }
+      ctx.strokeStyle = colors.border; ctx.strokeRect(ox + 0.5, oy + 0.5, side - 1, side - 1);
+      text(ctx, 'rows ask · columns answer', target.x + target.w / 2, target.y + target.h - 20, colors, { align: 'center', size: 9.5, mono: true, color: colors.muted });
+    };
+    drawMatrix(S, mid, 'score S = QKᵀ', true);
+    drawMatrix(A, right, 'attention α', false);
+
+    const verdict = mode === 'raw'
+      ? 'fixed symmetric similarity: no learned question/answer roles'
+      : mode === 'shared'
+        ? 'learned symmetric comparison: one map for both sides'
+        : 'learned bilinear compatibility: directional query/key roles';
+    text(ctx, verdict, box.x + 12, box.y + box.h - 36, colors, { size: 10.5, mono: true, color: colors.fg });
+    api.readout('rd', `max |Sij-Sji| = ${asym.toFixed(2)}`);
+  },
+});
+</script>

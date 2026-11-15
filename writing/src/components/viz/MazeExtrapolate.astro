@@ -1,0 +1,103 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 440 } = Astro.props;
+---
+<figure data-min-width="800" class="viz mazeextrapolate" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+// Finite diagnostic trajectories; stopping rules and guarantees are distinguished in the article.
+import { defineViz } from './engine/vizkit.js';
+import { gate, loadingText } from './engine/draw.js';
+import { loadReady } from './yatdeqmaze.js';
+
+const SIZES = [11, 15, 21, 27];
+const SIZE_COL = { 11: '#3a8f5e', 15: '#4a7fb3', 21: '#9a4f9c', 27: '#c2553a' };
+
+const accAt = (curve, it) => {                 // linear interpolation of a size's accuracy at a given iteration
+  const xs = curve.iters, ys = curve.acc;
+  if (it <= xs[0]) return ys[0];
+  if (it >= xs[xs.length - 1]) return ys[ys.length - 1];
+  for (let i = 1; i < xs.length; i++) if (it <= xs[i]) { const t = (it - xs[i - 1]) / (xs[i] - xs[i - 1]); return ys[i - 1] + t * (ys[i] - ys[i - 1]); }
+  return ys[ys.length - 1];
+};
+
+defineViz('mazeextrapolate', {
+  title: 'Archived reachability accuracy at larger grid sizes',
+  height: 440,
+  controls: [
+    { type: 'range', name: 'bud', label: 'thinking budget (iterations)', min: 4, max: 64, step: 1, value: 22, int: true,
+      reset: false, fmt: (v) => v, play: { period: 5200, loop: false } },
+    { type: 'readout', name: 'rd' },
+  ],
+
+  setup(api) {
+    gate(api, loadReady, (api, model) => { api.state.M = { ex: model.extrap, ad: model.adaptive, ts: model.train_size }; });
+  },
+
+  draw(api) {
+    const { ctx, colors, size, state: st } = api;
+    const W = size.W, H = size.H;
+    if (W === 0) return;
+    ctx.clearRect(0, 0, W, H);
+    if (!st.ready || !st.M) { loadingText(api, 'loading…'); return; }
+    const M = st.M, bud = api.get('bud');
+    const pad = 16, gap = 30;
+    const leftW = Math.round((W - pad * 2 - gap) * 0.6);
+    const L = { x: pad + 30, y: pad + 24, w: leftW - 40, h: H - pad * 2 - 44 };
+    const R = { x: pad + leftW + gap + 26, y: pad + 24, w: W - pad * 2 - gap - leftW - 34, h: H - pad * 2 - 44 };
+
+    // ── left: accuracy vs iterations, one curve per size ──
+    ctx.fillStyle = colors.fg; ctx.font = '12px ui-sans-serif, system-ui'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('cell accuracy vs thinking budget', L.x, L.y - 8);
+    const xmax = 64, ax = (it) => L.x + (it / xmax) * L.w, ay = (a) => L.y + L.h - ((a - 0.4) / 0.6) * L.h;
+    ctx.strokeStyle = colors.border; ctx.lineWidth = 1; ctx.strokeRect(L.x + 0.5, L.y + 0.5, L.w - 1, L.h - 1);
+    ctx.font = '9px ui-monospace, monospace';
+    for (const a of [0.5, 0.75, 1.0]) { const y = ay(a); ctx.strokeStyle = colors.border; ctx.globalAlpha = 0.35; ctx.beginPath(); ctx.moveTo(L.x, y); ctx.lineTo(L.x + L.w, y); ctx.stroke(); ctx.globalAlpha = 1;
+      ctx.fillStyle = colors.faint; ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillText((a * 100).toFixed(0), L.x - 4, y); }
+    ctx.fillStyle = colors.faint; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    for (const it of [0, 16, 32, 48, 64]) ctx.fillText(it + '', ax(it), L.y + L.h + 4);
+    // train-length guide: training unrolled 30 iterations (T_TRAIN in scripts/yat_deq_maze.py)
+    const tb = 30;
+    ctx.strokeStyle = colors.faint; ctx.setLineDash([2, 3]); ctx.beginPath(); ctx.moveTo(ax(tb), L.y); ctx.lineTo(ax(tb), L.y + L.h); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = colors.faint; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; ctx.font = '9px ui-sans-serif, system-ui'; ctx.fillText('train length 30', ax(tb) + 5, L.y + L.h - 6);
+    for (const n of SIZES) {
+      const c = M.ex[n], col = SIZE_COL[n];
+      ctx.strokeStyle = col; ctx.lineWidth = 2.2; ctx.beginPath();
+      for (let i = 0; i < c.iters.length; i++) { const x = ax(c.iters[i]), y = ay(c.acc[i]); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } ctx.stroke();
+      const a = accAt(c, bud); ctx.fillStyle = col; ctx.beginPath(); ctx.arc(ax(bud), ay(a), 4, 0, 6.283); ctx.fill();
+      ctx.strokeStyle = colors.bg; ctx.lineWidth = 1.3; ctx.stroke();
+    }
+    // budget slider line
+    ctx.strokeStyle = colors.fg; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(ax(bud), L.y); ctx.lineTo(ax(bud), L.y + L.h); ctx.stroke();
+    // legend
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.font = '10px ui-sans-serif, system-ui';
+    SIZES.forEach((n, i) => { const yy = L.y + 14 + i * 15; ctx.fillStyle = SIZE_COL[n]; ctx.fillRect(L.x + L.w - 74, yy - 5, 11, 3);
+      ctx.fillStyle = colors.muted; ctx.fillText(`${n}×${n}` + (n === M.ts ? ' (train)' : ''), L.x + L.w - 58, yy); });
+
+    // ── right: iterations-to-settle vs propagation distance ──
+    ctx.fillStyle = colors.fg; ctx.font = '12px ui-sans-serif, system-ui'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('output-change crossing vs BFS radius', R.x, R.y - 8);
+    const rad = M.ad.radius, set = M.ad.settle;
+    const mx = Math.max(...rad, ...set) + 3;
+    const rx = (v) => R.x + (v / mx) * R.w, ry = (v) => R.y + R.h - (v / mx) * R.h;
+    ctx.strokeStyle = colors.border; ctx.lineWidth = 1; ctx.strokeRect(R.x + 0.5, R.y + 0.5, R.w - 1, R.h - 1);
+    // y=x reference
+    ctx.strokeStyle = colors.faint; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(rx(0), ry(0)); ctx.lineTo(rx(mx), ry(mx)); ctx.stroke(); ctx.setLineDash([]);
+    for (let i = 0; i < rad.length; i++) { ctx.fillStyle = colors.accent; ctx.globalAlpha = 0.5; ctx.beginPath(); ctx.arc(rx(rad[i]), ry(set[i]), 2.6, 0, 6.283); ctx.fill(); }
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = colors.faint; ctx.font = '9px ui-sans-serif, system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText('BFS distance from goal', R.x + R.w / 2, R.y + R.h + 4);
+    ctx.save(); ctx.translate(R.x - 16, R.y + R.h / 2); ctx.rotate(-Math.PI / 2); ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.fillText('first Δprob < 0.02', 0, 0); ctx.restore();
+    ctx.fillStyle = colors.fg; ctx.font = 'bold 12px ui-sans-serif, system-ui'; ctx.textAlign = 'right'; ctx.textBaseline = 'top'; ctx.fillText('r = ' + M.ad.corr.toFixed(2), R.x + R.w - 6, R.y + 6);
+
+    const at = (n) => (accAt(M.ex[n], bud) * 100).toFixed(0);
+    api.readout('rd', `at ${bud} iterations: 11×11 ${at(11)}%, 15×15 ${at(15)}%, 21×21 ${at(21)}%, 27×27 ${at(27)}%. archived curve, interpolated between measured budgets`);
+  },
+});
+</script>

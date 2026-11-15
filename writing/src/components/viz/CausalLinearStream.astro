@@ -1,0 +1,33 @@
+---
+interface Props { caption?: string; height?: number; }
+const { caption, height = 330 } = Astro.props;
+---
+<figure data-min-width="440" class="viz causallinearstream" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+<style>.viz :global(.vk-readout) { white-space: normal; line-height: 1.6; }</style>
+<script>
+import { defineViz } from './engine/vizkit.js';
+import { text, heatmap } from './engine/draw.js';
+import { toyData, exactAttention, approximateAttention, relativeError, causalPositive, reassociated } from './engine/linear-attention-demo.js';
+
+defineViz('causallinearstream',{
+ title:'A computed prefix readout from a fixed-size state',height:330,
+ controls:[{type:'range',name:'prefix',label:'prefix length',min:1,max:28,step:1,value:12,int:true,reset:false},
+ {type:'range',name:'m',label:'features m',min:8,max:128,step:8,value:32,int:true,reset:false},{type:'readout',name:'rd'}],
+ setup(api){api.state.data=toyData();},
+ draw(api){const {ctx,colors,size,state}=api,n=api.get('prefix'),m=api.get('m'),{Q,K,V}=state.data;
+ const q=Q.slice(0,n),k=K.slice(0,n),v=V.slice(0,n),stream=causalPositive(q,k,v,m,5),exact=exactAttention(q,k,v,true);
+ const err=relativeError(stream.Y,exact.Y),r=V[0].length;
+ text(ctx,`prefix: ${n} tokens`,24,16,colors,{size:13});
+ text(ctx,`S: ${m} × ${r} · z: ${m} · ${m*(r+1)+1} scalars incl. log scale`,24,40,colors,{size:12});
+ const y=stream.Y[n-1],ey=exact.Y[n-1],scale=Math.max(...y.map(Math.abs),...ey.map(Math.abs),.01);
+ for(let c=0;c<r;c++){const top=80+c*48,zero=size.W/2,width=size.W*.35;
+ text(ctx,`v${c}`,20,top,colors,{size:11});
+ for(const [value,color,offset] of [[ey[c],colors.blue,0],[y[c],colors.accent,14]]){ctx.fillStyle=color;const w=Math.abs(value)/scale*width;ctx.fillRect(value>=0?zero:zero-w,top+offset,w,10);}}
+ text(ctx,'blue: exact causal · gold: random-feature state',24,size.H-28,colors,{size:11});
+ api.readout('rd',`prefix output error ${(100*err).toFixed(2)}% · persistent state size independent of prefix length`);
+ }
+});
+</script>

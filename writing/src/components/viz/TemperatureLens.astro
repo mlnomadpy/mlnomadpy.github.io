@@ -1,0 +1,122 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 380 } = Astro.props;
+---
+<figure data-min-width="800" class="viz kdlens" data-caption={caption} data-height={height} data-height-mobile="450" tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+// Temperature as the knob on how much geometry leaks. Drag T and the class
+// kernel S(T) = E[softmax(z/T) softmax(z/T)^T] is recomputed live from the run's
+// real exported teacher logits: near-identity when cold, structured when warm,
+// washed toward uniform when hot.
+import { defineViz } from './engine/vizkit.js';
+import { gate, loadingText, T as TT, frame, axes, parseColor, rgba, clamp01, fmt } from './engine/draw.js';
+import { eigh } from './engine/jax.js';
+import { loadKD, classKernel, centerKernel, ensureJax, CLASSES, CLASS_COL } from './kdistill.js';
+
+const GRID = [];                                   // log-spaced T values for the curve
+for (let u = -1; u <= 5.001; u += 0.25) GRID.push(Math.pow(2, u));
+
+defineViz('kdlens', {
+  title: 'Temperature changes output coactivation',
+  height: 380,
+  controls: [
+    { type: 'range', name: 'logT', label: 'temperature T', min: -1, max: 5, step: 0.05, value: 2,
+      fmt: (v) => Math.pow(2, v).toFixed(Math.pow(2, v) < 4 ? 1 : 0) },
+    { type: 'readout', name: 'rd' },
+  ],
+
+  setup(api) {
+    api.state.cache = new Map();
+    gate(api, () => Promise.all([loadKD(), ensureJax()]), (api, [d]) => {
+      api.state.d = d;
+      api.state.curve = GRID.map((t) => stats(classKernel(d.logits.vals, t)));
+    });
+  },
+
+  draw(api) {
+    const { ctx, colors, size, state: st } = api;
+    const W = size.W, H = size.H;
+    if (!st || !st.ready) { loadingText(api); return; }
+    const d = st.d, T = Math.pow(2, api.get('logT'));
+    const key = T.toFixed(3);
+    if (!st.cache.has(key)) {
+      const S = classKernel(d.logits.vals, T);
+      st.cache.set(key, { S, ...stats(S) });
+      if (st.cache.size > 160) st.cache.delete(st.cache.keys().next().value);
+    }
+    const { S, offdiag, effRank } = st.cache.get(key);
+
+    const pad = 14, top = 40, narrow = W < 620;
+    const kS = Math.min(H - top - 44, narrow ? W * 0.44 : 260);
+    const kX = pad + 16, kY = top;
+    const cX = kX + kS + 46, cW = W - cX - pad - 8;
+
+    TT(ctx, colors, 'kicker');
+    ctx.fillText(`the class kernel S(T) at T = ${T.toFixed(2)}, from the teacher's real logits`, pad, 20);
+
+    // ── the kernel heatmap ──
+    const cell = kS / 10, base = parseColor(colors.cellBg), hi = parseColor(colors.accent);
+    for (let i = 0; i < 10; i++) for (let j = 0; j < 10; j++) {
+      const t = clamp01(Math.pow(Math.max(0, S[i][j]), 0.7));
+      ctx.fillStyle = rgba([base[0] + (hi[0] - base[0]) * t, base[1] + (hi[1] - base[1]) * t, base[2] + (hi[2] - base[2]) * t]);
+      ctx.fillRect(kX + j * cell, kY + i * cell, cell + 0.5, cell + 0.5);
+    }
+    for (let c = 0; c < 10; c++) {
+      ctx.fillStyle = CLASS_COL[c];
+      ctx.fillRect(kX + c * cell + cell / 2 - 3, kY - 6, 6, 4);
+      ctx.fillRect(kX - 6, kY + c * cell + cell / 2 - 3, 4, 6);
+    }
+    frame(ctx, colors, kX, kY, kS, kS);
+    TT(ctx, colors, 'small', { color: colors.faint });
+    const regime = T < 1.2 ? 'cold: winning-class groups dominate these output relations'
+      : T > 12 ? 'hot: washing toward uniform, every relation flattens to 1'
+      : 'warm: softer outputs change which coordinates coactivate';
+    ctx.fillText(regime, pad, kY + kS + 18);
+
+    // ── how much leaks, across the whole dial ──
+    if (cW > 90) {
+      const box = { x: cX, y: kY + 8, w: cW, h: kS - 40 };
+      const { sx, sy } = axes(ctx, box, { xMin: -1, xMax: 5, yMin: 0, yMax: 1, xTicks: [-1, 1, 3, 5], yTicks: [0, 0.5, 1], fmtX: (v) => Math.pow(2, v) < 4 ? Math.pow(2, v).toFixed(1) : Math.pow(2, v).toFixed(0), grid: true }, colors);
+      ctx.strokeStyle = colors.accent; ctx.lineWidth = 2; ctx.beginPath();
+      GRID.forEach((t, i) => { const x = sx(Math.log2(t)), y = sy(st.curve[i].offdiag); i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); });
+      ctx.stroke();
+      ctx.strokeStyle = colors.blue; ctx.lineWidth = 2; ctx.beginPath();
+      GRID.forEach((t, i) => { const x = sx(Math.log2(t)), y = sy((st.curve[i].effRank - 1) / 8); i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); });
+      ctx.stroke();
+      const mx = sx(api.get('logT'));
+      ctx.strokeStyle = colors.fg; ctx.setLineDash([3, 3]); ctx.beginPath();
+      ctx.moveTo(mx, box.y); ctx.lineTo(mx, box.y + box.h); ctx.stroke(); ctx.setLineDash([]);
+      TT(ctx, colors, 'small', { color: colors.accent });
+      ctx.fillText('— mean off-diagonal similarity', cX, box.y + box.h + 30);
+      TT(ctx, colors, 'small', { color: colors.blue });
+      ctx.fillText('— centered effective rank (1–9, rescaled)', cX, box.y + box.h + 44);
+      TT(ctx, colors, 'small', { color: colors.faint, align: 'center' });
+      ctx.fillText('temperature T (log scale)', cX + cW / 2, box.y + box.h + 58);
+    }
+
+    // strongest relation at this T
+    let bi = 0, bj = 1;
+    for (let i = 0; i < 10; i++) for (let j = 0; j < 10; j++) if (i !== j && S[i][j] > S[bi][bj]) { bi = i; bj = j; }
+    api.readout('rd', `off-diagonal mean ${fmt(offdiag, 3)}, effective rank ${fmt(effRank, 2)}; loudest relation: ${CLASSES[bi]} ~ ${CLASSES[bj]} (${fmt(S[bi][bj], 2)})`);
+  },
+});
+
+// Entropy rank of the correctly double-centered PSD Gram, H S H.
+function stats(S) {
+  const n=S.length;
+  let off=0;
+  for(let i=0;i<n;i++)for(let j=0;j<n;j++)if(i!==j)off+=S[i][j]/(n*(n-1));
+  const w=eigh(centerKernel(S)).values;
+  const positive=w.map(v=>Math.max(0,v)), trace=positive.reduce((s,v)=>s+v,0);
+  if(trace<1e-10)return {offdiag:off,effRank:1};
+  const entropy=-positive.reduce((s,v)=>s+(v>0?(v/trace)*Math.log(v/trace):0),0);
+  return {offdiag:off,effRank:Math.exp(entropy)};
+}
+</script>

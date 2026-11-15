@@ -1,0 +1,35 @@
+---
+interface Props { caption?: string; height?: number; }
+const { caption, height = 330 } = Astro.props;
+---
+<figure data-min-width="480" class="viz featuretradeoff" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+<style>.viz :global(.vk-readout) { white-space: normal; line-height: 1.6; }</style>
+<script>
+import { defineViz } from './engine/vizkit.js';
+import { text, heatmap } from './engine/draw.js';
+import { toyData, exactAttention, approximateAttention, relativeError, causalPositive, reassociated } from './engine/linear-attention-demo.js';
+
+defineViz('featuretradeoff',{
+ title:'Measured output error across eight fixed random draws',height:330,
+ controls:[{type:'button',name:'resample',label:'new draw batch'},{type:'readout',name:'rd'}],
+ setup(api){api.state.batch=0;api.state.data=toyData();api.state.cache=null;},
+ onAction(name,api){if(name==='resample'){api.state.batch++;api.state.cache=null;api.render();}},
+ draw(api){const {ctx,colors,size,state}=api;
+ if(!state.cache){const {Q,K,V}=state.data,ref=exactAttention(Q,K,V).Y;state.cache=[8,16,32,64,128,256].map(m=>{
+ const errors=Array.from({length:8},(_,i)=>relativeError(approximateAttention(Q,K,V,m,100+8*state.batch+i).Y,ref));
+ return {m,mean:errors.reduce((a,b)=>a+b)/8,min:Math.min(...errors),max:Math.max(...errors)};});}
+ const rows=state.cache,W=size.W,H=size.H,pad=50,range=Math.max(...rows.map(r=>r.max),.01)*1.1;
+ const sx=i=>pad+i*(W-2*pad)/(rows.length-1),sy=v=>H-48-v/range*(H-90);
+ ctx.strokeStyle=colors.border;ctx.beginPath();ctx.moveTo(pad,30);ctx.lineTo(pad,H-48);ctx.lineTo(W-pad,H-48);ctx.stroke();
+ rows.forEach((r,i)=>{const x=sx(i);ctx.strokeStyle=colors.muted;ctx.beginPath();ctx.moveTo(x,sy(r.min));ctx.lineTo(x,sy(r.max));ctx.stroke();
+ ctx.fillStyle=colors.accent;ctx.beginPath();ctx.arc(x,sy(r.mean),4,0,Math.PI*2);ctx.fill();
+ text(ctx,(100*r.mean).toFixed(1)+'%',x,sy(r.mean)-18,colors,{align:'center',size:10});text(ctx,String(r.m),x,H-32,colors,{align:'center',size:11});});
+ text(ctx,'Relative error · dot: mean · line: range',pad,10,colors,{size:11});
+ text(ctx,'Gaussian draws m',W/2,H-12,colors,{align:'center',size:11});
+ api.readout('rd',`28-token toy · 8 draws per m · batch ${state.batch} · computed errors, no runtime measurements`);
+ }
+});
+</script>

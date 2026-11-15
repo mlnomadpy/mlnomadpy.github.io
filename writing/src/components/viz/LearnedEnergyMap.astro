@@ -1,0 +1,128 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 440 } = Astro.props;
+---
+<figure data-min-width="560" class="viz energymap" data-caption={caption} data-height={height} data-height-mobile="500" tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+// The scalar the HNN actually learned, H_theta(q, p), painted over phase space
+// from the real trained weights. Click anywhere to drop a pendulum there and
+// watch the learned motion ride a single level set of the learned landscape:
+// the readout tracks H_theta along the trajectory, and it does not move.
+// That is the whole construction: the field is built FROM this scalar, so the
+// scalar is conserved by the motion, not encouraged to be.
+import { defineViz } from './engine/vizkit.js';
+import { T, dot, fmt, axes, gate, loadingText, colorbar } from './engine/draw.js';
+import { drag } from './engine/pointer.js';
+import { load, hnnEnergy, hnnField, rk4 } from './hamnet.js';
+
+const QR = 3.2, PR = 2.6, GRID = 90;
+
+defineViz('energymap', {
+  title: 'The energy the network learned, and motion riding its level sets',
+  height: 440,
+  stepsPerFrame: 5,
+  autoplay: false,
+  controls: [
+    { type: 'play' }, { type: 'reset' }, { type: 'speed' },
+    { type: 'readout', name: 'rd' },
+  ],
+
+  setup(api) {
+    const st = api.state;
+    st.q0 ??= 1.6; st.p0 ??= 0.0;
+    st.trail = [[st.q0, st.p0]]; st.q = st.q0; st.p = st.p0; st.t = 0;
+    gate(api, () => load('pendulum'), (a, d) => {
+      a.state.data = d;
+      // precompute the learned-H grid once (real weights, real scalar)
+      const m = d.models.hnn, vals = new Float32Array(GRID * GRID);
+      let mn = Infinity, mx = -Infinity;
+      for (let r = 0; r < GRID; r++) for (let c = 0; c < GRID; c++) {
+        const q = -QR + (2 * QR * c) / (GRID - 1);
+        const p = PR - (2 * PR * r) / (GRID - 1);
+        const v = hnnEnergy(m, q, p);
+        vals[r * GRID + c] = v;
+        if (v < mn) mn = v; if (v > mx) mx = v;
+      }
+      a.state.grid = { vals, mn, mx };
+    });
+    if (!api.canvas.dataset.vkDrag) {
+      drag(api.canvas, {
+        onStart(pt) {
+          const st2 = api.state, m = st2._map;
+          if (!m) return;
+          const [q, p] = m.toVal(pt.x, pt.y);
+          if (q < -QR || q > QR || p < -PR || p > PR) return;
+          st2.q0 = q; st2.p0 = p; st2.q = q; st2.p = p;
+          st2.trail = [[q, p]]; st2.t = 0;
+          api.render();
+        },
+      });
+    }
+  },
+
+  step(api) {
+    const st = api.state, d = st.data;
+    if (!st.ready || !d || st.t > 80) return;
+    [st.q, st.p] = rk4(hnnField, d.models.hnn, st.q, st.p, d.dt);
+    st.trail.push([st.q, st.p]);
+    st.t += d.dt;
+  },
+
+  draw(api) {
+    const { ctx, colors, size: { W, H } } = api, st = api.state;
+    if (!st.ready || !st.grid) { loadingText(api); return; }
+    const pad = 14, box = { x: pad, y: 34, w: W - 96, h: H - 84 };
+    const toPx = (q, p) => [box.x + ((q + QR) / (2 * QR)) * box.w,
+                            box.y + (1 - (p + PR) / (2 * PR)) * box.h];
+    st._map = { toVal: (x, y) => [((x - box.x) / box.w) * 2 * QR - QR, (1 - (y - box.y) / box.h) * 2 * PR - PR] };
+
+    // learned-H heatmap from the cached grid (shifted so min sits at 0)
+    const { vals, mn, mx } = st.grid;
+    if (!st.off) {
+      const off = document.createElement('canvas'); off.width = GRID; off.height = GRID;
+      const octx = off.getContext('2d'), img = octx.createImageData(GRID, GRID);
+      // two-tone ramp: cold bg -> accent, with banding to make level sets visible
+      const BANDS = 14;
+      for (let i = 0; i < GRID * GRID; i++) {
+        const t0 = (vals[i] - mn) / (mx - mn || 1);
+        const t = Math.floor(t0 * BANDS) / BANDS;      // quantize: iso-bands = level sets
+        img.data[i * 4] = 22 + 200 * t;
+        img.data[i * 4 + 1] = 34 + 110 * t;
+        img.data[i * 4 + 2] = 58 + 30 * t;
+        img.data[i * 4 + 3] = 255;
+      }
+      octx.putImageData(img, 0, 0);
+      st.off = off;
+    }
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(st.off, box.x, box.y, box.w, box.h);
+    axes(ctx, box, { xMin: -QR, xMax: QR, yMin: -PR, yMax: PR }, colors);
+    T(ctx, colors, 'label');
+    ctx.fillText('Learned H(q,p): stripes mark level sets', box.x, box.y - 8);
+
+    // trajectory riding a level set
+    ctx.strokeStyle = '#f5c05a'; ctx.lineWidth = 2; ctx.beginPath();
+    st.trail.forEach(([q, p], i) => { const [x, y] = toPx(q, p); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+    ctx.stroke();
+    const [cx, cy] = toPx(st.q, st.p);
+    dot(ctx, cx, cy, 5, '#f5c05a'); dot(ctx, cx, cy, 2.4, '#3a2a08');
+
+    colorbar(ctx, { x: W - 66, y: box.y, w: 14, h: box.h }, mn, mx, colors,
+             { label: 'H learned' });
+
+    const m = st.data.models.hnn;
+    const h0 = hnnEnergy(m, st.trail[0][0], st.trail[0][1]);
+    const hNow = hnnEnergy(m, st.q, st.p);
+    api.readout('rd', `H at start ${fmt(h0, 3)}  H now ${fmt(hNow, 3)}  drift ${fmt(Math.abs(hNow - h0), 4)}`);
+    T(ctx, colors, 'label');
+    ctx.fillText('Click the map to choose a new starting state', pad, H - 14);
+  },
+});
+</script>

@@ -1,0 +1,55 @@
+---
+interface Props { caption?: string; height?: number; }
+const { caption, height = 260 } = Astro.props;
+---
+<figure class="viz simplexpacking" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+<script>
+import { defineViz } from './engine/vizkit.js';
+import { T } from './engine/draw.js';
+const classCount = value => Math.max(2, Math.min(100, Math.round(Number(value) || 2)));
+const simplexCosine = n => -1 / (n - 1);
+function setCount(api, value) {
+  const n = classCount(value); api.setControl('classes', n); api.setControl('count', n);
+}
+defineViz('simplexpacking', {
+  title: 'The regular-simplex angle as the class count grows',
+  height: 260,
+  controls: [
+    { type: 'range', name: 'classes', label: 'number of classes n', min: 2, max: 100, step: 1, value: 10, int: true, reset: false },
+    { type: 'number', name: 'count', label: 'class count', min: 2, max: 100, step: 1, value: 10, width: 66, reset: false },
+    { type: 'readout', name: 'result' },
+  ],
+  onControl(name, value, api) { if (name === 'classes' || name === 'count') setCount(api, value); },
+  draw(api) {
+    const { ctx, colors, size } = api, W = size.W, H = size.H; if (!W) return;
+    const n = classCount(api.get('classes')), left = 42, right = 16, top = 24, bottom = 43, pw = W - left - right, ph = H - top - bottom;
+    const sx = x => left + (x - 2) / 98 * pw, sy = y => top + (.1 - y) / 1.15 * ph;
+    ctx.clearRect(0, 0, W, H); ctx.save();
+    ctx.strokeStyle = colors.border; ctx.lineWidth = 1; ctx.beginPath();
+    [-1, -.75, -.5, -.25, 0].forEach(y => { ctx.moveTo(left, sy(y)); ctx.lineTo(W - right, sy(y)); }); ctx.stroke();
+    [-1, -.5, 0].forEach(y => { T(ctx, colors, 'small', { align: 'right', baseline: 'middle', color: colors.muted }); ctx.fillText(String(y), left - 5, sy(y)); });
+    const ticks = W < 440 ? [2, 25, 50, 75, 100] : [2, 10, 25, 50, 75, 100];
+    ticks.forEach(x => { T(ctx, colors, 'small', { align: 'center', baseline: 'top', color: colors.muted }); ctx.fillText(String(x), sx(x), H - bottom + 7); });
+    T(ctx, colors, 'small', { align: 'center', baseline: 'top', color: colors.muted }); ctx.fillText('number of classes n', left + pw / 2, H - 16);
+    ctx.strokeStyle = colors.muted; ctx.setLineDash([3, 4]); ctx.beginPath(); ctx.moveTo(left, sy(0)); ctx.lineTo(W - right, sy(0)); ctx.stroke();
+    ctx.setLineDash([2, 4]); ctx.beginPath(); ctx.moveTo(left, sy(-1)); ctx.lineTo(W - right, sy(-1)); ctx.stroke(); ctx.setLineDash([]);
+    T(ctx, colors, 'small', { align: 'right', color: colors.muted }); ctx.fillText('orthogonality: 0', W - right, sy(0) - 5);
+    T(ctx, colors, 'small', { align: 'right', baseline: 'top', color: colors.muted }); ctx.fillText('opposition: −1', W - right, sy(-1) + 5);
+    ctx.strokeStyle = colors.accent; ctx.lineWidth = 2.4; ctx.beginPath();
+    for (let i = 0; i <= 240; i++) { const x = 2 + i / 240 * 98, px = sx(x), py = sy(simplexCosine(x)); i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); } ctx.stroke();
+    // Key markers remain visible on a phone; exact selected values are below the plot.
+    [2, 3, 10, 50].forEach(k => { ctx.fillStyle = colors.muted; ctx.beginPath(); ctx.arc(sx(k), sy(simplexCosine(k)), 2.7, 0, 2 * Math.PI); ctx.fill(); });
+    if (W >= 580) {
+      [[2, 8, -10, 'left'], [3, 9, -7, 'left'], [10, 10, 19, 'left'], [50, 8, 18, 'left']].forEach(([k, dx, dy, align]) => {
+        T(ctx, colors, 'small', { align, color: colors.muted }); ctx.fillText(`n=${k} (${simplexCosine(k).toFixed(2)})`, sx(k) + dx, sy(simplexCosine(k)) + dy);
+      });
+    }
+    ctx.strokeStyle = colors.accent; ctx.lineWidth = 1; ctx.setLineDash([3, 4]); ctx.beginPath(); ctx.moveTo(sx(n), top); ctx.lineTo(sx(n), H - bottom); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = colors.accent; ctx.beginPath(); ctx.arc(sx(n), sy(simplexCosine(n)), 5, 0, 2 * Math.PI); ctx.fill(); ctx.strokeStyle = colors.bg; ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
+    api.readout('result', `n = ${n} · cos θ = −1/(n−1) = ${simplexCosine(n).toFixed(3)} · requires d ≥ ${n - 1}`);
+  },
+});
+</script>

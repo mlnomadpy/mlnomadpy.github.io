@@ -1,0 +1,72 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 380 } = Astro.props;
+---
+<figure data-min-width="400" class="viz alignunif" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+import { defineViz } from './engine/vizkit.js';
+import { panel, unitCircle, dot, text, PALETTE } from './engine/draw.js';
+
+// Wang & Isola (2020): every contrastive loss is two forces, alignment (pull
+// same-class points together) and uniformity (spread everything over the sphere).
+// Two knobs. Uniformity 0 → the classes collapse. Alignment 0 → uniform but
+// classes intermixed. Both on → tight, evenly-spread clusters: a good space.
+const T = 2.0; // uniformity temperature (Wang–Isola use t = 2)
+const randn = () => { const u = Math.random() || 1e-9, v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+
+defineViz('alignunif', {
+  title: 'A contrastive loss is two forces',
+  height: 380, stepsPerFrame: 1, maxStep: 760,
+  controls: [
+    { type: 'play' }, { type: 'button', name: 'reroll', label: 're-roll', reset: true }, { type: 'speed' },
+    { type: 'newrow' },
+    { type: 'range', name: 'C', label: 'classes C', min: 2, max: 6, step: 1, value: 4, int: true, reset: true, fmt: v => v },
+    { type: 'range', name: 'la', label: 'alignment', min: 0, max: 2, step: 0.05, value: 1, fmt: v => v.toFixed(2) },
+    { type: 'range', name: 'lu', label: 'uniformity', min: 0, max: 2, step: 0.05, value: 1, fmt: v => v.toFixed(2) },
+    { type: 'readout', name: 'rd' },
+  ],
+  setup(api) {
+    const C = api.get('C'), m = 12, N = C * m;
+    const th = new Float64Array(N), lab = new Int32Array(N);
+    for (let i = 0; i < N; i++) { th[i] = 2 * Math.PI * Math.random(); lab[i] = Math.floor(i / m); }
+    const cnt = new Int32Array(N); for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) if (i !== j && lab[i] === lab[j]) cnt[i]++;
+    api.state = { th, lab, cnt, N, C, m };
+  },
+  step(api) {
+    const { th, lab, cnt, N } = api.state, la = api.get('la'), lu = api.get('lu'), lr = 0.05, USCALE = 10;
+    const z = []; for (let i = 0; i < N; i++) z.push([Math.cos(th[i]), Math.sin(th[i])]);
+    // alignment gradient (same-class pull, averaged over each point's neighbours)
+    const g = z.map(() => [0, 0]);
+    for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) if (i !== j && lab[i] === lab[j]) { g[i][0] += la * 2 * (z[i][0] - z[j][0]) / cnt[i]; g[i][1] += la * 2 * (z[i][1] - z[j][1]) / cnt[i]; }
+    // uniformity gradient (Wang–Isola): U = log Σ_{i<j} exp(-t |zi-zj|^2)
+    let Ssum = 1e-12; const w = new Float64Array(N * N);
+    for (let i = 0; i < N; i++) for (let j = i + 1; j < N; j++) { const dx = z[i][0] - z[j][0], dy = z[i][1] - z[j][1]; const e = Math.exp(-T * (dx * dx + dy * dy)); w[i * N + j] = e; Ssum += e; }
+    for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) { if (i === j) continue; const e = i < j ? w[i * N + j] : w[j * N + i]; const dx = z[i][0] - z[j][0], dy = z[i][1] - z[j][1]; const f = lu * USCALE * (e / Ssum) * (-T) * 2; g[i][0] += f * dx; g[i][1] += f * dy; }
+    // project to tangent (angular update) and step
+    for (let i = 0; i < N; i++) { const perp = [-Math.sin(th[i]), Math.cos(th[i])]; const gd = g[i][0] * perp[0] + g[i][1] * perp[1]; th[i] -= lr * gd; }
+  },
+  draw(api) {
+    const { ctx, colors, size, state } = api;
+    const box = { x: 6, y: 4, w: size.W - 12, h: size.H - 8 };
+    const m = panel(ctx, box, colors, { header: 18 });
+    unitCircle(ctx, m, colors);
+    const { th, lab, N } = state;
+    for (let i = 0; i < N; i++) { const [px, py] = m.map([Math.cos(th[i]), Math.sin(th[i])]); ctx.globalAlpha = 0.72; dot(ctx, px, py, 3, PALETTE[lab[i] % PALETTE.length]); ctx.globalAlpha = 1; }
+    const la = api.get('la'), lu = api.get('lu');
+    let regime;
+    if (lu < 0.05) regime = 'uniformity off → classes collapse together';
+    else if (la < 0.05) regime = 'alignment off → spread, but classes intermixed';
+    else regime = 'both forces → tight, evenly-spread clusters';
+    text(ctx, 'embeddings on the circle, colour = class', box.x + 8, box.y + 3, colors, { size: 11.5, color: colors.fg });
+    text(ctx, regime, box.x + 8, box.y + box.h - 15, colors, { size: 10.5, mono: true, color: colors.muted });
+    api.readout('rd', `align ${la.toFixed(2)} · uniform ${lu.toFixed(2)}`);
+  },
+});
+</script>

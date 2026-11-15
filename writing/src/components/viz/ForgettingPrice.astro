@@ -1,0 +1,86 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 450 } = Astro.props;
+---
+<figure data-min-width="560" class="viz forgettingprice" data-caption={caption} data-height={height} data-height-mobile="560" tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+// The price of really forgetting. Modes are ranked by how much they
+// discriminate one class pair, deleted from the FEATURES r at a time, and a
+// fresh readout is refitted after every cut. The pair refuses to die; the
+// rest of the network dies first.
+import { defineViz } from './engine/vizkit.js';
+import { T, fmt, gate, loadingText, legend } from './engine/draw.js';
+import { load } from './surgery.js';
+
+defineViz('forgettingprice', {
+  title: 'What it costs to make the network truly forget',
+  height: 450,
+  controls: [
+    { type: 'range', name: 'r', label: 'modes removed', min: 0, max: 8, step: 1, value: 0, int: true, play: { period: 6000, loop: false }, fmt: (v) => ['0', '1', '2', '4', '8', '16', '32', '64', '128'][Math.round(v)] },
+    { type: 'readout', name: 'rd' },
+  ],
+
+  setup(api) {
+    gate(api, () => load('recovery'), (a, data) => { a.state.data = data; });
+  },
+
+  draw(api) {
+    const { ctx, colors, size: { W, H } } = api, st = api.state;
+    if (!st.ready) { loadingText(api, 'loading the refits…'); return; }
+    const d = st.data, F = d.forget;
+    const i = Math.round(api.get('r'));
+    const pad = 14, top = 30;
+    const box = { x: pad + 34, y: top, w: W - 2 * pad - 44, h: H - top - 92 };
+    const lx = (j) => box.x + (j / (F.length - 1)) * box.w;
+    const ly = (v) => box.y + box.h - ((v - 45) / (102 - 45)) * box.h;
+    ctx.strokeStyle = colors.border;
+    ctx.strokeRect(box.x + 0.5, box.y + 0.5, box.w - 1, box.h - 1);
+    T(ctx, colors, 'small');
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    for (const v of [50, 60, 70, 80, 90, 100]) ctx.fillText(v + '%', box.x - 3, ly(v));
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    F.forEach((f, j) => ctx.fillText(String(f.r), lx(j), box.y + box.h + 4));
+    // chance line for the two-class probe
+    ctx.strokeStyle = colors.faint; ctx.setLineDash([3, 4]);
+    ctx.beginPath(); ctx.moveTo(box.x, ly(50)); ctx.lineTo(box.x + box.w, ly(50)); ctx.stroke();
+    ctx.setLineDash([]);
+    const series = [
+      { key: 'pair_acc', color: '#c2553a', label: `the targeted distinction (${d.forget_pair[0]} vs ${d.forget_pair[1]}), refitted` },
+      { key: 'all_acc', color: '#4a7fb3', label: 'the whole ten-class task, refitted' },
+    ];
+    for (const s of series) {
+      ctx.strokeStyle = s.color; ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      F.forEach((f, j) => {
+        const x = lx(j), yv = ly(f[s.key]);
+        j === 0 ? ctx.moveTo(x, yv) : ctx.lineTo(x, yv);
+      });
+      ctx.stroke(); ctx.lineWidth = 1;
+      F.forEach((f, j) => {
+        ctx.fillStyle = s.color;
+        ctx.beginPath(); ctx.arc(lx(j), ly(f[s.key]), j === i ? 4 : 2.4, 0, 6.283); ctx.fill();
+      });
+    }
+    ctx.strokeStyle = colors.faint; ctx.setLineDash([2, 3]);
+    ctx.beginPath(); ctx.moveTo(lx(i), box.y); ctx.lineTo(lx(i), box.y + box.h); ctx.stroke();
+    ctx.setLineDash([]);
+    legend(ctx, box.x + 10, box.y + 16, series.map((s) => ({ color: s.color, label: s.label })), colors);
+    T(ctx, colors, 'label');
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('Accuracy after mode removal and readout refit', box.x, box.y - 8);
+    T(ctx, colors, 'small');
+    ctx.fillText('Remove modes that best separate the pair. Dashed: chance.', pad, H - 58);
+    ctx.fillText('Red: selected pair. Blue: full task. Compare their recovery.', pad, H - 40);
+    ctx.fillText('the network dies before the distinction does', pad, H - 22);
+    const f = F[i];
+    api.readout('rd', `${f.r} modes removed: the distinction survives at ${fmt(f.pair_acc, 1)}%, the whole task is at ${fmt(f.all_acc, 1)}%`);
+  },
+});
+</script>

@@ -1,0 +1,152 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 440 } = Astro.props;
+---
+<figure data-min-width="440" class="viz explainpicker" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+<style>
+  .explainpicker :global(.vk-readout) { white-space: normal; flex-basis: 100%; margin-left: 0; line-height: 1.6; }
+</style>
+<script>
+// Decompose one saved model's class logit into signed terms a_uc k(x,W_u).
+// The five largest absolute terms are drawn; the remainder and bias are retained.
+// Raw kernel shares are not class contributions. No abstention rule is added.
+import { defineViz } from './engine/vizkit.js';
+import protosImageUrl from '../../../assets/yat-fmnist/protos.png?url';
+import testImageUrl from '../../../assets/yat-fmnist/test.png?url';
+import oodImageUrl from '../../../assets/yat-fmnist/ood.png?url';
+import modelDataUrl from '../../../assets/yat-fmnist/model.json?url';
+import metaDataUrl from '../../../assets/yat-fmnist/meta.json?url';
+import testDataUrl from '../../../assets/yat-fmnist/test.json?url';
+
+const classNames = ['T-shirt', 'Trouser', 'Pullover', 'Dress', 'Coat', 'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot'];
+const signed = (v) => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(2)}`;
+const loadImg = (src) => new Promise((res) => { const im = new Image(); im.onload = () => res(im); im.onerror = () => res(null); im.src = src; });
+function offscreen(img) { const c = document.createElement('canvas'); c.width = img.width; c.height = img.height; const ctx = c.getContext('2d'); ctx.drawImage(img, 0, 0); return ctx; }
+function decode(ctx, idx, cols) {
+  const d = ctx.getImageData((idx % cols) * 28, Math.floor(idx / cols) * 28, 28, 28).data;
+  return Float64Array.from({ length: 784 }, (_, i) => d[i * 4] / 255);
+}
+
+defineViz('explainpicker', {
+  title: 'Follow the signed terms into a class logit',
+  height: 440,
+  heightMobile: 520,
+  controls: [
+    { type: 'select', name: 'src', label: 'input', value: 'test', reset: false,
+      options: [{ value: 'test', label: 'Fashion-MNIST' }, { value: 'ood', label: 'MNIST digits' }] },
+    { type: 'select', name: 'target', label: 'explain class', value: 'prediction', reset: false,
+      options: [{ value: 'prediction', label: 'predicted class' }, ...classNames.map((label, i) => ({ value: String(i), label }))] },
+    { type: 'button', name: 'rand', label: 'random', reset: false },
+    { type: 'readout', name: 'rd' },
+  ],
+  setup(api) {
+    api.state = { ready: false, sel: 0 };
+    Promise.all([
+      loadImg(protosImageUrl), loadImg(testImageUrl), loadImg(oodImageUrl),
+      fetch(modelDataUrl).then((r) => r.json()), fetch(metaDataUrl).then((r) => r.json()), fetch(testDataUrl).then((r) => r.json()),
+    ]).then(([protos, test, ood, model, meta, testj]) => {
+      if (!api.state) return;
+      const K = meta.K;
+      const W = new Float64Array(K * 784), Wout = new Float64Array(K * 10);
+      // The saved output matrix is nested [K][10], not a flat array.
+      for (let u = 0; u < K; u++) {
+        for (let i = 0; i < 784; i++) W[u * 784 + i] = model.W[u][i];
+        for (let c = 0; c < 10; c++) Wout[u * 10 + c] = model.Wout[u][c];
+      }
+      Object.assign(api.state, { ready: true, protos, test, ood, meta, testj, K, W, Wout,
+        Wn2: model.Wn2, bout: model.bout, b: model.b, eps: model.eps,
+        testCtx: offscreen(test), oodCtx: offscreen(ood) });
+      api.render();
+    });
+    if (!api.canvas.dataset.epPick) {
+      api.canvas.dataset.epPick = '1';
+      api.canvas.addEventListener('pointerdown', (e) => {
+        const st = api.state; if (!st?.ready || !st.strip) return;
+        const r = api.canvas.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
+        for (const t of st.strip) if (mx >= t.x && mx <= t.x + t.s && my >= t.y && my <= t.y + t.s) { st.sel = t.i; api.render(); break; }
+      });
+    }
+  },
+  onAction(name, api) {
+    if (name === 'rand' && api.state?.ready) {
+      const n = api.get('src') === 'ood' ? 40 : api.state.testj.n;
+      api.state.sel = (api.state.sel * 7 + 13) % n;
+      api.render();
+    }
+  },
+  onControl(name, value, api) { if (name === 'src' && api.state) { api.state.sel = 0; api.render(); } },
+  draw(api) {
+    const { ctx, colors, size, state: st } = api;
+    const W = size.W, H = size.H;
+    if (!W || !st) return;
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = colors.fg; ctx.font = '12px ui-sans-serif, system-ui';
+    if (!st.ready) { ctx.fillText('loading model…', 12, 24); return; }
+    const isOod = api.get('src') === 'ood';
+    const srcImg = isOod ? st.ood : st.test, srcCtx = isOod ? st.oodCtx : st.testCtx;
+    const srcCols = isOod ? st.meta.oodCols : st.testj.cols, nItems = isOod ? 40 : st.testj.n;
+    const classes = st.meta.classes, pad = 8, ss = 28, gap = 4;
+    const count = Math.min(nItems, Math.floor((W - 2 * pad + gap) / (ss + gap)));
+    st.strip = [];
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillStyle = colors.muted; ctx.font = '11px ui-sans-serif, system-ui';
+    ctx.fillText('pick an image or use random', pad, pad);
+    for (let i = 0; i < count; i++) {
+      const x = pad + i * (ss + gap), y = pad + 16;
+      ctx.drawImage(srcImg, (i % srcCols) * 28, Math.floor(i / srcCols) * 28, 28, 28, x, y, ss, ss);
+      ctx.lineWidth = i === st.sel ? 2.5 : 1; ctx.strokeStyle = i === st.sel ? colors.accent : colors.border;
+      ctx.strokeRect(x - .5, y - .5, ss + 1, ss + 1); st.strip.push({ x, y, s: ss, i });
+    }
+    const x = decode(srcCtx, st.sel, srcCols), K = st.K, act = new Float64Array(K);
+    let xn = 0; for (const v of x) xn += v * v;
+    for (let u = 0; u < K; u++) {
+      let dot = 0; for (let i = 0; i < 784; i++) dot += x[i] * st.W[u * 784 + i];
+      const d2 = xn + st.Wn2[u] - 2 * dot;
+      act[u] = (dot + st.b) ** 2 / (d2 + st.eps);
+    }
+    const logits = Float64Array.from(st.bout);
+    for (let c = 0; c < 10; c++) for (let u = 0; u < K; u++) logits[c] += act[u] * st.Wout[u * 10 + c];
+    let pred = 0; for (let c = 1; c < 10; c++) if (logits[c] > logits[pred]) pred = c;
+    const target = api.get('target') === 'prediction' ? pred : Number(api.get('target'));
+    const terms = Float64Array.from(act, (v, u) => v * st.Wout[u * 10 + target]);
+    const order = Array.from({ length: K }, (_, u) => u).sort((p, q) => Math.abs(terms[q]) - Math.abs(terms[p]));
+    const shown = order.slice(0, 5), shownSum = shown.reduce((s, u) => s + terms[u], 0);
+    const other = order.slice(5).reduce((s, u) => s + terms[u], 0);
+    const compact = W < 600, big = compact ? 72 : 108, top = 72;
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(srcImg, (st.sel % srcCols) * 28, Math.floor(st.sel / srcCols) * 28, 28, 28, pad, top, big, big);
+    ctx.strokeStyle = colors.border; ctx.lineWidth = 1; ctx.strokeRect(pad - .5, top - .5, big + 1, big + 1);
+    ctx.fillStyle = colors.fg; ctx.font = '12px ui-sans-serif, system-ui'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    const tx = compact ? pad + big + 12 : pad, ty = compact ? top + 4 : top + big + 12;
+    ctx.fillText(`prediction: ${classes[pred]}`, tx, ty);
+    ctx.fillStyle = colors.muted; ctx.font = '11px ui-sans-serif, system-ui';
+    ctx.fillText(isOod ? 'foreign input · classifier still predicts' : `label: ${classes[st.testj.labels[st.sel]]}`, tx, ty + 20);
+    const rx = compact ? pad : pad + big + 28, ry = compact ? top + big + 28 : top;
+    const rw = W - rx - pad, rowH = 40;
+    ctx.fillStyle = colors.fg; ctx.font = '12px ui-sans-serif, system-ui'; ctx.textBaseline = 'top';
+    ctx.fillText(`Top signed terms → ${classes[target]}`, rx, ry);
+    const barStart = rx + 64, barEnd = W - pad - 52, mid = (barStart + barEnd) / 2;
+    const half = Math.max(4, (barEnd - barStart) / 2), scale = Math.max(1e-12, Math.abs(terms[order[0]]));
+    for (let row = 0; row < shown.length; row++) {
+      const u = shown[row], y = ry + 24 + row * rowH, value = terms[u];
+      ctx.drawImage(st.protos, (u % st.meta.protoCols) * 28, Math.floor(u / st.meta.protoCols) * 28, 28, 28, rx, y, 28, 28);
+      ctx.fillStyle = colors.muted; ctx.font = '10px ui-monospace, monospace'; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+      ctx.fillText(`#${u}`, rx + 31, y + 14);
+      ctx.fillStyle = colors.cellBg; ctx.fillRect(barStart, y + 5, 2 * half, 18);
+      const len = half * Math.abs(value) / scale;
+      ctx.fillStyle = value >= 0 ? colors.accent : colors.blue;
+      ctx.fillRect(value >= 0 ? mid : mid - len, y + 5, len, 18);
+      ctx.strokeStyle = colors.fg; ctx.beginPath(); ctx.moveTo(mid, y + 3); ctx.lineTo(mid, y + 25); ctx.stroke();
+      ctx.fillStyle = colors.fg; ctx.textAlign = 'right'; ctx.fillText(signed(value), W - pad, y + 14);
+    }
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillStyle = colors.muted; ctx.font = '10px ui-monospace, monospace';
+    ctx.fillText('← negative   0   positive → · logit units', rx, ry + 24 + shown.length * rowH + 4);
+    api.readout('rd', `${classes[target]} logit ${signed(logits[target])} = shown ${signed(shownSum)} + other ${signed(other)} + bias ${signed(st.bout[target])} (rounded)`);
+  },
+});
+</script>

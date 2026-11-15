@@ -1,0 +1,82 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 430 } = Astro.props;
+---
+<figure data-min-width="560" class="viz topvsbottom" data-caption={caption} data-height={height} data-height-mobile="540" tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+// Where the function actually lives. Delete modes from the top of the
+// spectrum, or from the bottom, and compare, recomputed live from the
+// trained model's mode coordinates. Half the network's accuracy sits in
+// eight coordinates; the bottom half of the spectrum is worth almost
+// nothing, and nothing is where a concept can hide.
+import { defineViz } from './engine/vizkit.js';
+import { T, fmt, gate, loadingText, legend } from './engine/draw.js';
+import { load, cutSweep } from './surgery.js';
+
+defineViz('topvsbottom', {
+  title: 'Cut from the top, or cut from the bottom',
+  height: 430,
+  controls: [
+    { type: 'range', name: 'j', label: 'modes cut', min: 0, max: 256, step: 1, value: 0, int: true, play: { period: 11000, loop: 'pingpong' } },
+    { type: 'readout', name: 'rd' },
+  ],
+
+  setup(api) {
+    gate(api, () => load('live'), (a, data) => {
+      a.state.data = data;
+      const K = data.Ahat.length;
+      const asc = Array.from({ length: K }, (_, k) => k);
+      a.state.top = cutSweep(data, asc, data.y);
+      a.state.bot = cutSweep(data, asc.slice().reverse(), data.y);
+      a.state.K = K;
+    });
+  },
+
+  draw(api) {
+    const { ctx, colors, size: { W, H } } = api, st = api.state;
+    if (!st.ready) { loadingText(api, 'cutting the model 512 ways…'); return; }
+    const j = Math.round(api.get('j'));
+    const pad = 14, top = 30;
+    const box = { x: pad + 38, y: top, w: W - 2 * pad - 48, h: H - top - 76 };
+    const lx = (k) => box.x + (k / st.K) * box.w;
+    const ly = (v) => box.y + box.h - ((v - 5) / (95 - 5)) * box.h;
+    ctx.strokeStyle = colors.border;
+    ctx.strokeRect(box.x + 0.5, box.y + 0.5, box.w - 1, box.h - 1);
+    T(ctx, colors, 'small');
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    for (const v of [10, 30, 50, 70, 90]) ctx.fillText(v + '%', box.x - 3, ly(v));
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    for (const k of [0, 64, 128, 192, 256]) ctx.fillText(String(k), lx(k), box.y + box.h + 4);
+    ctx.strokeStyle = colors.faint; ctx.setLineDash([3, 4]);
+    ctx.beginPath(); ctx.moveTo(box.x, ly(10)); ctx.lineTo(box.x + box.w, ly(10)); ctx.stroke();
+    ctx.setLineDash([]);
+    for (const [arr, color] of [[st.top, '#c2553a'], [st.bot, '#4a7fb3']]) {
+      ctx.strokeStyle = color; ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      arr.forEach((v, k) => { const x = lx(k), yv = ly(v); k === 0 ? ctx.moveTo(x, yv) : ctx.lineTo(x, yv); });
+      ctx.stroke(); ctx.lineWidth = 1;
+    }
+    ctx.strokeStyle = colors.faint; ctx.setLineDash([2, 3]);
+    ctx.beginPath(); ctx.moveTo(lx(j), box.y); ctx.lineTo(lx(j), box.y + box.h); ctx.stroke();
+    ctx.setLineDash([]);
+    legend(ctx, box.x + 10, box.y + 16, [
+      { color: '#c2553a', label: 'cutting from the top of the spectrum' },
+      { color: '#4a7fb3', label: 'cutting from the bottom' },
+    ], colors);
+    T(ctx, colors, 'label');
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('accuracy after cutting j modes out of the readout (dashed: chance)', box.x, box.y - 8);
+    T(ctx, colors, 'small');
+    ctx.fillText('All 512 cuts recomputed live. Small modes barely change accuracy.', pad, H - 38);
+    ctx.fillText('In this readout, leading modes carry most predictive accuracy.', pad, H - 20);
+    api.readout('rd', `cutting ${j}: from the top ${fmt(st.top[j], 1)}%, from the bottom ${fmt(st.bot[j], 1)}%`);
+  },
+});
+</script>

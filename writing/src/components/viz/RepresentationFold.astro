@@ -1,0 +1,71 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 520 } = Astro.props;
+---
+<figure data-min-width="560" class="viz repfold" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+// Saved 64-dimensional features, exported 2D display, refitted stage prototypes.
+import { defineViz } from './engine/vizkit.js';
+import { loadFold, classifyStage, ensureJax, CLASS_COL } from './trainfeat.js';
+import { gate, loadingText, scatter, headline, frame } from './engine/draw.js';
+
+defineViz('repfold', {
+  title: 'Saved features and refitted prototypes',
+  height: 520,
+  controls: [
+    { type: 'range', name: 'stage', label: 'backbone training', min: 0, max: 4, step: 1, value: 0, int: true, reset: false, fmt: (v) => v, play: { period: 4500, loop: false } },
+    { type: 'readout', name: 'rd' },
+  ],
+
+  setup(api) {
+    gate(api, () => ensureJax().then(loadFold), (api, d) => {
+      Object.assign(api.state, { d, labels: d.labels, classes: d.classes });
+    });
+  },
+
+  draw(api) {
+    const { ctx, colors, size, state: st } = api;
+    const W = size.W, H = size.H;
+    if (W === 0 || !st) return;
+    ctx.clearRect(0, 0, W, H);
+    if (!st.ready) { loadingText(api, 'computing in your browser…'); return; }
+
+    const s = api.get('stage'), fr = st.d.frames[s];
+    const res = classifyStage(st.d, s);   // shared, computed once per stage
+
+    const pad = 14, topH = headline(ctx, colors, {
+      pad,
+      kicker: `backbone trained for ${fr.ep} epoch${fr.ep === 1 ? '' : 's'} · press play or slide`,
+      value: `${res.acc.toFixed(0)}%`,
+      sub: [`live display sample · n = ${res.sampleCount}`, `archived full evaluation: joint ${fr.trained.toFixed(1)}% · prototype ${fr.constructed.toFixed(1)}%`],
+    }) - pad;
+
+    // scatter
+    const x0 = pad, y0 = pad + topH, side = Math.min(W - pad * 2, H - y0 - pad - 18);
+    const cx = x0 + (W - pad * 2 - side) / 2;
+    const sx = (u) => cx + (u * 0.5 + 0.5) * side, sy = (v) => y0 + (0.5 - v * 0.5) * side;
+    frame(ctx, colors, cx, y0, side, side);
+    // points: fill by true class, red ring if the constructed head gets it wrong
+    scatter(ctx, fr.embed, { sx, sy, r: 2.6, alpha: 0.8, colorAt: (i) => CLASS_COL[st.labels[i]], ringAt: (i) => res.pred[i] !== st.labels[i], ringColor: colors.accent });
+    // prototypes as diamonds
+    ctx.globalAlpha = 1;
+    for (let u = 0; u < fr.protoEmbed.length; u++) {
+      const px = sx(fr.protoEmbed[u][0]), py = sy(fr.protoEmbed[u][1]);
+      ctx.save(); ctx.translate(px, py); ctx.rotate(Math.PI / 4);
+      ctx.fillStyle = CLASS_COL[fr.vote[u]]; ctx.fillRect(-4, -4, 8, 8);
+      ctx.lineWidth = 1.2; ctx.strokeStyle = colors.bg; ctx.strokeRect(-4, -4, 8, 8); ctx.restore();
+    }
+    ctx.fillStyle = colors.muted; ctx.font = '10px ui-sans-serif, system-ui'; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+    ctx.fillText('● test image · ◆ placed center · red ring: head error', cx, y0 + side + 14);
+
+    api.readout('rd', `epoch ${fr.ep} · sample score ${res.acc.toFixed(1)}% · ε recalibrated on displayed sample (${res.eps.toFixed(3)}) · projection is only a display`);
+  },
+});
+</script>

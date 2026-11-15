@@ -1,0 +1,186 @@
+---
+interface Props { caption?: string; height?: number; }
+const { caption, height = 480 } = Astro.props;
+---
+<figure data-min-width="800" class="viz codebooksqueeze" data-caption={caption} data-height={height} data-height-mobile="620" tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+<script>
+// One hundred class codes in a k-dimensional budget. Drag k and the packing
+// recomputes live: the pairwise-cosine distribution (siblings vs strangers),
+// the measured RMS cosine against the RMS lower bound for (100, k), and the
+// most-confused test pairs pinned at their current cosines. The point the
+// dial makes: the floor is set by the dimension count, but where the network
+// spends its crosstalk is set by the taxonomy.
+import { defineViz } from './engine/vizkit.js';
+import { T, fmt, gate, loadingText } from './engine/draw.js';
+import { load, welchPrep, welchCos, welchFloor } from './fifteen.js';
+
+const BLUE = '#4a7fb3', RED = '#c2553a';
+
+defineViz('codebooksqueeze', {
+  title: 'One hundred codes, k dimensions',
+  height: 480,
+  controls: [
+    { type: 'range', name: 'k', label: 'dimension budget k', min: 2, max: 30, step: 1, value: 15, int: true, play: { period: 16000, loop: false } },
+    { type: 'readout', name: 'rd' },
+  ],
+  setup(api) {
+    const st = api.state;
+    st.hover = null;
+    gate(api, () => load('welch'), (a, d) => {
+      a.state.d = d;
+      const wp = welchPrep(d);
+      // rms-vs-k curves per seed, once
+      a.state.curves = [];
+      for (let s = 0; s < wp.S; s++) {
+        const row = [];
+        for (let k = 2; k <= 30; k++) {
+          const cos = welchCos(d, s, k);
+          let acc = 0;
+          for (let p = 0; p < wp.nP; p++) acc += cos[p] * cos[p];
+          row.push(Math.sqrt(acc / wp.nP));
+        }
+        a.state.curves.push(row);
+      }
+      // the most-confused pairs, for the pinned ticks
+      a.state.top = [...d.conf].sort((x, y) => y[2] - x[2]).slice(0, 9);
+    });
+    api.canvas.addEventListener('pointermove', (e) => {
+      if (!st.ready) return;
+      const r = api.canvas.getBoundingClientRect();
+      const p = { x: e.clientX - r.left, y: e.clientY - r.top };
+      let hit = null;
+      for (const t of st.ticks ?? []) {
+        if (Math.abs(p.x - t.x) < 7 && Math.abs(p.y - t.y) < 9) { hit = t; break; }
+      }
+      st.hover = hit;
+      api.render();
+    });
+  },
+  draw(api) {
+    const { ctx, colors, size: { W, H } } = api, st = api.state;
+    if (!st.ready) { loadingText(api, 'loading the codebook…'); return; }
+    const d = st.d, wp = welchPrep(d), k = Math.round(api.get('k'));
+    const cos = st.k === k && st.cos ? st.cos : (st.cos = welchCos(d, 0, k), st.k = k, st.cos);
+
+    // ── left: the pairwise-cosine distribution, siblings apart from strangers
+    const pad = 14, top = 30;
+    const hb = { x: pad + 4, y: top, w: W * 0.56 - pad, h: H - top - 148 };
+    const NB = 60;
+    const sibH = new Float32Array(NB), crossH = new Float32Array(NB);
+    let rms = 0;
+    for (let p = 0; p < wp.nP; p++) {
+      const b = Math.min(NB - 1, Math.max(0, Math.floor(((cos[p] + 1) / 2) * NB)));
+      (wp.sib[p] ? sibH : crossH)[b]++;
+      rms += cos[p] * cos[p];
+    }
+    rms = Math.sqrt(rms / wp.nP);
+    const mS = Math.max(...sibH), mC = Math.max(...crossH);
+    const xOf = (c) => hb.x + ((c + 1) / 2) * hb.w;
+    ctx.strokeStyle = colors.border;
+    ctx.strokeRect(hb.x + 0.5, hb.y + 0.5, hb.w, hb.h);
+    const bw = hb.w / NB;
+    for (let b = 0; b < NB; b++) {
+      // each family on its own scale, or the 4,700 strangers crush the 245 siblings
+      const ch = (crossH[b] / mC) * hb.h, sh = (sibH[b] / mS) * hb.h;
+      ctx.fillStyle = 'rgba(122,128,138,0.5)';
+      ctx.fillRect(hb.x + b * bw, hb.y + hb.h - ch, bw - 0.5, ch);
+      ctx.fillStyle = 'rgba(194,85,58,0.62)';
+      ctx.fillRect(hb.x + b * bw, hb.y + hb.h - sh, bw - 0.5, sh);
+    }
+    // the two verticals: the RMS lower bound for this k, and where the network is
+    const fl = welchFloor(100, k);
+    ctx.setLineDash([3, 3]);
+    ctx.strokeStyle = BLUE;
+    ctx.beginPath(); ctx.moveTo(xOf(fl), hb.y); ctx.lineTo(xOf(fl), hb.y + hb.h); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.strokeStyle = RED; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(xOf(rms), hb.y); ctx.lineTo(xOf(rms), hb.y + hb.h); ctx.stroke();
+    ctx.lineWidth = 1;
+    T(ctx, colors, 'small');
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = BLUE;
+    ctx.fillText(`RMS lower bound ${fmt(fl, 2)}`, Math.min(xOf(fl) + 4, hb.x + hb.w - 90), hb.y + 12);
+    ctx.fillStyle = RED;
+    ctx.fillText(`network rms ${fmt(rms, 2)}`, Math.min(xOf(rms) + 4, hb.x + hb.w - 96), hb.y + 26);
+    ctx.fillStyle = colors.faint;
+    ctx.textAlign = 'center';
+    ctx.fillText('-1', xOf(-1) + 8, hb.y + hb.h + 13);
+    ctx.fillText('0', xOf(0), hb.y + hb.h + 13);
+    ctx.fillText('pairwise cosine at k = ' + k, xOf(0), hb.y + hb.h + 27);
+    ctx.fillText('+1', xOf(1) - 8, hb.y + hb.h + 13);
+    T(ctx, colors, 'label');
+    ctx.textAlign = 'left';
+    ctx.fillStyle = 'rgba(194,85,58,0.9)';
+    ctx.fillText('same superclass (200)', hb.x, top - 8);
+    ctx.fillStyle = colors.muted;
+    ctx.fillText('different superclass (4,750)', hb.x + 170, top - 8);
+
+    // the most-confused test pairs, pinned at their current cosines
+    const ty = hb.y + hb.h + 52;
+    T(ctx, colors, 'small');
+    ctx.fillStyle = colors.faint;
+    ctx.fillText('the nine most-confused test pairs, at their cosine (hover):', hb.x, ty - 12);
+    st.ticks = [];
+    st.top.forEach(([i, j, c], r) => {
+      const idx = i * 100 - ((i + 1) * (i + 2)) / 2 + j;
+      const x = xOf(cos[idx]), y = ty + (r % 3) * 13;
+      ctx.fillStyle = wp.sib[idx] ? 'rgba(194,85,58,0.9)' : 'rgba(122,128,138,0.9)';
+      ctx.beginPath(); ctx.arc(x, y, 3.4, 0, 6.29); ctx.fill();
+      st.ticks.push({ x, y, i, j, c, cos: cos[idx] });
+    });
+
+    // ── right: RMS cosine vs k, three seeds over the moving floor
+    const rx = hb.x + hb.w + 26, rw = W - rx - pad;
+    const rb = { x: rx, y: top, w: rw, h: H - top - 148 };
+    ctx.strokeStyle = colors.border;
+    ctx.strokeRect(rb.x + 0.5, rb.y + 0.5, rb.w, rb.h);
+    const yMax = 0.85;
+    const kx = (kk) => rb.x + ((kk - 2) / 28) * rb.w;
+    const vy = (v) => rb.y + rb.h - (Math.min(v, yMax) / yMax) * rb.h;
+    ctx.setLineDash([3, 3]); ctx.strokeStyle = BLUE;
+    ctx.beginPath();
+    for (let kk = 2; kk <= 30; kk++) {
+      const y = vy(welchFloor(100, kk));
+      kk === 2 ? ctx.moveTo(kx(kk), y) : ctx.lineTo(kx(kk), y);
+    }
+    ctx.stroke(); ctx.setLineDash([]);
+    ctx.strokeStyle = RED;
+    st.curves.forEach((row) => {
+      ctx.beginPath();
+      row.forEach((v, t) => { t === 0 ? ctx.moveTo(kx(t + 2), vy(v)) : ctx.lineTo(kx(t + 2), vy(v)); });
+      ctx.stroke();
+    });
+    ctx.strokeStyle = colors.faint; ctx.setLineDash([2, 3]);
+    ctx.beginPath(); ctx.moveTo(kx(k), rb.y); ctx.lineTo(kx(k), rb.y + rb.h); ctx.stroke();
+    ctx.setLineDash([]);
+    T(ctx, colors, 'label');
+    ctx.fillText('RMS cosine vs the budget', rx, top - 8);
+    T(ctx, colors, 'small');
+    ctx.fillStyle = RED;
+    ctx.fillText('three seeds', rx + 6, vy(st.curves[0][Math.min(6, 28)]) - 8);
+    ctx.fillStyle = BLUE;
+    ctx.fillText('RMS lower bound', rx + rb.w - 74, vy(welchFloor(100, 30)) - 6);
+    ctx.fillStyle = colors.faint;
+    ctx.textAlign = 'center';
+    ctx.fillText('2', kx(2) + 5, rb.y + rb.h + 13);
+    ctx.fillText('k', kx(16), rb.y + rb.h + 13);
+    ctx.fillText('30', kx(30) - 6, rb.y + rb.h + 13);
+    ctx.textAlign = 'left';
+    ctx.fillText('the gap between the curves is', rx, rb.y + rb.h + 32);
+    ctx.fillText('crosstalk the packing did not', rx, rb.y + rb.h + 46);
+    ctx.fillText('have to pay: the taxonomy tax', rx, rb.y + rb.h + 60);
+
+    if (st.hover) {
+      const t = st.hover;
+      const sibTxt = d.fine2coarse[t.i] === d.fine2coarse[t.j]
+        ? d.coarse_names[d.fine2coarse[t.i]] : 'different superclasses';
+      api.readout('rd', `${d.names[t.i]} vs ${d.names[t.j]} (${sibTxt}): cosine ${fmt(t.cos, 2)} at k=${k}, ${t.c} test confusions`);
+    } else {
+      api.readout('rd', `k=${k}: RMS floor ${fmt(fl, 3)}, network ${fmt(rms, 3)}; empirical pair structure, not an optimal-packing certificate`);
+    }
+  },
+});
+</script>

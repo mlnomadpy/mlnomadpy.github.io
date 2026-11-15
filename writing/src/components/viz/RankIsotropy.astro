@@ -1,0 +1,56 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 330 } = Astro.props;
+---
+<figure data-min-width="440" class="viz rankiso" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+import { defineViz } from './engine/vizkit.js';
+import { panel, dot, text } from './engine/draw.js';
+
+// Wish 3: use every direction. The same cloud, but the slider squashes its
+// covariance from a round, isotropic blob (effective rank 2, both directions
+// used) down to a thin sliver on a line (effective rank → 1, a whole dimension
+// wasted). The ellipse is the 2σ covariance; the readout is the effective rank.
+const N = 110;
+const randn = () => { const u = Math.random() || 1e-9, v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+
+defineViz('rankiso', {
+  title: 'Wish 3, fill the space, do not waste a dimension',
+  height: 330,
+  controls: [
+    { type: 'range', name: 'squash', label: 'squash', min: 0, max: 1, step: 0.01, value: 0, fmt: v => v.toFixed(2) },
+    { type: 'button', name: 'reroll', label: 're-roll' },
+    { type: 'readout', name: 'rd' },
+  ],
+  setup(api) { const pts = []; for (let i = 0; i < N; i++) pts.push([randn(), randn()]); api.state.pts = pts; },
+  onAction(name, api) { if (name === 'reroll') { const pts = []; for (let i = 0; i < N; i++) pts.push([randn(), randn()]); api.state.pts = pts; } },
+  draw(api) {
+    const { ctx, colors, size, state } = api;
+    const box = { x: 6, y: 4, w: size.W - 12, h: size.H - 8 };
+    const m = panel(ctx, box, colors, { header: 18 });
+    const sq = api.get('squash');
+    const sx = 0.62, sy = 0.62 * (1 - 0.97 * sq); // squash the y-eigenvalue
+    const ang = 0.5; const ca = Math.cos(ang), sa = Math.sin(ang);
+    const tf = (p) => { const x = p[0] * sx, y = p[1] * sy; return [x * ca - y * sa, x * sa + y * ca]; };
+    // covariance ellipse (2σ) along the rotated axes
+    ctx.strokeStyle = colors.accent; ctx.lineWidth = 1.4; ctx.globalAlpha = 0.5; ctx.beginPath();
+    for (let t = 0; t <= 64; t++) { const a = (t / 64) * 2 * Math.PI; const e = tf([2 * Math.cos(a), 2 * Math.sin(a)]); const [px, py] = m.map(e); t === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py); }
+    ctx.stroke(); ctx.globalAlpha = 1;
+    // points
+    ctx.globalAlpha = 0.66; for (const p of state.pts) { const [px, py] = m.map(tf(p)); dot(ctx, px, py, 2.4, colors.blue); } ctx.globalAlpha = 1;
+    // effective rank from the two eigenvalues (variances)
+    const l1 = sx * sx, l2 = sy * sy; const erank = ((l1 + l2) ** 2) / (l1 * l1 + l2 * l2);
+    text(ctx, 'Round covariance uses both dimensions', box.x + 8, box.y + 3, colors, { size: 11.5, color: colors.fg });
+    const tag = erank > 1.9 ? 'Isotropic · effective rank ≈ 2' : erank < 1.1 ? 'Nearly a line · effective rank ≈ 1' : `effective rank ${erank.toFixed(2)} of 2`;
+    text(ctx, tag, box.x + 8, box.y + box.h - 15, colors, { size: 10.5, mono: true, color: colors.muted });
+    api.readout('rd', `eff. rank ${erank.toFixed(2)}`);
+  },
+});
+</script>

@@ -1,0 +1,152 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 420 } = Astro.props;
+---
+<figure data-min-width="440" class="viz featflow" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+// Why a prototype moves, the force field of feature learning, computed live on
+// the nanograd engine. A prototype wants to become a detector for one class: the
+// objective rewards kernel response to that class and penalises the other. The
+// negative gradient of that objective is a force on the prototype's position, and
+// we draw it as a field. Drop the probe anywhere and it flows along the field onto
+// the data it should explain. There is force everywhere, no half-space where the
+// gradient is zero, which is exactly why a Yat unit never dies the way a ReLU
+// unit can. Real autodiff: each arrow is a backward pass.
+import { defineViz } from './engine/vizkit.js';
+import { arrow } from './engine/draw.js';
+import * as ng from './engine/nanograd.js';
+import { rng32 } from './engine/datasets.js';
+
+const B = 0.5, EPS = 0.4, PAD = 10;
+const DOM = 2.1, GRID = 13;
+
+defineViz('featflow', {
+  title: 'Why a prototype moves',
+  height: 420, stepsPerFrame: 1,
+  controls: [
+    { type: 'play' }, { type: 'step' }, { type: 'button', name: 'drop', label: 'new drop', reset: false },
+    { type: 'readout', name: 'rd' },
+  ],
+
+  setup(api) {
+    const r = rng32(3);
+    const randn = () => { let u = 0, v = 0; while (!u) u = r(); while (!v) v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+    const N = 90; const X = new Float64Array(N * 2), lab = new Int8Array(N);
+    const mA = new Float64Array(N), mB = new Float64Array(N); let nA = 0, nB = 0;
+    for (let i = 0; i < N; i++) {
+      const c = i < N / 2 ? 0 : 1;
+      X[i * 2] = (c ? 1 : -1) * 1.0 + randn() * 0.32; X[i * 2 + 1] = (c ? -0.5 : 0.5) + randn() * 0.4;
+      lab[i] = c; if (c === 0) { mA[i] = 1; nA++; } else { mB[i] = 1; nB++; }
+    }
+    const Xd = ng.tensor(N, 2, X), MA = ng.tensor(N, 1, mA), MB = ng.tensor(N, 1, mB);
+
+    // force = −∇_P L,  L = meanB κ(P,·) − meanA κ(P,·)   (descend → become an A-detector)
+    const forceAt = (px, py) => {
+      const P = ng.param(1, 2, (i) => (i === 0 ? px : py));
+      const dot = ng.matmul(Xd, ng.transpose(P));
+      const dist2 = ng.sumRows(ng.square(ng.sub(Xd, P)));
+      const ker = ng.div(ng.square(ng.addk(dot, B)), ng.addk(dist2, EPS));
+      const meanA = ng.mulk(ng.sumAll(ng.mul(ker, MA)), 1 / nA);
+      const meanB = ng.mulk(ng.sumAll(ng.mul(ker, MB)), 1 / nB);
+      ng.backward(ng.sub(meanB, meanA));
+      return [-P.g[0], -P.g[1]];
+    };
+
+    // static arrow field (one backward per arrow), computed once
+    const arrows = [];
+    for (let iy = 0; iy < GRID; iy++) for (let ix = 0; ix < GRID; ix++) {
+      const x = -DOM + (2 * DOM) * ix / (GRID - 1), y = -DOM + (2 * DOM) * iy / (GRID - 1);
+      const [fx, fy] = forceAt(x, y); const n = Math.hypot(fx, fy) + 1e-12;
+      arrows.push({ x, y, ux: fx / n, uy: fy / n, mag: n });
+    }
+    let mmax = 1e-9; for (const a of arrows) if (a.mag > mmax) mmax = a.mag;
+
+    api.state = { N, X, lab, Xd, MA, MB, nA, nB, forceAt, arrows, mmax, probe: [1.55, 1.5], trail: [] };
+
+    if (!api.canvas.dataset.flDrag) {
+      api.canvas.dataset.flDrag = '1';
+      const drop = (e) => {
+        const rc = api.canvas.getBoundingClientRect();
+        const Wd = api.size.W, Hd = api.size.H;
+        const side = Math.min(Wd - PAD * 2, Hd - PAD * 2 - 18);
+        const x0 = (Wd - side) / 2, y0 = PAD;
+        const wx = (-DOM) + ((e.clientX - rc.left - x0) / side) * 2 * DOM;
+        const wy = DOM - ((e.clientY - rc.top - y0) / side) * 2 * DOM;
+        if (Math.abs(wx) > DOM + 0.2 || Math.abs(wy) > DOM + 0.2) return;
+        api.state.probe = [wx, wy]; api.state.trail = []; api.render();
+      };
+      api.canvas.addEventListener('pointerdown', (e) => { api.canvas.setPointerCapture(e.pointerId); drop(e); });
+    }
+  },
+
+  onAction(name, api) {
+    if (name === 'drop') {
+      const ang = api.iter * 1.7, rad = 1.7;
+      api.state.probe = [Math.cos(ang) * rad, Math.sin(ang) * rad]; api.state.trail = [];
+    }
+  },
+
+  step(api) {
+    const st = api.state; if (!st) return;
+    const [px, py] = st.probe;
+    const [fx, fy] = st.forceAt(px, py); const n = Math.hypot(fx, fy) + 1e-12;
+    if (n > 1e-4) {
+      st.trail.push([px, py]); if (st.trail.length > 90) st.trail.shift();
+      st.probe = [px + 0.024 * fx / n, py + 0.024 * fy / n];
+    }
+  },
+
+  draw(api) {
+    const { ctx, colors, size, state: st } = api;
+    const Wd = size.W, Hd = size.H;
+    if (Wd === 0 || !st) return;
+    ctx.clearRect(0, 0, Wd, Hd);
+    const side = Math.min(Wd - PAD * 2, Hd - PAD * 2 - 18);
+    const x0 = (Wd - side) / 2, y0 = PAD;
+    const sx = (x) => x0 + ((x + DOM) / (2 * DOM)) * side;
+    const sy = (y) => y0 + ((DOM - y) / (2 * DOM)) * side;
+
+    ctx.fillStyle = colors.cellBg; ctx.fillRect(x0, y0, side, side);
+    ctx.strokeStyle = colors.border; ctx.lineWidth = 1; ctx.strokeRect(x0 + 0.5, y0 + 0.5, side - 1, side - 1);
+
+    // force field
+    for (const a of st.arrows) {
+      const len = (6 + 12 * Math.min(1, a.mag / st.mmax));
+      const cxp = sx(a.x), cyp = sy(a.y);
+      ctx.globalAlpha = 0.25 + 0.5 * Math.min(1, a.mag / st.mmax);
+      arrow(ctx, cxp - a.ux * len / 2, cyp + a.uy * len / 2, cxp + a.ux * len / 2, cyp - a.uy * len / 2, colors.muted, 1.2);
+    }
+    ctx.globalAlpha = 1;
+
+    // data points
+    for (let i = 0; i < st.N; i++) {
+      ctx.fillStyle = st.lab[i] ? colors.accent : colors.blue; ctx.globalAlpha = 0.7;
+      ctx.beginPath(); ctx.arc(sx(st.X[i * 2]), sy(st.X[i * 2 + 1]), 2.6, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // probe trail + probe
+    if (st.trail.length > 1) {
+      ctx.strokeStyle = colors.fg; ctx.globalAlpha = 0.5; ctx.lineWidth = 1.5; ctx.beginPath();
+      st.trail.forEach((p, i) => { const X = sx(p[0]), Y = sy(p[1]); i ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y); });
+      ctx.stroke(); ctx.globalAlpha = 1;
+    }
+    const pp = st.probe;
+    ctx.fillStyle = colors.fg; ctx.beginPath(); ctx.arc(sx(pp[0]), sy(pp[1]), 6, 0, Math.PI * 2); ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = colors.bg; ctx.stroke();
+
+    ctx.fillStyle = colors.muted; ctx.font = '11px ui-monospace, monospace';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+    ctx.fillText('Drag the prototype · motion follows −∇L · blue = target class', x0 + 2, Hd - 4);
+
+    api.readout('rd', `force everywhere → no dead zone · the prototype is pulled onto the data it should explain · nanograd`);
+  },
+});
+</script>

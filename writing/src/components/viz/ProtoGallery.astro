@@ -1,0 +1,105 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 460 } = Astro.props;
+---
+<figure data-min-width="440" class="viz protogallery" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<style>
+  .protogallery :global(.vk-readout) { white-space: normal; line-height: 1.6; }
+</style>
+<script>
+// Saved first-layer parameters from three Fashion-MNIST runs. Compare example-
+// seeded Yat centers with noise-seeded centers or ReLU weights. The gallery is
+// a visual comparison, not evidence that a parameter has a semantic/causal role.
+import { defineViz } from './engine/vizkit.js';
+
+import protosImageUrl from '../../../assets/yat-fmnist/protos.png?url';
+import reluImageUrl from '../../../assets/yat-fmnist/relu.png?url';
+import randomImageUrl from '../../../assets/yat-fmnist/random.png?url';
+import metaDataUrl from '../../../assets/yat-fmnist/meta.json?url';
+const CLASS_COL = ['#b3661b', '#4a7fb3', '#3a8f5e', '#9a4f9c', '#c2553a', '#5a7d3a', '#2f8f8f', '#a06a2a', '#7a5fc0', '#c0892a'];
+const loadImg = (src) => new Promise((res) => { const im = new Image(); im.onload = () => res(im); im.onerror = () => res(null); im.src = src; });
+
+defineViz('protogallery', {
+  title: 'A drawable center can still be hard to read',
+  height: 460,
+  controls: [
+    { type: 'select', name: 'comparison', label: 'compare with', value: 'noise', reset: false,
+      options: [{ value: 'noise', label: 'noise-seeded Yat centers' }, { value: 'relu', label: 'ReLU weights' }] },
+    { type: 'readout', name: 'rd' },
+  ],
+
+  setup(api) {
+    api.state = { ready: false };
+    Promise.all([
+      loadImg(protosImageUrl),
+      loadImg(reluImageUrl),
+      loadImg(randomImageUrl),
+      fetch(metaDataUrl).then((r) => r.json()),
+    ]).then(([protos, relu, random, meta]) => {
+      if (!api.state) return;
+      Object.assign(api.state, { ready: true, protos, relu, random, meta });
+      api.render();
+    });
+  },
+
+  draw(api) {
+    const { ctx, colors, size, state: st } = api;
+    const W = size.W, H = size.H;
+    if (W === 0 || !st) return;
+    ctx.clearRect(0, 0, W, H);
+    if (!st.ready) {
+      ctx.fillStyle = colors.muted; ctx.font = '12px ui-monospace, monospace';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('loading prototypes…', W / 2, H / 2); return;
+    }
+    const meta = st.meta, K = meta.K, compact = W < 600, cols = compact ? 5 : 10, rows = Math.ceil(K / cols);
+    const pad = 10, panelGap = 22, header = 44, footer = 22;
+    const panelW = (W - pad * 2 - panelGap) / 2;
+    const availH = H - pad - header - footer;
+    const cellGap = 3;
+    const cell = Math.min((panelW - (cols - 1) * cellGap) / cols, (availH - (rows - 1) * cellGap) / rows);
+    const gridW = cols * cell + (cols - 1) * cellGap, gridH = rows * cell + (rows - 1) * cellGap;
+    const gy = pad + header + (availH - gridH) / 2;
+
+    const panel = (img, x0, title, accuracy, yat) => {
+      ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+      ctx.fillStyle = colors.fg; ctx.font = `${compact ? 10 : 12}px ui-sans-serif, system-ui`;
+      ctx.fillText(title, x0 + gridW / 2, pad);
+      ctx.font = '12px ui-monospace, monospace'; ctx.fillStyle = colors.muted;
+      ctx.fillText(`${accuracy}% test`, x0 + gridW / 2, pad + 19);
+      ctx.imageSmoothingEnabled = true;
+      for (let k = 0; k < K; k++) {
+        const c = k % cols, r = Math.floor(k / cols);
+        const dx = x0 + c * (cell + cellGap), dy = gy + r * (cell + cellGap);
+        ctx.drawImage(img, (k % 10) * 28, Math.floor(k / 10) * 28, 28, 28, dx, dy, cell, cell);
+        ctx.lineWidth = yat ? 1.6 : 1;
+        ctx.strokeStyle = yat ? CLASS_COL[meta.vote[k] % 10] : colors.border;
+        ctx.strokeRect(dx - 0.5, dy - 0.5, cell + 1, cell + 1);
+      }
+    };
+
+    const lx = pad + (panelW - gridW) / 2;
+    const rx = pad + panelW + panelGap + (panelW - gridW) / 2;
+    const noise = api.get('comparison') === 'noise';
+    panel(st.protos, lx, compact ? 'Yat · examples' : 'Yat · example-seeded', meta.yatAcc, true);
+    panel(noise ? st.random : st.relu, rx, noise ? (compact ? 'Yat · noise' : 'Yat · noise-seeded') : (compact ? 'ReLU · rows' : 'ReLU · weight rows'), noise ? meta.randomAcc : meta.reluAcc, false);
+
+    // divider
+    ctx.strokeStyle = colors.border; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(W / 2, pad + header); ctx.lineTo(W / 2, H - footer); ctx.stroke();
+
+    // footer
+    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillStyle = colors.muted; ctx.font = '11px ui-monospace, monospace';
+    ctx.fillText(compact ? 'Saved runs · first-layer parameters' : 'Saved runs · first-layer parameters in image coordinates', W / 2, H - 5);
+
+    api.readout('rd', 'Images show saved parameters; their appearance alone does not establish meaning.');
+  },
+});
+</script>

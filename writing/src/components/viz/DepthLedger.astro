@@ -1,0 +1,123 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 460 } = Astro.props;
+---
+<figure data-min-width="720" class="viz depthledger" data-caption={caption} data-height={height} data-height-mobile="540" tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+// The hidden state of the two trained networks, watched through depth. Both
+// panels run the REAL seed-0 weights on the same real test points, one layer
+// per tick. Each dot is one input's state in its first (q, p) plane. Below,
+// the quantity only ONE of the networks possesses: the leapfrog net's learned
+// energy per layer, held in a narrow band. The plain net has no energy curve
+// because there is no scalar it is built from; the quantity is undefined, not
+// unmeasured. Same data, same width, same depth, one change: the block is a
+// symplectic step of a learned potential.
+import { defineViz } from './engine/vizkit.js';
+import { T, dot, fmt, axes, gate, loadingText, legend } from './engine/draw.js';
+import { load, depthStep, learnedEnergy, T_TOTAL, DIM } from './hamnet.js';
+
+const L = 16;
+
+function initClouds(st) {
+  const d = st.models[`${st.ds}_plain`], m = st.models[`${st.ds}_ham`];
+  const mk = (net) => st.sampleIdx.map((i) => {
+    const x = d.X[i];
+    // encode: x @ enc_w + enc_b
+    const [w, b] = net.model.enc, z = new Float64Array(b.length);
+    for (let j = 0; j < b.length; j++) { let s = b[j]; for (let k = 0; k < x.length; k++) s += x[k] * w[k][j]; z[j] = s; }
+    return { q: Float64Array.from(z.slice(0, DIM)), p: Float64Array.from(z.slice(DIM)), y: d.y[i] };
+  });
+  st.plain = mk(d); st.ham = mk(m);
+  st.layer = 0;
+  st.energy = [energyOf(st.ham, m.model)];
+}
+const energyOf = (cloud, net) => {
+  let s = 0;
+  cloud.forEach((c) => { s += learnedEnergy(net, c.q, c.p); });
+  return s / cloud.length;
+};
+
+defineViz('depthledger', {
+  title: 'The hidden state through depth, live',
+  height: 460,
+  stepsPerFrame: 1,
+  autoplay: false,
+  controls: [
+    { type: 'play' }, { type: 'reset' }, { type: 'speed' },
+    { type: 'select', name: 'ds', label: 'dataset', value: 'moons',
+      options: [{ value: 'moons', label: 'moons' }, { value: 'rings', label: 'rings' }, { value: 'spirals', label: 'spirals' }] },
+    { type: 'readout', name: 'rd' },
+  ],
+
+  setup(api) {
+    const st = api.state;
+    st.ds = api.get('ds');
+    gate(api, () => load('models'), (a, d) => {
+      a.state.models = d;
+      a.state.sampleIdx = Array.from({ length: 160 }, (_, i) => i);
+      initClouds(a.state);
+    });
+    if (st.models) { st.ds = api.get('ds'); initClouds(st); }
+  },
+
+  step(api) {
+    const st = api.state;
+    if (!st.ready || !st.plain || st.layer >= L) return;
+    const h = T_TOTAL / L;
+    const dp = st.models[`${st.ds}_plain`].model, dh = st.models[`${st.ds}_ham`].model;
+    st.plain.forEach((c) => depthStep(dp, 'plain', h, c.q, c.p));
+    st.ham.forEach((c) => depthStep(dh, 'ham', h, c.q, c.p));
+    st.layer++;
+    st.energy.push(energyOf(st.ham, dh));
+  },
+
+  draw(api) {
+    const { ctx, colors, size: { W, H } } = api, st = api.state;
+    if (!st.ready || !st.plain) { loadingText(api); return; }
+    const pad = 14, half = (W - 3 * pad) / 2, cloudH = H - 190;
+    const R = 6;                               // state view half-range
+    const boxes = [
+      { x: pad, y: 34, w: half, h: cloudH, cloud: st.plain, name: 'plain residual net', col: '#c2553a' },
+      { x: 2 * pad + half, y: 34, w: half, h: cloudH, cloud: st.ham, name: 'leapfrog net', col: '#4a7fb3' },
+    ];
+    const cls = ['#3a8f5e', '#9a4f9c'];
+    boxes.forEach((b) => {
+      axes(ctx, b, { xMin: -R, xMax: R, yMin: -R, yMax: R, zero: true }, colors);
+      T(ctx, colors, 'label'); ctx.fillText(`${b.name}, layer ${st.layer}/${L}`, b.x, b.y - 8);
+      b.cloud.forEach((c) => {
+        const x = b.x + ((Math.max(-R, Math.min(R, c.q[0])) + R) / (2 * R)) * b.w;
+        const y = b.y + (1 - (Math.max(-R, Math.min(R, c.p[0])) + R) / (2 * R)) * b.h;
+        dot(ctx, x, y, 2.4, cls[c.y]);
+      });
+    });
+
+    // learned-energy strip: the row only one network has
+    const sbox = { x: pad, y: 34 + cloudH + 30, w: W - 2 * pad, h: H - cloudH - 120 };
+    const eMin = Math.min(...st.energy), eMax = Math.max(...st.energy);
+    const padE = Math.max((eMax - eMin) * 0.6, 0.1);
+    axes(ctx, sbox, { xMin: 0, xMax: L, yMin: eMin - padE, yMax: eMax + padE, grid: true }, colors);
+    T(ctx, colors, 'label');
+    ctx.fillText('learned energy E = ||p||²/2 + V(q), mean over the cloud, per layer', sbox.x, sbox.y - 8);
+    ctx.strokeStyle = '#4a7fb3'; ctx.lineWidth = 1.9; ctx.beginPath();
+    st.energy.forEach((v, i) => {
+      const x = sbox.x + (i / L) * sbox.w;
+      const y = sbox.y + (1 - (v - (eMin - padE)) / ((eMax + padE) - (eMin - padE))) * sbox.h;
+      i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+    });
+    ctx.stroke();
+    T(ctx, colors, 'label', { color: '#c2553a' });
+    ctx.fillText('plain net: no Hamiltonian specified by the architecture', sbox.x + 8, sbox.y + 12);
+    legend(ctx, pad, H - 36, [
+      { color: cls[0], label: 'class 0' }, { color: cls[1], label: 'class 1' },
+    ], colors);
+    api.readout('rd', `layer ${st.layer}/${L}  mean energy range ${fmt(eMax - eMin, 3)}`);
+  },
+});
+</script>

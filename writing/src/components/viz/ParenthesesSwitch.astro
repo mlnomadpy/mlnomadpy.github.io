@@ -1,0 +1,184 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 330 } = Astro.props;
+---
+<figure data-min-width="800" class="viz parenthesesswitch" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+import { defineViz } from './engine/vizkit.js';
+import { arrow, text } from './engine/draw.js';
+
+const PAD = 14;
+
+defineViz('parenthesesswitch', {
+  height: 330,
+  autoplay: false,
+  maxStep: 260,
+  controls: [
+    { type: 'play' },
+    { type: 'step', label: 'Step' },
+    { type: 'reset' },
+    { type: 'speed', presets: [0.5, 1, 2, 4] },
+    { type: 'newrow' },
+    { type: 'range', name: 'N', label: 'tokens N', min: 8, max: 32, step: 4, value: 20, int: true, reset: true },
+    { type: 'range', name: 'm', label: 'features m', min: 4, max: 16, step: 2, value: 8, int: true, reset: true },
+    { type: 'readout', name: 'ro' },
+  ],
+  setup(api) {
+    api.state.t = 0;
+  },
+  step(api) {
+    api.state.t++;
+  },
+  draw(api) {
+    const { ctx, colors, size, state } = api;
+    const W = size.W, H = size.H;
+    if (!W) return;
+    const N = api.get('N'), m = api.get('m');
+    const t = state.t % 260;
+    const exactProgress = Math.min(1, t / 110);
+    const linProgress = Math.min(1, t / 95);
+    const readProgress = Math.max(0, Math.min(1, (t - 95) / 100));
+
+    const mid = W / 2;
+    ctx.strokeStyle = colors.border;
+    ctx.setLineDash([4, 5]);
+    ctx.beginPath();
+    ctx.moveTo(mid, PAD);
+    ctx.lineTo(mid, H - PAD);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    text(ctx, 'exact softmax:  (QK^T)V', mid / 2, 14, colors, { align: 'center', size: 13, weight: '700', color: colors.blue });
+    text(ctx, 'linear attention:  φ(Q)(φ(K)^T V)', mid + mid / 2, 14, colors, { align: 'center', size: 13, weight: '700', color: colors.accent });
+
+    drawExact(api, { x: PAD, y: 42, w: mid - PAD * 2, h: H - 58 }, N, exactProgress);
+    drawLinear(api, { x: mid + PAD, y: 42, w: mid - PAD * 2, h: H - 58 }, N, m, linProgress, readProgress);
+
+    const cells = Math.round(exactProgress * N * N);
+    const keys = Math.round(linProgress * N);
+    api.readout('ro', `exact fills ${cells}/${N * N} scores · linear summarizes ${keys}/${N} keys into ${m} features`);
+  },
+});
+
+function drawExact(api, box, N, p) {
+  const { ctx, colors } = api;
+  const topY = box.y + 10;
+  const tokenY = box.y + box.h - 26;
+  const matSide = Math.min(box.w * 0.52, box.h - 82);
+  const mx = box.x + box.w * 0.48 - matSide / 2;
+  const my = box.y + 58;
+  const qx = box.x + 20;
+  const vx = box.x + box.w - 30;
+
+  text(ctx, 'build the whole N x N score table', box.x + box.w / 2, topY, colors, { align: 'center', size: 11.5, color: colors.muted });
+  drawTokens(ctx, qx, tokenY, N, colors.blue, colors);
+  drawTokens(ctx, vx, tokenY, N, colors.green, colors);
+  text(ctx, 'Q', qx, tokenY + 15, colors, { align: 'center', mono: true, size: 11, color: colors.blue });
+  text(ctx, 'K,V', vx, tokenY + 15, colors, { align: 'center', mono: true, size: 11, color: colors.green });
+  arrow(ctx, qx + 14, tokenY - 4, mx - 10, my + matSide * 0.42, colors.blue, 1.5);
+  arrow(ctx, vx - 14, tokenY - 4, mx + matSide + 10, my + matSide * 0.58, colors.green, 1.5);
+
+  drawMatrix(ctx, mx, my, matSide, N, p, colors);
+  arrow(ctx, mx + matSide, my + matSide / 2, vx - 26, my + matSide / 2, colors.fg, 1.4);
+  text(ctx, 'A', mx + matSide / 2, my - 18, colors, { align: 'center', mono: true, size: 12, weight: '700' });
+  text(ctx, 'N^2 entries (pattern schematic)', mx + matSide / 2, my + matSide + 8, colors, { align: 'center', size: 11, color: colors.muted });
+}
+
+function drawLinear(api, box, N, m, pBuild, pRead) {
+  const { ctx, colors } = api;
+  const tokenY = box.y + box.h - 26;
+  const sx = box.x + box.w * 0.37;
+  const sy = box.y + 64;
+  const sw = Math.min(92, box.w * 0.34);
+  const sh = Math.min(104, box.h - 115);
+  const qx = box.x + 22;
+  const outx = box.x + box.w - 26;
+
+  text(ctx, 'summarize K,V once; every query reads the summary', box.x + box.w / 2, box.y + 10, colors, { align: 'center', size: 11.5, color: colors.muted });
+  drawTokens(ctx, qx, tokenY, N, colors.blue, colors);
+  drawTokens(ctx, outx, tokenY, N, colors.accent, colors);
+  text(ctx, 'φ(Q)', qx, tokenY + 15, colors, { align: 'center', mono: true, size: 11, color: colors.blue });
+  text(ctx, 'Y', outx, tokenY + 15, colors, { align: 'center', mono: true, size: 11, color: colors.accent });
+
+  const rows = m, cols = 7;
+  ctx.fillStyle = colors.cellBg;
+  ctx.fillRect(sx, sy, sw, sh);
+  ctx.strokeStyle = colors.border;
+  ctx.strokeRect(sx + 0.5, sy + 0.5, sw - 1, sh - 1);
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const x = sx + 3 + c * ((sw - 6) / cols);
+      const y = sy + 3 + r * ((sh - 6) / rows);
+      const cw = (sw - 8) / cols, ch = (sh - 8) / rows;
+      const v = Math.max(0, Math.sin((r + 1) * 1.7 + c * 0.9) * 0.5 + 0.5) * pBuild;
+      ctx.fillStyle = mix(colors.cellBg, colors.accent, v);
+      ctx.fillRect(x, y, cw, ch);
+    }
+  }
+  text(ctx, 'φ(K)^T V', sx + sw / 2, sy - 18, colors, { align: 'center', mono: true, size: 12, weight: '700' });
+  text(ctx, `${m} x d state`, sx + sw / 2, sy + sh + 8, colors, { align: 'center', size: 11, color: colors.muted });
+
+  arrow(ctx, qx + 14, tokenY - 4, sx - 12, sy + sh * 0.62, colors.blue, 1.5);
+  arrow(ctx, sx + sw, sy + sh / 2, outx - 18, tokenY - 4, colors.accent, 1.8);
+  if (pRead > 0) {
+    ctx.strokeStyle = colors.fg;
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 4]);
+    ctx.beginPath();
+    ctx.moveTo(qx + 20, tokenY - 14);
+    ctx.quadraticCurveTo(sx + sw / 2, sy - 34, outx - 20, tokenY - 14);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    text(ctx, 'no N x N table', sx + sw / 2, sy - 38, colors, { align: 'center', size: 11, color: colors.fg });
+  }
+}
+
+function drawTokens(ctx, x, y, N, color, colors) {
+  const shown = Math.min(N, 18);
+  for (let i = 0; i < shown; i++) {
+    const yy = y - i * 6;
+    ctx.fillStyle = i < shown - 1 ? color : colors.faint;
+    ctx.beginPath();
+    ctx.arc(x, yy, 2.4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function drawMatrix(ctx, x, y, side, N, p, colors) {
+  ctx.fillStyle = colors.cellBg;
+  ctx.fillRect(x, y, side, side);
+  const cell = side / N;
+  const count = Math.floor(p * N * N);
+  for (let idx = 0; idx < count; idx++) {
+    const r = Math.floor(idx / N), c = idx % N;
+    const band = Math.exp(-Math.pow(Math.abs(r - c), 2) / 18);
+    ctx.fillStyle = mix(colors.cellBg, colors.blue, 0.18 + 0.75 * band);
+    ctx.fillRect(x + c * cell, y + r * cell, cell + 0.3, cell + 0.3);
+  }
+  ctx.strokeStyle = colors.border;
+  ctx.strokeRect(x + 0.5, y + 0.5, side - 1, side - 1);
+}
+
+function mix(a, b, t) {
+  const pa = parse(a), pb = parse(b);
+  t = Math.max(0, Math.min(1, t));
+  return `rgb(${Math.round(pa[0] + (pb[0] - pa[0]) * t)},${Math.round(pa[1] + (pb[1] - pa[1]) * t)},${Math.round(pa[2] + (pb[2] - pa[2]) * t)})`;
+}
+
+function parse(v) {
+  if (v[0] === '#') {
+    let s = v.slice(1);
+    if (s.length === 3) s = s.split('').map((c) => c + c).join('');
+    return [parseInt(s.slice(0, 2), 16), parseInt(s.slice(2, 4), 16), parseInt(s.slice(4, 6), 16)];
+  }
+  const m = v.match(/\d+(\.\d+)?/g);
+  return m ? [+m[0], +m[1], +m[2]] : [0, 0, 0];
+}
+</script>

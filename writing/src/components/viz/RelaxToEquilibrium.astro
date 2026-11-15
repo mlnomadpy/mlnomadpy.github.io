@@ -1,0 +1,132 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 440 } = Astro.props;
+---
+<figure data-min-width="720" class="viz relaxequilibrium" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+// Finite diagnostic trajectories; stopping rules and guarantees are distinguished in the article.
+import { defineViz } from './engine/vizkit.js';
+import { gate, loadingText } from './engine/draw.js';
+import { loadReady, compute, makeRunner, CLS_A, CLS_B } from './yatdeq.js';
+
+const MAXK = 48;
+
+defineViz('relaxequilibrium', {
+  title: 'Watch a finite state trajectory approach equilibrium',
+  height: 440,
+  controls: [
+    { type: 'select', name: 'pick', label: 'input', value: '3', reset: false,
+      options: [
+        { value: '0', label: 'deep in a class (easy)' },
+        { value: '1', label: 'deep in the other class' },
+        { value: '2', label: 'off-center' },
+        { value: '3', label: 'slower threshold crossing' },
+      ] },
+    { type: 'range', name: 'k', label: 'iteration', min: 0, max: MAXK, step: 1, value: MAXK, int: true,
+      reset: false, fmt: (v) => v, play: { period: 4200, loop: false } },
+    { type: 'readout', name: 'rd' },
+  ],
+
+  setup(api) {
+    gate(api, loadReady, (api, model) => {
+      const cmp = compute(model);
+      const T = model.test, n = T.y.length;
+      // rank inputs by iterations-to-converge, then pick four spread across the range
+      const order = [...Array(n).keys()].sort((a, b) => T.kcount[a] - T.kcount[b]);
+      const at = (f) => order[Math.min(n - 1, Math.round(f * (n - 1)))];
+      const chosen = [at(0.06), at(0.14), at(0.55), at(0.985)];
+      const runs = chosen.map((idx) => {
+        const r = makeRunner(cmp, [T.x[idx]]);
+        const traj = [r.proj()[0]], resid = [];
+        for (let k = 0; k < MAXK; k++) { resid.push(r.stepR()[0]); traj.push(r.proj()[0]); }
+        r.dispose();
+        return { idx, y: T.y[idx], x: T.x[idx], traj, resid };
+      });
+      // shared PCA bounds over the equilibrium cloud and every trajectory
+      let xa = 1e9, xb = -1e9, ya = 1e9, yb = -1e9;
+      const eat = (p) => { xa = Math.min(xa, p[0]); xb = Math.max(xb, p[0]); ya = Math.min(ya, p[1]); yb = Math.max(yb, p[1]); };
+      T.proj.forEach(eat); runs.forEach((r) => r.traj.forEach(eat));
+      const px = (xb - xa) * 0.08, py = (yb - ya) * 0.08;
+      api.state.M = { cmp, cloud: T.proj, cloudY: T.y, runs, bnd: [xa - px, xb + px, ya - py, yb + py] };
+    });
+  },
+
+  onControl(name, v, api) { if (name === 'pick') api.setControl('k', MAXK); },
+
+  draw(api) {
+    const { ctx, colors, size, state: st } = api;
+    const W = size.W, H = size.H;
+    if (W === 0) return;
+    ctx.clearRect(0, 0, W, H);
+    if (!st.ready || !st.M) { loadingText(api, 'solving the equilibrium…'); return; }
+
+    const M = st.M, run = M.runs[+api.get('pick')], k = Math.min(api.get('k'), MAXK);
+    const pad = 16, gap = 26;
+    const leftW = Math.round((W - pad * 2 - gap) * 0.6);
+    const L = { x: pad, y: pad + 24, w: leftW, h: H - pad * 2 - 24 };
+    const R = { x: pad + leftW + gap, y: pad + 24, w: W - pad * 2 - gap - leftW, h: H - pad * 2 - 24 };
+    const [xa, xb, ya, yb] = M.bnd;
+    const sx = (x) => L.x + ((x - xa) / (xb - xa)) * L.w;
+    const sy = (y) => L.y + L.h - ((y - ya) / (yb - ya)) * L.h;
+
+    // ── left: state space window ──
+    ctx.fillStyle = colors.fg; ctx.font = '12px ui-sans-serif, system-ui'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('state space (2-D window on 32 dimensions)', L.x, L.y - 8);
+    ctx.strokeStyle = colors.border; ctx.lineWidth = 1; ctx.strokeRect(L.x + 0.5, L.y + 0.5, L.w - 1, L.h - 1);
+    // equilibrium cloud: every input's resting point
+    for (let i = 0; i < M.cloud.length; i++) {
+      ctx.fillStyle = M.cloudY[i] ? CLS_B : CLS_A; ctx.globalAlpha = 0.16;
+      ctx.beginPath(); ctx.arc(sx(M.cloud[i][0]), sy(M.cloud[i][1]), 2.4, 0, 6.283); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    // this input's fixed point (the destination)
+    const zstar = run.traj[MAXK], col = run.y ? CLS_B : CLS_A;
+    ctx.strokeStyle = col; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.arc(sx(zstar[0]), sy(zstar[1]), 9, 0, 6.283); ctx.stroke();
+    ctx.fillStyle = colors.muted; ctx.font = '10px ui-sans-serif, system-ui'; ctx.textAlign = 'center';
+    ctx.fillText('final shown', sx(zstar[0]), sy(zstar[1]) - 13);
+    // trajectory up to k
+    ctx.strokeStyle = colors.fg; ctx.globalAlpha = 0.55; ctx.lineWidth = 1.6; ctx.beginPath();
+    for (let i = 0; i <= k; i++) { const p = run.traj[i]; i ? ctx.lineTo(sx(p[0]), sy(p[1])) : ctx.moveTo(sx(p[0]), sy(p[1])); }
+    ctx.stroke(); ctx.globalAlpha = 1;
+    for (let i = 0; i <= k; i++) { const p = run.traj[i]; ctx.fillStyle = colors.fg; ctx.globalAlpha = 0.18 + 0.5 * (i / Math.max(1, k));
+      ctx.beginPath(); ctx.arc(sx(p[0]), sy(p[1]), 2, 0, 6.283); ctx.fill(); }
+    ctx.globalAlpha = 1;
+    // start + current
+    const p0 = run.traj[0], pc = run.traj[k];
+    ctx.fillStyle = colors.faint; ctx.beginPath(); ctx.arc(sx(p0[0]), sy(p0[1]), 3.5, 0, 6.283); ctx.fill();
+    ctx.fillStyle = colors.muted; ctx.font = '10px ui-sans-serif, system-ui'; ctx.textAlign = 'left'; ctx.fillText('z₀', sx(p0[0]) + 6, sy(p0[1]) + 3);
+    ctx.fillStyle = col; ctx.beginPath(); ctx.arc(sx(pc[0]), sy(pc[1]), 5, 0, 6.283); ctx.fill();
+    ctx.strokeStyle = colors.bg; ctx.lineWidth = 1.5; ctx.stroke();
+
+    // ── right: residual collapse (log) ──
+    ctx.fillStyle = colors.fg; ctx.font = '12px ui-sans-serif, system-ui'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('step size ‖Δz‖', R.x, R.y - 8);
+    ctx.strokeStyle = colors.border; ctx.lineWidth = 1; ctx.strokeRect(R.x + 0.5, R.y + 0.5, R.w - 1, R.h - 1);
+    const lo = -7, hi = 1;                                  // log10 range
+    const lg = (v) => Math.log10(Math.max(1e-7, v));
+    const rx = (i) => R.x + (i / MAXK) * R.w;
+    const ry = (v) => R.y + R.h - ((lg(v) - lo) / (hi - lo)) * R.h;
+    // gridlines per decade
+    ctx.strokeStyle = colors.border; ctx.font = '9px ui-monospace, monospace';
+    for (let e = lo; e <= hi; e++) { const yy = R.y + R.h - ((e - lo) / (hi - lo)) * R.h;
+      ctx.globalAlpha = 0.35; ctx.beginPath(); ctx.moveTo(R.x, yy); ctx.lineTo(R.x + R.w, yy); ctx.stroke(); ctx.globalAlpha = 1;
+      ctx.fillStyle = colors.faint; ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillText('1e' + e, R.x - 3, yy); }
+    // full curve faint, traversed curve solid
+    ctx.strokeStyle = colors.faint; ctx.globalAlpha = 0.5; ctx.lineWidth = 1.2; ctx.beginPath();
+    for (let i = 0; i < MAXK; i++) { const x = rx(i + 1), y = ry(run.resid[i]); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } ctx.stroke(); ctx.globalAlpha = 1;
+    ctx.strokeStyle = colors.accent; ctx.lineWidth = 2.2; ctx.beginPath();
+    for (let i = 0; i < k; i++) { const x = rx(i + 1), y = ry(run.resid[i]); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } ctx.stroke();
+    if (k > 0) { ctx.fillStyle = colors.accent; ctx.beginPath(); ctx.arc(rx(k), ry(run.resid[k - 1]), 3.5, 0, 6.283); ctx.fill(); }
+
+    const rv = k > 0 ? run.resid[k - 1] : 1;
+    api.readout('rd', `iteration ${k}: the state moved ${rv < 1e-4 ? 'less than 1e-4 (the plotted settling threshold)' : 'by ' + rv.toExponential(1)}`);
+  },
+});
+</script>

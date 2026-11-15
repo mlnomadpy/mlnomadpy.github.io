@@ -1,0 +1,26 @@
+---
+interface Props { caption?: string; }
+const { caption } = Astro.props;
+const families = [
+  ['Gaussian on Rᵈ', 'Analytic functions; contained in every finite-order L² Sobolev space. Compact-domain approximation can still reach nonanalytic targets.'],
+  ['Matérn on Rᵈ', 'Native space equivalent to H^(ν+d/2). Whether a particular corner belongs depends on dimension and smoothness.'],
+  ['Polynomial on Rᵈ', 'Finite-dimensional polynomial features. For (1+x·y)^p, degree at most p; a homogeneous kernel has a different feature set.'],
+  ['Bandlimited on R', 'Constant spectral density on a finite frequency interval gives a sinc kernel. Functions have L² Fourier transforms supported in that interval.'],
+  ['Brownian on [0,1]', 'k(s,t)=min(s,t): absolutely continuous f with f(0)=0 and f′∈L². A typical Brownian sample path is not in this RKHS.'],
+  ['Yat on a compact domain', 'Squared alignment times an IMQ gate. For b≥0 and ε>0 it is PSD. Universality holds for b>0, or for b=0 when the compact domain excludes the origin. Full native-space comparison needs its own analysis.'],
+];
+---
+<figure class="viz kernel-field-guide" aria-label="Kernel function-space field guide">
+  <h4 class="kernel-field-guide__title">Different spaces, different questions</h4>
+  {families.map(([name, description]) => <details><summary>{name}</summary><p>{description}</p></details>)}
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+<style>
+.kernel-field-guide {margin:2rem 0;border-block:1px solid var(--color-border, #8885);padding-block:1rem;}
+.kernel-field-guide__title {font:600 1rem/1.45 var(--ui,system-ui);margin:0 0 1rem;}
+details {border-top:1px solid #8883;padding:.6rem 0;}
+summary {cursor:pointer;font-weight:500;min-height:44px;display:list-item;align-content:center;}
+summary:focus-visible {outline:2px solid var(--sand);outline-offset:4px;}
+p {margin:.6rem 0;font-size:.95em;}
+figcaption {font-size:.85em;opacity:.75;margin-top:1rem;}
+</style>

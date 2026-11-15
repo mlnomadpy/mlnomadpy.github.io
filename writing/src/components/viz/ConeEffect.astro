@@ -1,0 +1,133 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 380 } = Astro.props;
+---
+<figure data-min-width="400" class="viz coneeffect" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+import { defineViz } from './engine/vizkit.js';
+import { panel, unitCircle, dot, arrow, text, PALETTE } from './engine/draw.js';
+
+// Random untrained ReLU net: outputs already bunch into a narrow cone (the cone
+// effect). No training, pure forward passes, recomputed on slider/re-roll.
+const D = 16, H = 24, DE = 2, N = 320;
+const randn = () => { let u = Math.random(), v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+
+defineViz('coneeffect', {
+  title: 'The cone effect: embeddings don’t start uniform',
+  height: 380,
+  controls: [
+    { type: 'range', name: 'depth', label: 'depth', min: 1, max: 8, step: 1, value: 1, int: true, fmt: v => v },
+    { type: 'button', name: 'reroll', label: 're-roll', reset: true },
+    { type: 'readout', name: 'rd' },
+  ],
+  setup(api) {
+    const X = []; for (let i = 0; i < N; i++) { const r = new Float64Array(D); for (let d = 0; d < D; d++) r[d] = randn(); X.push(r); }
+    const nets = []; let din = D; for (let l = 0; l < 8; l++) { const W = []; for (let a = 0; a < din; a++) { const row = new Float64Array(H); for (let b = 0; b < H; b++) row[b] = randn() * Math.sqrt(2 / din); W.push(row); } nets.push(W); din = H; }
+    const proj = []; for (let a = 0; a < H; a++) { const row = new Float64Array(DE); for (let b = 0; b < DE; b++) row[b] = randn() * Math.sqrt(2 / H); proj.push(row); }
+    api.state = { X, nets, proj };
+  },
+  draw(api) {
+    const { ctx, colors, size, state } = api; const L = api.get('depth');
+    const forward = (depth) => {
+      const pts = new Array(N);
+      let mx = 0, my = 0;
+      for (let i = 0; i < N; i++) {
+        let h = state.X[i]; let din = D;
+        for (let l = 0; l < depth; l++) {
+          const W = state.nets[l], o = new Float64Array(H);
+          for (let b = 0; b < H; b++) {
+            let s = 0;
+            for (let a = 0; a < din; a++) s += h[a] * W[a][b];
+            o[b] = s > 0 ? s : 0;
+          }
+          h = o; din = H;
+        }
+        let z0 = 0, z1 = 0;
+        for (let a = 0; a < H; a++) { z0 += h[a] * state.proj[a][0]; z1 += h[a] * state.proj[a][1]; }
+        const n = Math.hypot(z0, z1) + 1e-9;
+        z0 /= n; z1 /= n;
+        mx += z0 / N; my += z1 / N;
+        pts[i] = [z0, z1];
+      }
+      const Rbar = Math.hypot(mx, my);
+      const width = Math.min(Math.PI, Math.sqrt(-2 * Math.log(Math.max(Rbar, 1e-4))));
+      return { pts, mx, my, Rbar, width };
+    };
+
+    const drawCone = (box, data, label, active) => {
+      const m = panel(ctx, box, colors, { header: 26 });
+      unitCircle(ctx, m, colors);
+      const ang = Math.atan2(data.my, data.mx);
+      const width = data.width;
+
+      if (active) {
+        ctx.save();
+        ctx.globalAlpha = 0.14;
+        ctx.fillStyle = colors.accent;
+        ctx.beginPath();
+        ctx.moveTo(m.cx, m.cy);
+        ctx.arc(m.cx, m.cy, Math.max(0, m.R), -ang - width, -ang + width);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+
+      ctx.globalAlpha = active ? 0.72 : 0.32;
+      for (let i = 0; i < N; i++) {
+        const [px, py] = m.map(data.pts[i]);
+        dot(ctx, px, py, active ? 2.3 : 2.0, PALETTE[Math.floor(i / 40) % PALETTE.length]);
+      }
+      ctx.globalAlpha = 1;
+
+      const nx = data.mx / (data.Rbar + 1e-9), ny = data.my / (data.Rbar + 1e-9);
+      arrow(ctx, m.cx, m.cy, m.cx + nx * m.R * 0.82, m.cy - ny * m.R * 0.82, active ? colors.fg : colors.muted, 2);
+      text(ctx, label, box.x + 8, box.y + 6, colors, { size: 12, color: active ? colors.fg : colors.muted });
+      text(ctx, `cone width ${Math.min(180, width * 180 / Math.PI).toFixed(0)} deg`, box.x + box.w - 8, box.y + 7, colors, { size: 10, mono: true, align: 'right', color: colors.muted });
+      text(ctx, 'colours are fixed random input slices', box.x + 8, box.y + box.h - 15, colors, { size: 10, color: colors.muted });
+      return m;
+    };
+
+    const base = forward(1);
+    const deep = forward(L);
+    const gap = 10, margin = 6, usableW = size.W - margin * 2;
+    const twoCol = usableW >= 620;
+    const h = twoCol ? size.H - 8 : (size.H - 14) / 2;
+    const baseBox = twoCol
+      ? { x: margin, y: 4, w: (usableW - gap) / 2, h }
+      : { x: margin, y: 4, w: usableW, h };
+    const deepBox = twoCol
+      ? { x: margin + baseBox.w + gap, y: 4, w: baseBox.w, h }
+      : { x: margin, y: 4 + h + gap, w: usableW, h };
+
+    drawCone(baseBox, base, 'baseline: depth 1', L === 1);
+    drawCone(deepBox, deep, `selected: depth ${L}`, true);
+
+    // Tiny angular histogram underneath the selected panel so concentration is
+    // visible even when the scatter points overlap.
+    const histBox = { x: deepBox.x + 12, y: deepBox.y + deepBox.h - 44, w: deepBox.w - 24, h: 24 };
+    const bins = new Array(36).fill(0);
+    for (const p of deep.pts) {
+      const a = (Math.atan2(p[1], p[0]) + Math.PI) / (2 * Math.PI);
+      bins[Math.min(35, Math.max(0, Math.floor(a * 36)))]++;
+    }
+    const maxBin = Math.max(...bins, 1);
+    ctx.globalAlpha = 0.85;
+    for (let b = 0; b < bins.length; b++) {
+      const bh = (bins[b] / maxBin) * histBox.h;
+      ctx.fillStyle = colors.accent;
+      ctx.fillRect(histBox.x + (b / bins.length) * histBox.w, histBox.y + histBox.h - bh, histBox.w / bins.length - 1, bh);
+    }
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = colors.border; ctx.lineWidth = 1; ctx.strokeRect(histBox.x + 0.5, histBox.y + 0.5, histBox.w - 1, histBox.h - 1);
+
+    api.readout('rd', `selected cone width ≈ ${Math.min(180, deep.width * 180 / Math.PI).toFixed(0)}°`);
+  },
+});
+</script>

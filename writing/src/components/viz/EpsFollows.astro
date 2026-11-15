@@ -1,0 +1,84 @@
+---
+interface Props { caption?: string; height?: number; }
+const { caption, height = 430 } = Astro.props;
+---
+<figure data-min-width="800" class="viz epsfollows" data-caption={caption} data-height={height} data-height-mobile="540" tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+<script>
+// The softening on a second dataset. The histogram is every squared distance
+// from a CIFAR image to a trained prototype; the red markers are the three
+// seeds' learned epsilons, three orders of magnitude to the left. The twist
+// is on the right: at hotter learning rates epsilon runs UP into the
+// distances, and accuracy falls. The idle softening is what the best
+// optimizer chooses, on this dataset as on the last one.
+import { defineViz } from './engine/vizkit.js';
+import { T, fmt, gate, loadingText } from './engine/draw.js';
+import { load } from './fifteen.js';
+
+defineViz('epsfollows', {
+  title: 'Softening scale and a separate-width LR sweep',
+  height: 430,
+  controls: [{ type: 'readout', name: 'rd' }],
+  setup(api) { gate(api, () => load('eps'), (a, d) => { a.state.d = d; }); },
+  draw(api) {
+    const { ctx, colors, size: { W, H } } = api, st = api.state;
+    if (!st.ready) { loadingText(api, 'loading the audit…'); return; }
+    const d = st.d, pad = 14, top = 32;
+    const box = { x: pad, y: top, w: W * 0.6 - pad, h: H - top - 96 };
+    const lo = Math.log10(Math.min(...d.eps)) - 0.5;
+    const hi = d.edges[d.edges.length - 1] + 0.3;
+    const lx = (v) => box.x + ((v - lo) / (hi - lo)) * box.w;
+    ctx.strokeStyle = colors.border;
+    ctx.strokeRect(box.x + 0.5, box.y + 0.5, box.w - 1, box.h - 1);
+    const mH = Math.max(...d.hist);
+    for (let b = 0; b < d.hist.length; b++) {
+      const x0 = lx(d.edges[b]), x1 = lx(d.edges[b + 1]);
+      const h = (d.hist[b] / mH) * (box.h - 20);
+      ctx.fillStyle = colors.muted; ctx.globalAlpha = 0.5;
+      ctx.fillRect(x0, box.y + box.h - h, Math.max(1, x1 - x0 - 1), h);
+      ctx.globalAlpha = 1;
+    }
+    d.eps.forEach((e, i) => {
+      const x = lx(Math.log10(e));
+      ctx.strokeStyle = '#c2553a'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(x, box.y + 6); ctx.lineTo(x, box.y + box.h); ctx.stroke();
+      ctx.lineWidth = 1;
+    });
+    T(ctx, colors, 'small');
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    for (const p of [-1, 0, 1, 2, 3]) {
+      const x = lx(p);
+      if (x > box.x && x < box.x + box.w) ctx.fillText('1e' + p, x, box.y + box.h + 4);
+    }
+    ctx.textAlign = 'left';
+    ctx.fillText('squared distance, image to prototype (log)', box.x, box.y + box.h + 20);
+    T(ctx, colors, 'label');
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('1,024-prototype runs: ε vs sampled squared distances', box.x, top - 8);
+
+    // Separate-width sweep; parameter changes do not isolate a causal effect.
+    const rx = W * 0.62, rw = W - rx - pad;
+    T(ctx, colors, 'label');
+    ctx.fillText('256-prototype LR sweep', rx, top - 8);
+    const rows = d.sweep;
+    const rh = (H - top - 96) / rows.length;
+    rows.forEach((r, i) => {
+      const y = top + i * rh;
+      T(ctx, colors, 'small');
+      ctx.fillText(`lr ${r.lr}`, rx, y + 14);
+      T(ctx, colors, 'title');
+      ctx.font = '600 17px ui-sans-serif, system-ui, sans-serif';
+      ctx.fillStyle = colors.accent;
+      ctx.fillText(`ε = ${r.eps}`, rx, y + 36);
+      T(ctx, colors, 'small');
+      ctx.fillText(`accuracy ${fmt(r.acc, 1)}%${i === 0 ? '  <- best of shown sweep' : ''}`, rx, y + 52);
+    });
+    T(ctx, colors, 'small');
+    ctx.fillText('Different-width LR sweep: an association, not an isolated ε effect.', pad, H - 28);
+    ctx.fillText('Small ε relative to distance² does not prove no predictive effect.', pad, H - 13);
+    api.readout('rd', `ε ${d.eps.map((e) => fmt(e, 2)).join(' / ')} across seeds, median distance² ${fmt(d.median_d2, 0)}: a ${fmt(d.median_d2 / Math.max(...d.eps), 0)}× gap`);
+  },
+});
+</script>

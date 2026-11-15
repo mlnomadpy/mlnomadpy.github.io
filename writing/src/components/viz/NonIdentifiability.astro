@@ -1,0 +1,137 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 430 } = Astro.props;
+---
+<figure data-min-width="640" class="viz nonidentifiability" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<style>
+  .viz :global(.vk-readout) { white-space: normal; line-height: 1.6; }
+</style>
+<script>
+import { defineViz } from './engine/vizkit.js';
+import { panel, text, PALETTE } from './engine/draw.js';
+import { np, withJax, drawJaxLoading } from './engine/jax.js';
+
+// Carathéodory non-identifiability, made literal. One fixed point y, many convex
+// decompositions y = Σ a_u r_u over an overcomplete prototype set. We enumerate the
+// triangles of prototypes that contain y, each gives a UNIQUE barycentric (sparse,
+// 3-prototype) decomposition, and then animate between them. The set of valid
+// decompositions is convex, so any interpolation of two valid ones is valid and
+// reads out the SAME y. The readout is recomputed live in jax-js each frame as a numerical check; linearity proves it stays fixed in exact arithmetic.
+const R = [[0.0, 0.86], [-0.78, 0.46], [-0.7, -0.52], [0.06, -0.86], [0.8, -0.42], [0.74, 0.52]];
+const Y = [0.06, 0.07];
+const NAMES = ['r1', 'r2', 'r3', 'r4', 'r5', 'r6'];
+
+function hull(pts) {
+  const p = pts.map((q, i) => ({ x: q[0], y: q[1], i })).sort((a, b) => a.x - b.x || a.y - b.y);
+  const cross = (o, a, b) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+  const lo = []; for (const q of p) { while (lo.length >= 2 && cross(lo[lo.length - 2], lo[lo.length - 1], q) <= 0) lo.pop(); lo.push(q); }
+  const hi = []; for (let k = p.length - 1; k >= 0; k--) { const q = p[k]; while (hi.length >= 2 && cross(hi[hi.length - 2], hi[hi.length - 1], q) <= 0) hi.pop(); hi.push(q); }
+  return lo.slice(0, -1).concat(hi.slice(0, -1));
+}
+
+// every triple whose triangle contains Y → its barycentric convex decomposition
+function decompositions() {
+  const m = R.length, out = [];
+  for (let i = 0; i < m; i++) for (let j = i + 1; j < m; j++) for (let k = j + 1; k < m; k++) {
+    const [x1, y1] = R[i], [x2, y2] = R[j], [x3, y3] = R[k];
+    const det = (y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3);
+    if (Math.abs(det) < 1e-6) continue;
+    const l1 = ((y2 - y3) * (Y[0] - x3) + (x3 - x2) * (Y[1] - y3)) / det;
+    const l2 = ((y3 - y1) * (Y[0] - x3) + (x1 - x3) * (Y[1] - y3)) / det;
+    const l3 = 1 - l1 - l2;
+    if (l1 < 0.02 || l2 < 0.02 || l3 < 0.02) continue;          // strictly inside
+    const a = new Array(m).fill(0); a[i] = l1; a[j] = l2; a[k] = l3;
+    const cx = (x1 + x2 + x3) / 3, cy = (y1 + y2 + y3) / 3;
+    out.push({ a, ang: Math.atan2(cy - Y[1], cx - Y[0]) });
+  }
+  out.sort((p, q) => p.ang - q.ang);
+  return out.map((o) => o.a);
+}
+
+function lerp(a, b, t) { return a.map((v, i) => v + (b[i] - v) * t); }
+function smooth(t) { return t * t * (3 - 2 * t); }
+
+defineViz('nonidentifiability', {
+  title: 'Same output, different coefficients',
+  height: 430,  controls: [
+    { type: 'play' }, { type: 'reset' }, { type: 'speed', presets: [0.5, 1, 2] },
+    { type: 'readout', name: 'rd' },
+  ],
+  setup(api) {
+    api.state.A = decompositions();
+    api.state.hull = hull(R);
+    api.state.t = 0;
+    withJax(api);
+  },
+  step(api) { api.state.t = (api.state.t || 0) + 0.018; },
+  draw(api) {
+    if (!api.state.jaxReady) return drawJaxLoading(api);
+    const { ctx, colors, size, state } = api;
+    const box = { x: 6, y: 4, w: size.W - 12, h: size.H - 8 };
+    panel(ctx, box, colors, {});
+    const A = state.A, K = A.length;
+
+    const stage = { x: box.x, y: box.y + 22, w: box.w, h: box.h - 84 };
+    const m = panel(ctx, stage, colors, {});
+    const map = m.map;
+
+    // interpolate around the cycle of sparse decompositions, every intermediate is valid
+    const tt = (state.t || 0) % K;
+    const i = Math.floor(tt), f = smooth(tt - i);
+    const a = lerp(A[i], A[(i + 1) % K], f);
+
+    // Recompute as a numerical check of the algebraic identity.
+    const yNow = np.matmul(np.reshape(np.array(a), [1, a.length]), np.array(R)).js()[0];
+
+    // hull
+    const hv = state.hull;
+    ctx.beginPath();
+    hv.forEach((p, idx) => { const [hx, hy] = map([p.x, p.y]); idx ? ctx.lineTo(hx, hy) : ctx.moveTo(hx, hy); });
+    ctx.closePath();
+    ctx.fillStyle = colors.accent + '10'; ctx.fill();
+    ctx.strokeStyle = colors.accent + '55'; ctx.lineWidth = 1.1; ctx.stroke();
+
+    // spokes weighted by current coefficient
+    const [yx, yy] = map(Y);
+    for (let u = 0; u < R.length; u++) {
+      const [px, py] = map(R[u]);
+      ctx.strokeStyle = PALETTE[u % PALETTE.length]; ctx.globalAlpha = 0.12 + 0.7 * a[u]; ctx.lineWidth = 0.5 + 6 * a[u];
+      ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(yx, yy); ctx.stroke(); ctx.globalAlpha = 1;
+    }
+    for (let u = 0; u < R.length; u++) {
+      const [px, py] = map(R[u]);
+      ctx.fillStyle = PALETTE[u % PALETTE.length];
+      ctx.beginPath(); ctx.arc(px, py, 3.5 + 8 * a[u], 0, Math.PI * 2); ctx.fill();
+      text(ctx, NAMES[u], px + 7, py - 8, colors, { size: 10, mono: true, color: colors.muted });
+    }
+    // fixed y
+    ctx.fillStyle = colors.fg; ctx.beginPath(); ctx.arc(yx, yy, 7.5, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = colors.cellBg; ctx.lineWidth = 1.8; ctx.stroke();
+    text(ctx, 'y (fixed)', yx + 11, yy - 12, colors, { size: 11, weight: '700', mono: true });
+
+    // ── coefficient strip ──
+    const stripY = box.y + box.h - 56, stripH = 24;
+    const bw = (box.w - 24) / a.length;
+    const active = a.filter((v) => v > 0.02).length;
+    for (let u = 0; u < a.length; u++) {
+      const bx = box.x + 12 + u * bw + 3, bh = a[u] * stripH * 1.6;
+      ctx.fillStyle = PALETTE[u % PALETTE.length];
+      ctx.fillRect(bx, stripY + stripH - bh, Math.max(9, bw - 8), bh);
+      text(ctx, a[u].toFixed(2), bx + (bw - 8) / 2, stripY + stripH + 2, colors, { align: 'center', size: 9, mono: true, color: colors.muted });
+    }
+    const sum = a.reduce((p, v) => p + v, 0);
+    const error = Math.max(...yNow.map((v,i) => Math.abs(v - Y[i])));
+    text(ctx, `Σa = ${sum.toFixed(3)} · all ≥ 0 · active prototypes: ${active}  (Carathéodory: 3 suffice in the plane)`,
+      box.x + 12, box.y + box.h - 14, colors, { size: 10, mono: true, color: colors.muted });
+
+    api.readout('rd', `y (${yNow[0].toFixed(3)}, ${yNow[1].toFixed(3)}) · reconstruction error ${error.toExponential(1)}`);
+  },
+});
+</script>

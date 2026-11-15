@@ -1,0 +1,88 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 440 } = Astro.props;
+---
+<figure data-min-width="720" class="viz adaptivedepthmap" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+// Finite diagnostic trajectories; stopping rules and guarantees are distinguished in the article.
+import { defineViz } from './engine/vizkit.js';
+import { gate, loadingText } from './engine/draw.js';
+import { loadReady, compute, CLS_A, CLS_B } from './yatdeq.js';
+
+const LOX = -2.6, HIX = 2.6, LOY = -2.6, HIY = 2.6;
+
+defineViz('adaptivedepthmap', {
+  title: 'First threshold crossing differs across inputs',
+  height: 440,
+  controls: [
+    { type: 'range', name: 'd', label: 'diagnostic budget', min: 4, max: 66, step: 1, value: 20, int: true,
+      reset: false, fmt: (v) => v, play: { period: 5200, loop: false } },
+    { type: 'readout', name: 'rd' },
+  ],
+
+  setup(api) {
+    gate(api, loadReady, (api, model) => {
+      compute(model);   // warms the shared model; this panel reads precomputed depths
+      const T = model.test, k = T.kcount;
+      const kmax = Math.max(...k), kmin = Math.min(...k);
+      const bins = new Array(kmax - kmin + 1).fill(0);
+      k.forEach((v) => bins[v - kmin]++);
+      api.state.M = { x: T.x, y: T.y, k, kmin, kmax, bins, hmax: Math.max(...bins), n: k.length };
+    });
+  },
+
+  draw(api) {
+    const { ctx, colors, size, state: st } = api;
+    const W = size.W, H = size.H;
+    if (W === 0) return;
+    ctx.clearRect(0, 0, W, H);
+    if (!st.ready || !st.M) { loadingText(api, 'reading settle times…'); return; }
+    const M = st.M, d = api.get('d');
+    const pad = 16, gap = 26;
+    const leftW = Math.round((W - pad * 2 - gap) * 0.6);
+    const B = { x: pad, y: pad + 24, w: leftW, h: H - pad * 2 - 24 };
+    const R = { x: pad + leftW + gap, y: pad + 24, w: W - pad * 2 - gap - leftW, h: H - pad * 2 - 24 };
+    const px = (x) => B.x + ((x - LOX) / (HIX - LOX)) * B.w, py = (y) => B.y + ((HIY - y) / (HIY - LOY)) * B.h;
+
+    // left: input plane, settled vs still-iterating under this budget
+    ctx.fillStyle = colors.fg; ctx.font = '12px ui-sans-serif, system-ui'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('first step below 1e-4 by this budget', B.x, B.y - 8);
+    ctx.strokeStyle = colors.border; ctx.lineWidth = 1; ctx.strokeRect(B.x + 0.5, B.y + 0.5, B.w - 1, B.h - 1);
+    let settled = 0;
+    for (let i = 0; i < M.n; i++) {
+      const done = M.k[i] <= d, col = M.y[i] ? CLS_B : CLS_A, x = px(M.x[i][0]), y = py(M.x[i][1]);
+      if (done) { settled++; ctx.fillStyle = col; ctx.globalAlpha = 1; ctx.beginPath(); ctx.arc(x, y, 3, 0, 6.283); ctx.fill(); }
+      else { ctx.strokeStyle = col; ctx.globalAlpha = 0.5; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(x, y, 3, 0, 6.283); ctx.stroke(); }
+    }
+    ctx.globalAlpha = 1;
+
+    // right: distribution of iterations-to-settle
+    ctx.fillStyle = colors.fg; ctx.font = '12px ui-sans-serif, system-ui'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('first-crossing iteration', R.x, R.y - 8);
+    ctx.strokeStyle = colors.border; ctx.lineWidth = 1; ctx.strokeRect(R.x + 0.5, R.y + 0.5, R.w - 1, R.h - 1);
+    const nb = M.bins.length, bw = R.w / nb, base = R.y + R.h - 22;
+    for (let b = 0; b < nb; b++) {
+      const kv = M.kmin + b, h = (M.bins[b] / M.hmax) * (R.h - 34);
+      ctx.fillStyle = kv <= d ? colors.accent : colors.border;
+      ctx.globalAlpha = kv <= d ? 0.9 : 0.55;
+      ctx.fillRect(R.x + b * bw + 0.5, base - h, Math.max(1, bw - 1), h);
+    }
+    ctx.globalAlpha = 1;
+    // budget marker
+    const mxp = R.x + ((Math.min(d, M.kmax) - M.kmin + 1) / nb) * R.w;
+    ctx.strokeStyle = colors.fg; ctx.lineWidth = 1.4; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(mxp, R.y + 4); ctx.lineTo(mxp, base); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = colors.faint; ctx.font = '9px ui-monospace, monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    for (const t of [M.kmin, Math.round((M.kmin + M.kmax) / 2), M.kmax]) ctx.fillText(t + '', R.x + ((t - M.kmin + 0.5) / nb) * R.w, base + 6);
+
+    const pct = (100 * settled / M.n).toFixed(0);
+    api.readout('rd', `budget ${d}: ${pct}% first crossed the step threshold · archived counts from a fixed 120-step solve`);
+  },
+});
+</script>

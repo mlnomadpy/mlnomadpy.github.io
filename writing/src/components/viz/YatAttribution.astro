@@ -1,0 +1,149 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 400 } = Astro.props;
+---
+<figure data-min-width="720" class="viz yatattrib" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+// A normalized-message toy model: f(x) = sum a_u m_u, with a_u = k_u / sum k.
+// Bars display the nonnegative mixing weights a_u, not the signed terms a_u m_u.
+// The separate diagonal readout is the squared norm of k(x,·), not of f.
+import { defineViz } from './engine/vizkit.js';
+import { np, withJax, drawJaxLoading } from './engine/jax.js';
+import { rng32 } from './engine/datasets.js';
+
+const B = 0.5;
+const PAD = 10;
+const DOM = 2.2;
+
+// kernel value of every prototype against the query, on jax-js
+const queryKer = (protos, K, qx, qy, eps) => {
+  const Pv = np.reshape(np.array(protos), [K, 2]);
+  const qv = np.reshape(np.array([qx, qy]), [1, 2]);
+  const dot = np.sum(Pv.ref.mul(qv.ref), 1);
+  const diff = np.subtract(Pv, qv);
+  const dist2 = np.sum(diff.ref.mul(diff), 1);
+  const lin = dot.add(B);
+  const num = lin.ref.mul(lin);
+  return num.div(dist2.add(eps)).js();
+};
+
+defineViz('yatattrib', {
+  title: 'Normalized messages: mixing weights and a signed output',
+  height: 400,
+  controls: [
+    { type: 'range', name: 'K', label: 'prototypes', min: 5, max: 14, step: 1, value: 9, int: true, reset: true, fmt: (v) => v },
+    { type: 'range', name: 'eps', label: 'ε bandwidth', min: -1.2, max: 0.8, step: 0.05, value: -0.3, reset: false, fmt: (v) => Math.pow(10, v).toFixed(2) },
+    { type: 'readout', name: 'rd' },
+  ],
+
+  setup(api) {
+    const K = api.get('K');
+    const r = rng32(23);
+    const protos = new Float64Array(K * 2), msg = new Float64Array(K);
+    for (let k = 0; k < K; k++) {
+      protos[k * 2] = (r() * 2 - 1) * DOM * 0.82;
+      protos[k * 2 + 1] = (r() * 2 - 1) * DOM * 0.82;
+      msg[k] = r() < 0.5 ? -1 : 1;                  // each prototype's message (a class)
+    }
+    api.state = { K, protos, msg, qx: 0.3, qy: 0.2, jaxReady: false };
+
+    if (!api.canvas.dataset.atDrag) {
+      api.canvas.dataset.atDrag = '1';
+      const toWorld = (e) => {
+        const rc = api.canvas.getBoundingClientRect();
+        const Wd = api.size.W, Hd = api.size.H;
+        const side = Math.min(Hd - PAD * 2 - 20, Wd * 0.52);
+        const x0 = PAD, y0 = PAD;
+        const px = (e.clientX - rc.left - x0) / side, py = (e.clientY - rc.top - y0) / side;
+        if (px < -0.1 || px > 1.1) return;
+        api.state.qx = Math.max(-DOM, Math.min(DOM, -DOM + px * 2 * DOM));
+        api.state.qy = Math.max(-DOM, Math.min(DOM, DOM - py * 2 * DOM));
+        api.render();
+      };
+      let drag = false;
+      api.canvas.addEventListener('pointerdown', (e) => { drag = true; api.canvas.setPointerCapture(e.pointerId); toWorld(e); });
+      api.canvas.addEventListener('pointermove', (e) => { if (drag) toWorld(e); });
+      api.canvas.addEventListener('pointerup', (e) => { drag = false; try { api.canvas.releasePointerCapture(e.pointerId); } catch {} });
+    }
+    withJax(api);
+  },
+
+  draw(api) {
+    const { ctx, colors, size, state: st } = api;
+    const Wd = size.W, Hd = size.H;
+    if (Wd === 0 || !st) return;
+    ctx.clearRect(0, 0, Wd, Hd);
+    if (!st.jaxReady) return drawJaxLoading(api);
+
+    const eps = Math.pow(10, api.get('eps'));
+    const side = Math.min(Hd - PAD * 2 - 20, Wd * 0.52);
+    const x0 = PAD, y0 = PAD;
+    const sx = (x) => x0 + ((x + DOM) / (2 * DOM)) * side;
+    const sy = (y) => y0 + ((DOM - y) / (2 * DOM)) * side;
+
+    // attribution weights a_u = κ/Σκ  (κ on jax-js)
+    const ker = queryKer(st.protos, st.K, st.qx, st.qy, eps);
+    let Z = 0; for (let k = 0; k < st.K; k++) Z += ker[k];
+    Z = Z || 1e-9;
+    const a = new Float64Array(st.K);
+    let out = 0; for (let k = 0; k < st.K; k++) { a[k] = ker[k] / Z; out += a[k] * st.msg[k]; }
+    let amax = 1e-9; for (let k = 0; k < st.K; k++) if (a[k] > amax) amax = a[k];
+    const cap = Math.pow(st.qx * st.qx + st.qy * st.qy + B, 2) / eps;
+
+    const colFor = (m) => (m >= 0 ? colors.accent : colors.blue);
+
+    // ── left: prototype scatter ──
+    ctx.fillStyle = colors.cellBg; ctx.fillRect(x0, y0, side, side);
+    ctx.strokeStyle = colors.border; ctx.lineWidth = 1; ctx.strokeRect(x0 + 0.5, y0 + 0.5, side - 1, side - 1);
+    const qpx = sx(st.qx), qpy = sy(st.qy);
+    for (let k = 0; k < st.K; k++) {
+      const ratio = a[k] / amax;
+      ctx.strokeStyle = colFor(st.msg[k]); ctx.globalAlpha = 0.15 + 0.55 * ratio; ctx.lineWidth = 1 + 2 * ratio;
+      ctx.beginPath(); ctx.moveTo(qpx, qpy); ctx.lineTo(sx(st.protos[k * 2]), sy(st.protos[k * 2 + 1])); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    for (let k = 0; k < st.K; k++) {
+      const px = sx(st.protos[k * 2]), py = sy(st.protos[k * 2 + 1]);
+      const ratio = a[k] / amax;
+      ctx.fillStyle = colFor(st.msg[k]); ctx.globalAlpha = 0.45 + 0.5 * ratio;
+      ctx.beginPath(); ctx.arc(px, py, 4 + 7 * ratio, 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = 1; ctx.lineWidth = 1.4; ctx.strokeStyle = colors.bg; ctx.stroke();
+    }
+    ctx.fillStyle = colors.fg; ctx.beginPath(); ctx.arc(qpx, qpy, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = colors.bg; ctx.stroke();
+    ctx.fillStyle = colors.muted; ctx.font = '10px ui-monospace, monospace';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+    ctx.fillText('drag the ● query', x0 + 4, y0 + side - 4);
+
+    // ── right: mixing-weight bars (sorted), each a_u ──
+    const bx = x0 + side + 16, bw = Wd - bx - PAD;
+    const order = Array.from({ length: st.K }, (_, k) => k).sort((p, q) => a[q] - a[p]);
+    const rowH = Math.min(26, (side - 24) / st.K);
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = colors.fg; ctx.font = '11px ui-sans-serif, system-ui'; ctx.textAlign = 'left';
+    ctx.fillText('mixing weight  aᵤ = κ(x,Wᵤ) / Σκ', bx, y0 + 8);
+    for (let i = 0; i < st.K; i++) {
+      const k = order[i];
+      const ry = y0 + 22 + i * rowH;
+      const full = bw - 54;
+      ctx.fillStyle = colors.cellBg; ctx.fillRect(bx + 44, ry, full, rowH - 5);
+      ctx.fillStyle = colFor(st.msg[k]); ctx.globalAlpha = 0.85;
+      ctx.fillRect(bx + 44, ry, full * (a[k] / Math.max(amax, 1e-9)), rowH - 5);
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = colors.muted; ctx.font = '10px ui-monospace, monospace'; ctx.textAlign = 'left';
+      ctx.fillText(`W${k}${st.msg[k] >= 0 ? '+' : '−'}`, bx, ry + (rowH - 5) / 2);
+      ctx.fillStyle = colors.faint; ctx.textAlign = 'right';
+      ctx.fillText(a[k].toFixed(2), bx + 40, ry + (rowH - 5) / 2);
+    }
+
+    api.readout('rd', `output f(x) = Σ aᵤmᵤ = ${out.toFixed(2)} · Σ aᵤ = 1.00 (mixing weights) · section norm² k(x,x) = ${cap.toFixed(1)}`);
+  },
+});
+</script>

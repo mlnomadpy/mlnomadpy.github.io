@@ -1,0 +1,114 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 470 } = Astro.props;
+---
+<figure data-min-width="800" class="viz mercermodes" data-caption={caption} data-height={height} data-height-mobile="620" tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+// Sample-mode poles and class profiles. Interpretations require stability and external evidence.
+import { defineViz } from './engine/vizkit.js';
+import { T, fmt, gate, loadingText } from './engine/draw.js';
+import { load, thumb } from './mercer.js';
+
+defineViz('mercermodes', {
+  title: 'Feature modes, ranked by sampled variance',
+  height: 470,
+  controls: [{ type: 'readout', name: 'rd' }],
+
+  setup(api) {
+    const st = api.state;
+    st.sel = 0;
+    gate(api, () => load('modes'), (a, data) => { a.state.data = data; });
+    api.canvas.addEventListener('pointerdown', (e) => {
+      if (!st.ready || !st.bars) return;
+      const r = api.canvas.getBoundingClientRect();
+      const p = { x: e.clientX - r.left, y: e.clientY - r.top };
+      const hit = st.bars.find((b) => p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y - 6 && p.y <= b.y + b.h + 6);
+      if (hit) { st.sel = hit.k; api.render(); }
+    });
+  },
+
+  draw(api) {
+    const { ctx, colors, size: { W, H } } = api, st = api.state;
+    if (!st.ready) { loadingText(api, 'loading the modes…'); return; }
+    const d = st.data;
+    const pad = 14, top = 34;
+
+    // ── the eigenvalue bars, clickable ──
+    const barBox = { x: pad + 4, y: top, w: W - 2 * pad - 8, h: 92 };
+    const n = d.modes.length;
+    const bw = barBox.w / n;
+    st.bars = [];
+    const maxShare = d.modes[0].lam_share;
+    d.modes.forEach((md, i) => {
+      const h = Math.max(3, (md.lam_share / maxShare) * barBox.h);
+      const x = barBox.x + i * bw + 2, y = barBox.y + barBox.h - h;
+      ctx.fillStyle = i === st.sel ? colors.accent : colors.muted;
+      ctx.globalAlpha = i === st.sel ? 1 : 0.55;
+      ctx.fillRect(x, y, bw - 4, h);
+      ctx.globalAlpha = 1;
+      T(ctx, colors, 'small');
+      ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+      ctx.fillText(String(i + 1), x + (bw - 4) / 2, barBox.y + barBox.h + 4);
+      st.bars.push({ x, y: barBox.y, w: bw - 4, h: barBox.h, k: i });
+    });
+    T(ctx, colors, 'label');
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('the top 16 modes of the trained kernel, bar = eigenvalue share; click one', pad, top - 8);
+
+    // ── the selected mode: two ends + class profile ──
+    const md = d.modes[st.sel];
+    const gy = top + barBox.h + 34;
+    const gw = Math.min(52, (W * 0.55 - pad) / 5 - 6);
+    T(ctx, colors, 'label');
+    ctx.fillText(`mode ${st.sel + 1}: one end`, pad, gy - 6);
+    md.top.forEach((id, i) => {
+      const x = pad + i * (gw + 6);
+      thumb(ctx, d.thumbs[String(id)], x, gy, gw, gw, 'mg' + id);
+      ctx.strokeStyle = '#4a7fb3'; ctx.lineWidth = 2;
+      ctx.strokeRect(x + 1, gy + 1, gw - 2, gw - 2);
+      ctx.lineWidth = 1;
+    });
+    const gy2 = gy + gw + 26;
+    ctx.fillText('the other end', pad, gy2 - 6);
+    md.bot.forEach((id, i) => {
+      const x = pad + i * (gw + 6);
+      thumb(ctx, d.thumbs[String(id)], x, gy2, gw, gw, 'mg' + id);
+      ctx.strokeStyle = '#c2553a'; ctx.lineWidth = 2;
+      ctx.strokeRect(x + 1, gy2 + 1, gw - 2, gw - 2);
+      ctx.lineWidth = 1;
+    });
+
+    // class profile on the right
+    const px = pad + 5 * (gw + 6) + 26;
+    const pw = W - px - pad - 60;
+    const rowH = Math.min(17, (2 * gw + 26) / 10);
+    T(ctx, colors, 'label');
+    ctx.fillText('mean mode value per class', px, gy - 6);
+    const maxAbs = Math.max(...md.cls.map((v) => Math.abs(v))) + 1e-9;
+    md.cls.forEach((v, c) => {
+      const yv = gy + c * rowH;
+      const mid = px + pw / 2;
+      const len = (Math.abs(v) / maxAbs) * (pw / 2 - 4);
+      ctx.fillStyle = v >= 0 ? '#4a7fb3' : '#c2553a';
+      ctx.fillRect(v >= 0 ? mid : mid - len, yv + 2, Math.max(1, len), rowH - 5);
+      T(ctx, colors, 'small');
+      ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.fillText(d.classes[c], px + pw + 5, yv + rowH / 2);
+    });
+    ctx.strokeStyle = colors.faint;
+    ctx.beginPath(); ctx.moveTo(px + pw / 2, gy); ctx.lineTo(px + pw / 2, gy + 10 * rowH); ctx.stroke();
+
+    T(ctx, colors, 'small');
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('Poles are extreme test images. Check sign and stability before naming an axis.', pad, H - 14);
+    api.readout('rd', `mode ${st.sel + 1}: ${fmt(100 * md.lam_share, 1)}% of the kernel's trace, carries ${fmt(100 * md.label_share, 1)}% of the label energy, ${fmt(100 * md.head_share, 1)}% of centered logit variance`);
+  },
+});
+</script>

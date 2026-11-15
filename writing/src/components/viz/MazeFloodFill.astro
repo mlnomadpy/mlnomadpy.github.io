@@ -1,0 +1,142 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 480 } = Astro.props;
+---
+<figure data-min-width="720" class="viz mazefloodfill" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+// Finite diagnostic trajectories; stopping rules and guarantees are distinguished in the article.
+import { defineViz } from './engine/vizkit.js';
+import { gate, loadingText, mix, parseColor } from './engine/draw.js';
+import { loadJSON } from './engine/io.js';
+import modelURL from '../../../assets/yat-deq-maze/model.json?url';
+import { prepareMazeOperator, propagateMaze } from './engine/maze-propagation.js';
+
+const KMAX = 60, REACH = '#3a8f5e';
+// Per-mounted-instance closure: different grid panels cannot change each
+// other's iteration formatting, pending jobs or four-entry result cache.
+defineViz('mazefloodfill', () => {
+  let curMax = KMAX, job = null;
+  const cache = new Map(), toIter = v => Math.round(v / KMAX * curMax);
+
+  async function build(api) {
+    const st = api.state;
+    job?.abort();
+    const controller = new AbortController(); job = controller;
+    const current = () => api.isCurrent(st) && job === controller && !controller.signal.aborted;
+    const complete = api.beginTask();
+    const size = String(api.get('size')), ei = +api.get('ex'), ex = st.model.examples[size][ei];
+    curMax = Math.min(KMAX, 2 * Math.max(ex.wall.length, ex.wall[0].length) + 6);
+    api.setControl('k', api.get('k'));
+    st.M = null; st.progress = 0; api.render();
+    try {
+      const key = `${size}:${ei}`;
+      let result = cache.get(key);
+      if (result) { cache.delete(key); cache.set(key, result); }
+      else {
+        result = await propagateMaze(st.op, ex, {
+          signal: controller.signal, isCurrent: current,
+          onProgress(done, max) { if (current()) { st.progress = done / max; api.render(); } },
+        });
+        if (!current()) return;
+        cache.set(key, result);
+        if (cache.size > 4) cache.delete(cache.keys().next().value);
+      }
+      if (!current()) return;
+      st.M = result; st.progress = 1; api.render();
+    } catch (error) {
+      if (error.name !== 'AbortError' && current()) throw error;
+    } finally { complete(); }
+  }
+
+  return {
+  title: 'A local operator on four tested grid sizes',
+  height: 480,
+  controls: [
+    { type: 'select', name: 'size', label: 'grid', value: '15', reset: false,
+      options: [{ value: '11', label: '11×11 (train size)' }, { value: '15', label: '15×15' }, { value: '21', label: '21×21' }, { value: '27', label: '27×27 (never seen)' }] },
+    { type: 'select', name: 'ex', label: 'maze', value: '0', reset: false,
+      options: [0, 1, 2, 3, 4, 5].map((i) => ({ value: '' + i, label: 'maze ' + (i + 1) })) },
+    { type: 'range', name: 'k', label: 'iteration', min: 0, max: KMAX, step: 1, value: KMAX, int: true,
+      reset: false, fmt: (v) => toIter(v), play: { period: 6500, loop: false } },
+    { type: 'readout', name: 'rd' },
+  ],
+
+  setup(api) {
+    api.onCleanup(() => { job?.abort(); job = null; });
+    gate(api, () => loadJSON(modelURL), async (api, model) => {
+      const st = api.state;
+      st.model = model; st.op = prepareMazeOperator(model);
+      await build(api);
+    });
+  },
+  onControl(name, v, api) {
+    if ((name === 'size' || name === 'ex') && api.state.model) {
+      api.setControl('k', KMAX);
+      build(api).catch(error => api.fail?.(error));
+    }
+  },
+
+  draw(api) {
+    const { ctx, colors, size, state: st } = api;
+    const W = size.W, H = size.H;
+    if (W === 0) return;
+    ctx.clearRect(0, 0, W, H);
+    if (!st.ready || !st.M) { loadingText(api, `propagating… ${Math.round((st.progress || 0) * 100)}%`); return; }
+    const M = st.M, k = Math.min(toIter(api.get('k')), M.maxk);
+    const field = M.fields[k];
+
+    const pad = 16, infoW = 168;
+    const gw = W - pad * 2 - infoW, gh = H - pad * 2;
+    const cell = Math.floor(Math.min(gw, gh) / M.W);
+    const gx = pad + (gw - cell * M.W) / 2, gy = pad + (gh - cell * M.H) / 2;
+    const bg = parseColor(colors.bg || '#fff'), reach = parseColor(REACH), wallc = parseColor(colors.border);
+
+    for (let i = 0; i < M.H; i++) for (let j = 0; j < M.W; j++) {
+      const c = i * M.W + j, x = gx + j * cell, y = gy + i * cell, p = field[c];
+      let col;
+      if (M.wallFlat[c]) col = mix(bg, wallc, 0.9);                 // wall
+      else col = mix(bg, reach, Math.max(0, p) * 0.92);            // free: fill with belief
+      ctx.fillStyle = `rgb(${col[0] | 0},${col[1] | 0},${col[2] | 0})`;
+      ctx.fillRect(x + 0.5, y + 0.5, cell - 1, cell - 1);
+    }
+    // goal marker
+    const gi = M.goal[0], gj = M.goal[1];
+    ctx.strokeStyle = colors.fg; ctx.lineWidth = 2; ctx.beginPath();
+    ctx.arc(gx + gj * cell + cell / 2, gy + gi * cell + cell / 2, Math.max(2, cell * 0.32), 0, 6.283); ctx.stroke();
+
+    // info column
+    const ix = gx + cell * M.W + 22;
+    let ok = 0, tot = 0, front = 0, falsePos = 0;
+    for (let c = 0; c < M.n; c++) if (!M.wallFlat[c]) { tot++; const pred = field[c] > 0.5 ? 1 : 0; if (pred === M.reachFlat[c]) ok++; if (M.reachFlat[c] && field[c] <= 0.5) front++; if (!M.reachFlat[c] && field[c] > 0.5) falsePos++; }
+    const acc = tot ? ok / tot : 0;
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = colors.muted; ctx.font = '11px ui-sans-serif, system-ui';
+    ctx.fillText(`grid ${M.H}×${M.W}`, ix, gy + 6);
+    ctx.fillText(`goal reaches ${M.radius} cells deep`, ix, gy + 24);
+    ctx.fillStyle = colors.fg; ctx.font = 'bold 22px ui-sans-serif, system-ui'; ctx.fillText('iter ' + k, ix, gy + 58);
+    ctx.fillStyle = colors.muted; ctx.font = '11px ui-sans-serif, system-ui';
+    ctx.fillText('cells matching truth', ix, gy + 84);
+    ctx.fillStyle = front === 0 ? REACH : colors.accent; ctx.font = 'bold 18px ui-sans-serif, system-ui';
+    ctx.fillText((acc * 100).toFixed(1) + '%', ix, gy + 106);
+    ctx.fillStyle = colors.muted; ctx.font = '11px ui-sans-serif, system-ui';
+    ctx.fillText(`${front} misses; ${falsePos} false positives`, ix, gy + 128);
+    // legend
+    const ly = gy + 164;
+    ctx.fillStyle = `rgb(${mix(bg, reach, 0.92).map((v) => v | 0).join(',')})`; ctx.fillRect(ix, ly, 12, 12);
+    ctx.fillStyle = colors.muted; ctx.fillText('reachable', ix + 18, ly + 10);
+    ctx.fillStyle = `rgb(${mix(bg, wallc, 0.9).map((v) => v | 0).join(',')})`; ctx.fillRect(ix, ly + 20, 12, 12);
+    ctx.fillStyle = colors.muted; ctx.fillText('wall', ix + 18, ly + 30);
+
+    const delta=k>0?Math.max(...field.map((v,c)=>M.wallFlat[c]?0:Math.abs(v-M.fields[k-1][c]))):null;
+    api.readout('rd', `iteration ${k}: ${(acc*100).toFixed(1)}% free cells correct · ${front} misses · ${falsePos} false positives · max probability change ${delta===null?'—':delta.toExponential(2)}`);
+  },
+  };
+});
+</script>

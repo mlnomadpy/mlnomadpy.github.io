@@ -1,0 +1,105 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 470 } = Astro.props;
+---
+<figure data-min-width="800" class="viz mercertrunc" data-caption={caption} data-height={height} data-height-mobile="620" tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+// Reconstruct predictions from a rounded 800-image payload; full-test references are separate.
+import { defineViz } from './engine/vizkit.js';
+import { T, fmt, gate, loadingText, legend } from './engine/draw.js';
+import { load, thumb, truncSweep } from './mercer.js';
+
+defineViz('mercertrunc', {
+  title: 'Project the predictor onto k feature modes',
+  height: 470,
+  controls: [
+    { type: 'range', name: 'k', label: 'modes kept', min: 1, max: 128, step: 1, value: 4, play: { period: 12000, loop: false } },
+    { type: 'readout', name: 'rd' },
+  ],
+
+  setup(api) {
+    gate(api, () => load('trunc'), (a, data) => {
+      a.state.data = data;
+      a.state.sw = {
+        trained: truncSweep(data.trained, data.y),
+        frozen: truncSweep(data.frozen, data.y),
+      };
+    });
+  },
+
+  draw(api) {
+    const { ctx, colors, size: { W, H } } = api, st = api.state;
+    if (!st.ready) { loadingText(api, 'loading the eigen-coordinates…'); return; }
+    const d = st.data, k = Math.round(api.get('k'));
+    const pad = 14, top = 30;
+
+    // ── left: accuracy vs k, both arms, live-swept at setup ──
+    const cw = W * 0.56;
+    const box = { x: pad + 34, y: top, w: cw - 48, h: H - top - 96 };
+    const lx = (kk) => box.x + (Math.log(kk) / Math.log(128)) * box.w;
+    const ly = (a) => box.y + box.h - ((a - 15) / (95 - 15)) * box.h;
+    ctx.strokeStyle = colors.border;
+    ctx.strokeRect(box.x + 0.5, box.y + 0.5, box.w - 1, box.h - 1);
+    T(ctx, colors, 'small');
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    for (const a of [20, 40, 60, 80]) ctx.fillText(a + '%', box.x - 3, ly(a));
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    for (const kk of [1, 4, 16, 64, 128]) ctx.fillText(String(kk), lx(kk), box.y + box.h + 4);
+    for (const [arm, color] of [['trained', '#c2553a'], ['frozen', '#4a7fb3']]) {
+      // full-rank reference
+      ctx.strokeStyle = color; ctx.setLineDash([3, 4]); ctx.globalAlpha = 0.6;
+      ctx.beginPath(); ctx.moveTo(box.x, ly(d[arm].full_acc)); ctx.lineTo(box.x + box.w, ly(d[arm].full_acc)); ctx.stroke();
+      ctx.setLineDash([]); ctx.globalAlpha = 1;
+      ctx.strokeStyle = color; ctx.lineWidth = 2;
+      ctx.beginPath();
+      st.sw[arm].acc.forEach((a, i) => {
+        const x = lx(i + 1), yv = ly(a);
+        i === 0 ? ctx.moveTo(x, yv) : ctx.lineTo(x, yv);
+      });
+      ctx.stroke(); ctx.lineWidth = 1;
+    }
+    ctx.strokeStyle = colors.faint; ctx.setLineDash([2, 3]);
+    ctx.beginPath(); ctx.moveTo(lx(k), box.y); ctx.lineTo(lx(k), box.y + box.h); ctx.stroke();
+    ctx.setLineDash([]);
+    legend(ctx, box.x + 8, box.y + 14, [
+      { color: '#c2553a', label: 'trained kernel, top-k modes' },
+      { color: '#4a7fb3', label: 'frozen kernel, top-k modes' },
+    ], colors);
+    T(ctx, colors, 'label');
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('800-image reconstruction (dashes: full-test reference)', box.x, box.y - 8);
+
+    // ── right: thumbnails under the current truncation (trained net) ──
+    const tx = pad + cw + 6;
+    const gw = Math.min(46, (W - tx - pad) / 6 - 6);
+    T(ctx, colors, 'label');
+    ctx.fillText(`the trained net rebuilt from ${k} mode${k > 1 ? 's' : ''}`, tx, top - 6);
+    const preds = st.sw.trained.preds[k - 1];
+    let ok24 = 0;
+    for (let i = 0; i < 24; i++) {
+      const gx = tx + (i % 6) * (gw + 5), gy = top + Math.floor(i / 6) * (gw + 5);
+      thumb(ctx, d.thumbs[i], gx, gy, gw, gw, 'tr' + i);
+      const good = preds[i] === d.y[i];
+      if (good) ok24++;
+      ctx.strokeStyle = good ? '#3a8f5e' : '#c2553a'; ctx.lineWidth = 2;
+      ctx.strokeRect(gx + 1, gy + 1, gw - 2, gw - 2);
+      ctx.lineWidth = 1;
+    }
+    T(ctx, colors, 'small');
+    ctx.fillText('green = this k-mode verdict is already right', tx, top + 4 * (gw + 5) + 14);
+
+    T(ctx, colors, 'small');
+    ctx.fillText('solid curves: 800 test images; dashed full-model references: all 10,000', pad, H - 44);
+    ctx.fillText('the trained curve leaps in single digits of k: these are feature modes, not a count of concepts', pad, H - 28);
+    const aT = st.sw.trained.acc[k - 1], aF = st.sw.frozen.acc[k - 1];
+    api.readout('rd', `k = ${k}: trained ${fmt(aT, 1)}% on subset (full-test ${fmt(d.trained.full_acc, 1)}), frozen ${fmt(aF, 1)}% on subset (full-test ${fmt(d.frozen.full_acc, 1)})`);
+  },
+});
+</script>

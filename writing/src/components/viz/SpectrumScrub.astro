@@ -1,0 +1,108 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 470 } = Astro.props;
+---
+<figure data-min-width="800" class="viz mercerspectrum" data-caption={caption} data-height={height} data-height-mobile="600" tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+// Empirical feature spectra and centered-label projections, not a causal account of training.
+import { defineViz } from './engine/vizkit.js';
+import { T, fmt, gate, loadingText, legend } from './engine/draw.js';
+import { load } from './mercer.js';
+
+defineViz('mercerspectrum', {
+  title: 'Feature spectrum and label alignment through training',
+  height: 470,
+  controls: [
+    { type: 'range', name: 'ep', label: 'epoch', min: 0, max: 12, step: 1, value: 0, int: true, play: { period: 7000, loop: false } },
+    { type: 'readout', name: 'rd' },
+  ],
+
+  setup(api) {
+    gate(api, () => load('spectrum'), (a, data) => { a.state.data = data; });
+  },
+
+  draw(api) {
+    const { ctx, colors, size: { W, H } } = api, st = api.state;
+    if (!st.ready) { loadingText(api, 'loading the decompositions…'); return; }
+    const d = st.data;
+    const ep = Math.round(api.get('ep'));
+    const tr = d.arms.trained, fz = d.arms.frozen;
+    const pad = 14, top = 30, gapX = 46;
+    const half = (W - 2 * pad - gapX) / 2;
+    const boxL = { x: pad + 34, y: top, w: half - 34, h: H - top - 96 };
+    const boxR = { x: pad + half + gapX + 14, y: top, w: half - 24, h: H - top - 96 };
+    const m = tr.eigvals_log10[0].length;
+
+    // ── left: eigenvalue spectra (log10 values, log index) ──
+    const lx = (k) => boxL.x + (Math.log(k + 1) / Math.log(m)) * boxL.w;
+    const yLo = -6, yHi = 3;
+    const ly = (v) => boxL.y + boxL.h - ((Math.max(yLo, Math.min(yHi, v)) - yLo) / (yHi - yLo)) * boxL.h;
+    ctx.strokeStyle = colors.border;
+    ctx.strokeRect(boxL.x + 0.5, boxL.y + 0.5, boxL.w - 1, boxL.h - 1);
+    T(ctx, colors, 'small');
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    for (const v of [2, 0, -2, -4]) ctx.fillText('1e' + v, boxL.x - 3, ly(v));
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    for (const k of [1, 10, 100, 256]) ctx.fillText(String(k), lx(k - 1), boxL.y + boxL.h + 4);
+    const drawSpec = (vals, color, lw, alpha = 1) => {
+      ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.globalAlpha = alpha;
+      ctx.beginPath();
+      vals.forEach((v, k) => {
+        const x = lx(k), yv = ly(v);
+        k === 0 ? ctx.moveTo(x, yv) : ctx.lineTo(x, yv);
+      });
+      ctx.stroke(); ctx.globalAlpha = 1; ctx.lineWidth = 1;
+    };
+    drawSpec(fz.eigvals_log10[0], colors.muted, 1.4, 0.7);
+    drawSpec(tr.eigvals_log10[0], colors.faint, 1.2, 0.8);   // init reference
+    drawSpec(tr.eigvals_log10[ep], '#c2553a', 2.2);
+    T(ctx, colors, 'label');
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('eigenvalues of the network kernel (log-log)', boxL.x, boxL.y - 8);
+    legend(ctx, boxL.x + 8, boxL.y + 14, [
+      { color: '#c2553a', label: `trained kernel, epoch ${ep}` },
+      { color: colors.faint, label: 'the same kernel at epoch 0' },
+      { color: colors.muted, label: 'frozen twin (never changes)' },
+    ], colors);
+
+    // ── right: cumulative label energy by mode ──
+    const rx = (k) => boxR.x + (Math.log(k + 1) / Math.log(m)) * boxR.w;
+    const ry = (v) => boxR.y + boxR.h - v * boxR.h;
+    ctx.strokeStyle = colors.border;
+    ctx.strokeRect(boxR.x + 0.5, boxR.y + 0.5, boxR.w - 1, boxR.h - 1);
+    T(ctx, colors, 'small');
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    for (const v of [0, 0.5, 1]) ctx.fillText(fmt(100 * v, 0) + '%', boxR.x - 3, ry(v));
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    for (const k of [1, 10, 100, 256]) ctx.fillText(String(k), rx(k - 1), boxR.y + boxR.h + 4);
+    const drawAlign = (vals, color, lw, alpha = 1) => {
+      ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.globalAlpha = alpha;
+      ctx.beginPath();
+      vals.forEach((v, k) => {
+        const x = rx(k), yv = ry(v);
+        k === 0 ? ctx.moveTo(x, yv) : ctx.lineTo(x, yv);
+      });
+      ctx.stroke(); ctx.globalAlpha = 1; ctx.lineWidth = 1;
+    };
+    drawAlign(fz.align_curve[0], colors.muted, 1.4, 0.7);
+    drawAlign(tr.align_curve[0], colors.faint, 1.2, 0.8);
+    drawAlign(tr.align_curve[ep], '#4a7fb3', 2.2);
+    T(ctx, colors, 'label');
+    ctx.fillText('share of the label function in the top k modes', boxR.x, boxR.y - 8);
+
+    T(ctx, colors, 'small');
+    ctx.fillText('both charts recomputed from the epoch-e model on the full 10,000-image test set; x: mode index k (log)', pad, H - 58);
+    ctx.fillText('epoch 1 concentrates the spectrum; later snapshots spread variance more broadly', pad, H - 42);
+    ctx.fillText('these snapshots describe a trajectory, not its cause; accuracy can fluctuate', pad, H - 26);
+    const acc = tr.acc[ep];
+    api.readout('rd', `epoch ${ep}: participation ratio ${fmt(tr.pr[ep], 1)}, label energy in top 10 modes ${fmt(100 * tr.align10[ep], 1)}%${acc != null ? ', test acc ' + fmt(acc, 1) + '%' : ''}`);
+  },
+});
+</script>

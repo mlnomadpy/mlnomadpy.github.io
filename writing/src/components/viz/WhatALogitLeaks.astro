@@ -1,0 +1,126 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 400 } = Astro.props;
+---
+<figure data-min-width="880" class="viz kdleak" data-caption={caption} data-height={height} data-height-mobile="470" tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+// One garment at a time, the teacher's softened output next to it, and the class
+// kernel S = E[p pT] accumulating live as the examples stream past. Every number
+// is a real exported teacher logit from scripts/kernel_distill.py; the softmax
+// and the running average are computed here, in the page.
+import { defineViz } from './engine/vizkit.js';
+import { gate, loadingText, T, frame, softPanel, parseColor, rgba, clamp01 } from './engine/draw.js';
+import { loadKD, samplesImg, softmaxT, CLASSES, CLASS_COL } from './kdistill.js';
+
+const ABBR = ['Ts', 'Tr', 'Pu', 'Dr', 'Co', 'Sa', 'Sh', 'Sn', 'Ba', 'Bo'];
+
+defineViz('kdleak', {
+  title: 'What a single output leaks, and what hundreds of them add up to',
+  height: 400,
+  controls: [
+    { type: 'range', name: 'n', label: 'examples seen', min: 1, max: 240, step: 1, value: 1, int: true,
+      play: { period: 24000 }, fmt: (v) => `${v}` },
+    { type: 'readout', name: 'rd' },
+  ],
+
+  setup(api) {
+    gate(api, () => Promise.all([loadKD(), samplesImg()]), (api, [d, img]) => {
+      api.state.d = d; api.state.img = img;
+      // teacher soft outputs at the run's temperature, one per exported example
+      api.state.P = d.logits.vals.map((z) => softmaxT(z, d.temp));
+    });
+  },
+
+  draw(api) {
+    const { ctx, colors, size, state: st } = api;
+    const W = size.W, H = size.H;
+    if (!st || !st.ready) { loadingText(api); return; }
+    const d = st.d, P = st.P, n = Math.max(1, Math.min(240, api.get('n')));
+    const labels = d.logits.labels, cols = d.logits.cols;
+
+    // running estimate of S from the first n outputs
+    const S = Array.from({ length: 10 }, () => new Float64Array(10));
+    for (let k = 0; k < n; k++) { const p = P[k];
+      for (let i = 0; i < 10; i++) for (let j = 0; j < 10; j++) S[i][j] += p[i] * p[j]; }
+    for (let i = 0; i < 10; i++) for (let j = 0; j < 10; j++) S[i][j] /= n;
+
+    const cur = n - 1, p = P[cur], y = labels[cur];
+    const pad = 12, narrow = W < 620;
+    // layout: garment | soft output bars | accumulating kernel
+    const gW = narrow ? 92 : 120, kS = Math.min(H - 74, narrow ? W * 0.4 : 236);
+    const kX = W - pad - kS - 26, bX = pad + gW + 18, bW = Math.max(90, kX - bX - 26);
+
+    T(ctx, colors, 'kicker'); ctx.fillText('one example', pad, 20);
+    ctx.fillText(`the teacher's soft output (T = ${d.temp})`, bX, 20);
+    ctx.fillText(`S after ${n} example${n > 1 ? 's' : ''}`, kX, 20);
+
+    // ── the garment ──
+    const gy = 32, gs = gW;
+    ctx.imageSmoothingEnabled = false;
+    const sxi = (cur % cols) * 28, syi = Math.floor(cur / cols) * 28;
+    softPanel(ctx, pad - 3, gy - 3, gs + 6, gs + 6, colors, { r: 6 });
+    ctx.drawImage(st.img, sxi, syi, 28, 28, pad, gy, gs, gs);
+    ctx.imageSmoothingEnabled = true;
+    T(ctx, colors, 'label', { color: CLASS_COL[y] });
+    ctx.fillText(CLASSES[y], pad, gy + gs + 18);
+    T(ctx, colors, 'small');
+    ctx.fillText(`test example ${n} of 240`, pad, gy + gs + 33);
+
+    // ── the soft output as bars ──
+    const bTop = 32, bH = H - bTop - 46, bar = bW / 10;
+    const pMax = Math.max(...p, 1e-9);
+    for (let c = 0; c < 10; c++) {
+      const h = clamp01(p[c] / pMax) * (bH - 12), x = bX + c * bar;
+      const col = parseColor(CLASS_COL[c]);
+      ctx.fillStyle = rgba(col, c === y ? 0.95 : 0.62);
+      ctx.fillRect(x + 1, bTop + bH - h, bar - 2, h);
+      T(ctx, colors, 'small', { align: 'center', color: c === y ? colors.fg : colors.faint });
+      ctx.fillText(ABBR[c], x + bar / 2, bTop + bH + 12);
+      if (p[c] > 0.02) {
+        T(ctx, colors, 'small', { align: 'center', color: colors.muted });
+        ctx.fillText(p[c].toFixed(2).slice(1), x + bar / 2, bTop + bH - h - 4);
+      }
+    }
+    frame(ctx, colors, bX, bTop, bW, bH);
+    T(ctx, colors, 'small', { color: colors.faint });
+    ctx.fillText('Off-answer mass: similarity to other classes.', bX, bTop + bH + 28);
+
+    // ── the accumulating kernel S ──
+    const kY = 32, cell = kS / 10;
+    let offMax = 0;
+    for (let i = 0; i < 10; i++) for (let j = 0; j < 10; j++) if (i !== j && S[i][j] > offMax) offMax = S[i][j];
+    const base = parseColor(colors.cellBg), hi = parseColor(colors.accent);
+    for (let i = 0; i < 10; i++) for (let j = 0; j < 10; j++) {
+      const t = clamp01(Math.pow(S[i][j] / (i === j ? Math.max(S[i][i], 1e-9) : Math.max(offMax, 1e-9)), 0.62));
+      const col = i === j ? [base[0] + (hi[0] - base[0]) * t * 0.45, base[1] + (hi[1] - base[1]) * t * 0.45, base[2] + (hi[2] - base[2]) * t * 0.45]
+        : [base[0] + (hi[0] - base[0]) * t, base[1] + (hi[1] - base[1]) * t, base[2] + (hi[2] - base[2]) * t];
+      ctx.fillStyle = rgba(col);
+      ctx.fillRect(kX + j * cell, kY + i * cell, cell + 0.5, cell + 0.5);
+    }
+    // the current example's row/col flash: which relations this output just fed
+    ctx.strokeStyle = CLASS_COL[y]; ctx.lineWidth = 1.4;
+    ctx.strokeRect(kX + 0.5, kY + y * cell + 0.5, kS - 1, cell - 1);
+    ctx.strokeRect(kX + y * cell + 0.5, kY + 0.5, cell - 1, kS - 1);
+    frame(ctx, colors, kX, kY, kS, kS);
+    for (let c = 0; c < 10; c++) {
+      ctx.fillStyle = CLASS_COL[c];
+      ctx.fillRect(kX + c * cell + cell / 2 - 3, kY - 6, 6, 4);
+      ctx.fillRect(kX - 6, kY + c * cell + cell / 2 - 3, 4, 6);
+    }
+    T(ctx, colors, 'small', { color: colors.faint });
+    ctx.fillText('S = mean of p pT so far', kX, kY + kS + 14);
+
+    // strongest off-diagonal pair so far
+    let bi = 0, bj = 1;
+    for (let i = 0; i < 10; i++) for (let j = 0; j < 10; j++) if (i !== j && S[i][j] > S[bi][bj]) { bi = i; bj = j; }
+    api.readout('rd', `strongest relation so far: ${CLASSES[bi]} ~ ${CLASSES[bj]} (${S[bi][bj].toFixed(3)})`);
+  },
+});
+</script>

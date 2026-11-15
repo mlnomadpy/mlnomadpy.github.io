@@ -1,0 +1,117 @@
+---
+interface Props { caption?: string; height?: number; }
+const { caption, height = 320 } = Astro.props;
+---
+<figure class="viz knockoutbars" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  <details class="knockout-values">
+    <summary>Read the reported intervention values</summary>
+    <p>Historical values from Table 2 of the withdrawn Painting Arithmetic draft; these measurements have not been independently reproduced. The draft separately reports the multiplication baseline as 86.5% → 42.7% under a row intervention; this chart retains the deltas exactly as printed.</p>
+    <div class="knockout-table-scroll" role="region" aria-label="Selected intervention values" tabindex="0">
+      <table>
+        <caption>Multiplication subset (N=30), row intervention</caption>
+        <thead><tr><th scope="col">Operator</th><th scope="col">Change in OCR accuracy (percentage points)</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Addition (+)</th><td data-operator="plus">−14.4</td></tr>
+          <tr><th scope="row">Subtraction (−)</th><td data-operator="minus">−13.8</td></tr>
+          <tr><th scope="row">Multiplication (×)</th><td data-operator="times">−43.7</td></tr>
+          <tr><th scope="row">Division (÷)</th><td data-operator="div">−1.6</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </details>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+<style>
+  .knockout-values { margin-top: .75rem; color: var(--muted, #b4aa9a); }
+  .knockout-values summary { cursor: pointer; padding: .5rem 0; }
+  .knockout-values summary:focus-visible { outline: 2px solid var(--sand, #d7b77e); outline-offset: 3px; }
+  .knockout-values p { font-size: .9em; }
+  .knockout-table-scroll { overflow-x: auto; }
+  .knockout-values table { width: 100%; border-collapse: collapse; font-size: .85em; }
+  .knockout-values caption { text-align: left; padding-block: .5rem; }
+  .knockout-values th, .knockout-values td { text-align: left; padding: .5rem; border-bottom: 1px solid var(--line, #454034); }
+  .knockout-values td { font-variant-numeric: tabular-nums; }
+</style>
+<script>
+import { defineViz } from './engine/vizkit.js';
+import { T } from './engine/draw.js';
+
+// Historical ΔOCR in percentage points, unchanged from the withdrawn draft's
+// Table 2. SLOT/RANDOM were reported only for × and +. No missing result is filled.
+const TABLE2 = {
+  times: { N: 30,
+    row:    { plus: -14.4, minus: -13.8, times: -43.7, div: -1.6 },
+    slot:   { plus:  -1.9, minus:  -3.6, times: -40.0, div: -0.6 },
+    random: { plus:  -8.9, minus:  -9.8, times:  -9.2, div: -2.6 } },
+  plus: { N: 32,
+    row:    { plus: -13.6, minus: -5.1, times:  -1.9, div: -2.3 },
+    slot:   { plus:  -4.5, minus:  0.6, times:  -1.2, div: -0.4 },
+    random: { plus: -12.5, minus: -8.2, times: -20.0, div: -3.9 } },
+  minus: { N: 14,
+    row:    { plus: -3.5, minus: -4.4, times: -3.2, div: -0.8 } },
+  div: { N: 47,
+    row:    { plus: -13.1, minus: -18.3, times: -9.7, div: -15.8 } },
+};
+const OP_ORDER = ['plus', 'minus', 'times', 'div'];
+const OP_LABEL = { plus: '+', minus: '−', times: '×', div: '÷' };
+const OP_NAME = { plus: 'Addition', minus: 'Subtraction', times: 'Multiplication', div: 'Division' };
+const specificity = (subset, values) => -values[subset] + OP_ORDER.filter(op => op !== subset).reduce((sum, op) => sum + values[op], 0) / 3;
+
+defineViz('knockoutbars', root => {
+  function selection(api) {
+    const subset = api.get('subset') in TABLE2 ? api.get('subset') : 'times';
+    let mode = api.get('mode');
+    if (!(mode in TABLE2[subset])) { mode = 'row'; api.setControl('mode', mode); }
+    // Native select options retain keyboard semantics and expose unavailable
+    // interventions without letting an absent measurement masquerade as zero.
+    const modeSelect = [...root.querySelectorAll('select')].find(el => [...el.options].some(op => op.value === 'slot'));
+    if (modeSelect) for (const option of modeSelect.options) option.disabled = !(option.value in TABLE2[subset]);
+    return { subset, mode, values: TABLE2[subset][mode] };
+  }
+  return {
+    title: 'Reported OCR changes after an intervention',
+    height: 320,
+    controls: [
+      { type: 'select', name: 'subset', label: 'subset to knock out', value: 'times', reset: false, options: OP_ORDER.map(value => ({ value, label: `${OP_NAME[value]} (${OP_LABEL[value]})` })) },
+      { type: 'select', name: 'mode', label: 'intervention', value: 'row', reset: false, options: [{ value: 'row', label: 'Row' }, { value: 'slot', label: 'Slot' }, { value: 'random', label: 'Random' }] },
+      { type: 'readout', name: 'result' },
+    ],
+    onControl(_name, _value, api) { selection(api); },
+    setup(api) { selection(api); },
+    draw(api) {
+      const { ctx, colors, size } = api, W = size.W, H = size.H; if (!W) return;
+      const { subset, mode, values } = selection(api);
+      const left = W < 420 ? 47 : 56, right = 16, top = 27, bottom = 59, pw = W - left - right, ph = H - top - bottom;
+      const sy = v => top + (5 - v) / 55 * ph;
+      ctx.clearRect(0, 0, W, H); ctx.save();
+      ctx.strokeStyle = colors.border; ctx.lineWidth = 1; ctx.beginPath();
+      for (let v = -50; v <= 0; v += 10) { ctx.moveTo(left, sy(v)); ctx.lineTo(W - right, sy(v)); } ctx.stroke();
+      for (let v = -50; v <= 0; v += 10) { T(ctx, colors, 'small', { align: 'right', baseline: 'middle', color: colors.muted }); ctx.fillText(`${v}`, left - 6, sy(v)); }
+      ctx.strokeStyle = colors.muted; ctx.beginPath(); ctx.moveTo(left, sy(0)); ctx.lineTo(W - right, sy(0)); ctx.stroke();
+      T(ctx, colors, 'small', { color: colors.muted }); ctx.fillText('ΔOCR accuracy · percentage points', left, 13);
+      const groupWidth = pw / 4, barWidth = Math.min(58, groupWidth * .44);
+      OP_ORDER.forEach((op, i) => {
+        const x = left + groupWidth * (i + .5), value = values[op], y0 = sy(0), y1 = sy(value), targeted = op === subset;
+        ctx.globalAlpha = targeted ? 1 : .42; ctx.fillStyle = colors.accent; ctx.fillRect(x - barWidth / 2, Math.min(y0, y1), barWidth, Math.max(1, Math.abs(y1 - y0))); ctx.globalAlpha = 1;
+        ctx.strokeStyle = targeted ? colors.accent : colors.muted; ctx.strokeRect(x - barWidth / 2, Math.min(y0, y1), barWidth, Math.max(1, Math.abs(y1 - y0)));
+        T(ctx, colors, 'small', { align: 'center', baseline: value <= 0 ? 'top' : 'bottom', color: targeted ? colors.accent : colors.muted }); ctx.fillText((value > 0 ? '+' : '') + value.toFixed(1), x, value <= 0 ? y1 + 5 : y1 - 5);
+        T(ctx, colors, 'label', { align: 'center', baseline: 'top', color: targeted ? colors.fg : colors.muted }); ctx.fillText(OP_LABEL[op], x, H - bottom + 10);
+        if (targeted) { T(ctx, colors, 'small', { align: 'center', baseline: 'top', color: colors.muted }); ctx.fillText('targeted', x, H - bottom + 29); }
+      });
+      ctx.restore();
+      const key = `${subset}/${mode}`;
+      if (api.state.tableSelection !== key) {
+        const table = root.querySelector('.knockout-values table');
+        if (table) {
+          table.querySelector('caption').textContent = `${OP_NAME[subset]} subset (N=${TABLE2[subset].N}), ${mode} intervention`;
+          for (const op of OP_ORDER) table.querySelector(`[data-operator="${op}"]`).textContent = (values[op] > 0 ? '+' : '') + values[op].toFixed(1);
+        }
+        api.state.tableSelection = key;
+      }
+      const note = subset === 'minus' || subset === 'div' ? ' · only row intervention was reported for this subset' : '';
+      api.readout('result', `Archived Table 2 · ${OP_NAME[subset]} subset, N=${TABLE2[subset].N} · ${mode} · target Δ ${values[subset].toFixed(1)} pp · specificity (draft Def. 3) ${specificity(subset, values).toFixed(1)} pp${note}`);
+    },
+  };
+});
+</script>

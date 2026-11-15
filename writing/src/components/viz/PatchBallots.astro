@@ -1,0 +1,105 @@
+---
+interface Props { caption?: string; height?: number; }
+const { caption, height = 460 } = Astro.props;
+---
+<figure data-min-width="800" class="viz patchballots" data-caption={caption} data-height={height} data-height-mobile="600" tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+<script>
+// Mean pooling is linear, so the network's logits are exactly the average of
+// its per-patch votes. That makes attribution free and exact: every patch has
+// a ballot, and here it is. Click any image to see which patch voted for what.
+import { defineViz } from './engine/vizkit.js';
+import { T, fmt, gate, loadingText, PALETTE } from './engine/draw.js';
+import { load, thumb, ballot } from './patchparts.js';
+
+defineViz('patchballots', {
+  title: 'Every patch casts a vote, and the model is the tally',
+  height: 460,
+  controls: [{ type: 'readout', name: 'rd' }],
+  setup(api) {
+    const st = api.state; st.sel = 0;
+    gate(api, () => load('votes'), (a, d) => {
+      a.state.d = d;
+      // open on an example the model gets right; the misses are one click away
+      for (let i = 0; i < d.votes.length; i++) {
+        const t = new Array(10).fill(0);
+        for (let p = 0; p < d.votes[i].length; p++) {
+          const b = ballot(d.votes[i], p);
+          t[b.cls] += b.margin;
+        }
+        if (t.indexOf(Math.max(...t)) === d.y[i]) { a.state.sel = i; break; }
+      }
+    });
+    api.canvas.addEventListener('pointerdown', (e) => {
+      if (!st.ready || !st.cells) return;
+      const r = api.canvas.getBoundingClientRect();
+      const p = { x: e.clientX - r.left, y: e.clientY - r.top };
+      const hit = st.cells.find((c) => p.x >= c.x && p.x <= c.x + c.s && p.y >= c.y && p.y <= c.y + c.s);
+      if (hit) { st.sel = hit.i; api.render(); }
+    });
+  },
+  draw(api) {
+    const { ctx, colors, size: { W, H } } = api, st = api.state;
+    if (!st.ready) { loadingText(api, 'loading the ballots…'); return; }
+    const d = st.d, pad = 14, top = 32;
+    // the strip of images to choose from
+    const gw = Math.min(40, (W - 2 * pad) / 12 - 5);
+    st.cells = [];
+    T(ctx, colors, 'label'); ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('click an image', pad, top - 8);
+    for (let i = 0; i < 24; i++) {
+      const x = pad + (i % 12) * (gw + 5), y = top + Math.floor(i / 12) * (gw + 5);
+      thumb(ctx, d.thumbs[i], x, y, gw, gw, 'pb' + i);
+      ctx.strokeStyle = i === st.sel ? colors.accent : colors.border;
+      ctx.lineWidth = i === st.sel ? 2 : 1;
+      ctx.strokeRect(x + 0.5, y + 0.5, gw - 1, gw - 1);
+      ctx.lineWidth = 1;
+      st.cells.push({ x, y, s: gw, i });
+    }
+    // the chosen image, big, with its ballot grid beside it
+    const by = top + 2 * (gw + 5) + 28;
+    const side = Math.min(W * 0.3, H - by - 46);
+    thumb(ctx, d.thumbs[st.sel], pad, by, side, side, 'pb' + st.sel);
+    ctx.strokeStyle = colors.border; ctx.strokeRect(pad + 0.5, by + 0.5, side - 1, side - 1);
+    T(ctx, colors, 'small');
+    ctx.fillText(`truth: ${d.classes[d.y[st.sel]]}`, pad, by + side + 15);
+
+    const g = d.grid, gx0 = pad + side + 30, cell = side / g;
+    const votes = d.votes[st.sel];
+    const tally = new Array(10).fill(0);
+    for (let p = 0; p < g * g; p++) {
+      const b = ballot(votes, p);
+      tally[b.cls] += b.margin;
+      const r = Math.floor(p / g), c = p % g;
+      const col = PALETTE[b.cls % PALETTE.length];
+      ctx.fillStyle = col;
+      ctx.globalAlpha = Math.max(0.08, Math.min(1, b.margin / 6));
+      ctx.fillRect(gx0 + c * cell, by + r * cell, cell - 1, cell - 1);
+      ctx.globalAlpha = 1;
+    }
+    ctx.strokeStyle = colors.border; ctx.strokeRect(gx0 + 0.5, by + 0.5, side - 1, side - 1);
+    T(ctx, colors, 'label');
+    ctx.fillText(`${g}x${g} ballots, one per ${d.P}px patch`, gx0, by - 8);
+    // the tally
+    const tx = gx0 + side + 26, tw = W - tx - pad;
+    let mx = Math.max(...tally.map(Math.abs)) || 1;
+    T(ctx, colors, 'label'); ctx.fillText('the tally the model computes', tx, by - 8);
+    for (let c = 0; c < 10; c++) {
+      const yv = by + c * (side / 10);
+      const len = (Math.abs(tally[c]) / mx) * (tw - 60);
+      ctx.fillStyle = PALETTE[c % PALETTE.length];
+      ctx.globalAlpha = tally[c] > 0 ? 0.85 : 0.25;
+      ctx.fillRect(tx, yv + 2, Math.max(1, len), side / 10 - 4);
+      ctx.globalAlpha = 1;
+      T(ctx, colors, 'small');
+      ctx.fillText(d.classes[c], tx + tw - 54, yv + side / 20 + 3);
+    }
+    T(ctx, colors, 'small');
+    ctx.fillText(`Color: patch vote. Intensity: vote strength. Computed from the model.`, pad, H - 12);
+    const win = tally.indexOf(Math.max(...tally));
+    api.readout('rd', `${d.classes[d.y[st.sel]]}: the patches elect ${d.classes[win]}`);
+  },
+});
+</script>

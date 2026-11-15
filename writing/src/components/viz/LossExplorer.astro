@@ -1,0 +1,482 @@
+---
+interface Props {
+  loss: 'hadsell' | 'triplet' | 'infonce' | 'clip' | 'supcon' | 'siglip' | 'alignunif' | 'orthog';
+  preset?: string;
+  dataset?: string;
+  caption?: string;
+  height?: number;
+}
+const { loss, preset = 'default', caption, height = 360 } = Astro.props;
+---
+<figure data-min-width="720" class="viz lossexplorer" data-loss={loss} data-preset={preset} data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+import { projectSphere, stepObjective } from './engine/contrastive-objectives.js';
+import { defineViz } from './engine/vizkit.js';
+import { rng32 } from './engine/datasets.js';
+import { dot, cross } from './engine/draw.js';
+
+// One contrastive loss, optimised in-place on a 2-D dataset, with a live param
+// slider, preset failure-modes, and loss/accuracy curves. The losses, configs,
+// presets and metrics below are the substance; vizkit handles the controls,
+// loop, speed, theme, resize, visibility and keyboard. The `loss` prop selects
+// which config this instance shows, read per-instance via the spec factory.
+
+const classPalette = ['#b3661b', '#4a7fb3', '#3a8f5e', '#9a4f9c', '#c14b4b', '#5f8da8', '#c08b3c', '#7160a8'];
+const classColor = (y, alpha = 1) => { const hex = classPalette[y % classPalette.length]; const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16); return `rgba(${r}, ${g}, ${b}, ${alpha})`; };
+const randn = (rng) => { let u = 0, v = 0; while (u === 0) u = rng(); while (v === 0) v = rng(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+
+// ─── datasets ──────────────────────────────────────────────────────────
+const makeData = (kind, n, seed) => {
+  const rng = rng32(seed); const pts = [], labels = [];
+  if (kind === 'moons') {
+    const half = Math.floor(n / 2);
+    for (let i = 0; i < half; i++) { const t = Math.PI * (i / Math.max(1, half - 1)); pts.push([Math.cos(t) + randn(rng) * 0.07, Math.sin(t) + randn(rng) * 0.07]); labels.push(0); }
+    for (let i = 0; i < n - half; i++) { const t = Math.PI * (i / Math.max(1, n - half - 1)); pts.push([1 - Math.cos(t) + randn(rng) * 0.07, 0.4 - Math.sin(t) + randn(rng) * 0.07]); labels.push(1); }
+  } else if (kind === 'blobs') {
+    const half = Math.floor(n / 2);
+    for (let i = 0; i < half; i++) { pts.push([0.35 + randn(rng) * 0.45, 0.0 + randn(rng) * 0.45]); labels.push(0); }
+    for (let i = 0; i < n - half; i++) { pts.push([-0.35 + randn(rng) * 0.45, 0.0 + randn(rng) * 0.45]); labels.push(1); }
+  } else if (kind === 'rings') {
+    const half = Math.floor(n / 2);
+    for (let i = 0; i < half; i++) { const t = 2 * Math.PI * rng(); pts.push([0.4 * Math.cos(t) + randn(rng) * 0.05, 0.4 * Math.sin(t) + randn(rng) * 0.05]); labels.push(0); }
+    for (let i = 0; i < n - half; i++) { const t = 2 * Math.PI * rng(); pts.push([1.1 * Math.cos(t) + randn(rng) * 0.05, 1.1 * Math.sin(t) + randn(rng) * 0.05]); labels.push(1); }
+  } else if (kind === 'four') {
+    const per = Math.floor(n / 4); const centers = [[0.6, 0.6], [-0.6, 0.6], [-0.6, -0.6], [0.6, -0.6]];
+    for (let c = 0; c < 4; c++) { const k = (c === 3) ? (n - 3 * per) : per; for (let i = 0; i < k; i++) { pts.push([centers[c][0] + randn(rng) * 0.18, centers[c][1] + randn(rng) * 0.18]); labels.push(c); } }
+  } else if (kind === 'eight') {
+    const per = Math.floor(n / 8);
+    for (let c = 0; c < 8; c++) { const k = (c === 7) ? (n - 7 * per) : per; const a = (c / 8) * 2 * Math.PI; const cx = 0.9 * Math.cos(a), cy = 0.9 * Math.sin(a); for (let i = 0; i < k; i++) { pts.push([cx + randn(rng) * 0.12, cy + randn(rng) * 0.12]); labels.push(c); } }
+  } else if (kind === 'spiral') {
+    const half = Math.floor(n / 2);
+    for (let i = 0; i < half; i++) { const t = 0.2 + 2.5 * (i / Math.max(1, half - 1)); const r = 0.15 * t; pts.push([r * Math.cos(t * 2) + randn(rng) * 0.04, r * Math.sin(t * 2) + randn(rng) * 0.04]); labels.push(0); }
+    for (let i = 0; i < n - half; i++) { const t = 0.2 + 2.5 * (i / Math.max(1, n - half - 1)); const r = 0.15 * t; pts.push([-r * Math.cos(t * 2) + randn(rng) * 0.04, -r * Math.sin(t * 2) + randn(rng) * 0.04]); labels.push(1); }
+  } else if (kind === 'imbalanced') {
+    const minority = Math.floor(n * 0.2);
+    for (let i = 0; i < n - minority; i++) { const t = Math.PI * (i / Math.max(1, n - minority - 1)); pts.push([Math.cos(t) + randn(rng) * 0.07, Math.sin(t) + randn(rng) * 0.07]); labels.push(0); }
+    for (let i = 0; i < minority; i++) { const t = Math.PI * (i / Math.max(1, minority - 1)); pts.push([1 - Math.cos(t) + randn(rng) * 0.07, 0.4 - Math.sin(t) + randn(rng) * 0.07]); labels.push(1); }
+  } else if (kind === 'noisy') {
+    const half = Math.floor(n / 2);
+    for (let i = 0; i < half; i++) { const t = Math.PI * (i / Math.max(1, half - 1)); pts.push([Math.cos(t) + randn(rng) * 0.07, Math.sin(t) + randn(rng) * 0.07]); labels.push(rng() < 0.1 ? 1 : 0); }
+    for (let i = 0; i < n - half; i++) { const t = Math.PI * (i / Math.max(1, n - half - 1)); pts.push([1 - Math.cos(t) + randn(rng) * 0.07, 0.4 - Math.sin(t) + randn(rng) * 0.07]); labels.push(rng() < 0.1 ? 0 : 1); }
+  } else { // random / random-4
+    const k = (kind === 'random-4') ? 4 : 2;
+    for (let i = 0; i < n; i++) { pts.push([(rng() * 2 - 1) * 1.5, (rng() * 2 - 1) * 1.5]); labels.push(i % k); }
+    for (let i = n - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [labels[i], labels[j]] = [labels[j], labels[i]]; }
+  }
+  return { pts, labels };
+};
+const DATA_OPTS = [
+  { value: 'moons', label: 'two-moons' }, { value: 'blobs', label: 'overlapping blobs' }, { value: 'rings', label: 'concentric rings' },
+  { value: 'four', label: 'four classes' }, { value: 'eight', label: 'eight classes' }, { value: 'spiral', label: 'two spirals' },
+  { value: 'imbalanced', label: 'imbalanced moons (80/20)' }, { value: 'noisy', label: 'noisy moons (10% flip)' },
+  { value: 'random', label: 'random (2 classes, no spatial signal)' }, { value: 'random-4', label: 'random (4 classes, no spatial signal)' },
+];
+
+// ─── helpers + losses (mutate pts in place, return loss) ─────────────────
+const stepHadsell = (pts, labels, lr, rng, params = {}) => stepObjective('hadsell', pts, labels, lr, rng, params);
+const stepTriplet = (pts, labels, lr, rng, params = {}) => stepObjective('triplet', pts, labels, lr, rng, params);
+const stepInfoNCE = (pts, labels, lr, rng, params = {}) => stepObjective('infonce', pts, labels, lr, rng, params);
+const stepCLIP = (pts, labels, lr, rng, params = {}) => stepObjective('clip', pts, labels, lr, rng, params);
+const stepSupCon = (pts, labels, lr, rng, params = {}) => stepObjective('supcon', pts, labels, lr, rng, params);
+const stepSigLIP = (pts, labels, lr, rng, params = {}) => stepObjective('siglip', pts, labels, lr, rng, params);
+const stepAlignUnif = (pts, labels, lr, rng, params = {}) => stepObjective('alignunif', pts, labels, lr, rng, params);
+const stepOrthog = (pts, labels, lr, rng, params = {}) => stepObjective('orthog', pts, labels, lr, rng, params);
+
+const CONFIG = {
+  hadsell:   { name: 'Pair contrastive (Hadsell)', param: 'margin', paramName: 'margin m', step: stepHadsell, paramRange: [0.1, 4.0], paramDefault: 1.2, paramStep: 0.05, onSphere: false, lr: 0.4 },
+  triplet:   { name: 'Triplet', param: 'margin', paramName: 'margin m', step: stepTriplet, paramRange: [0.02, 1.5], paramDefault: 0.3, paramStep: 0.02, onSphere: false, lr: 0.4 },
+  infonce:   { name: 'InfoNCE (NT-Xent)', param: 'tau', paramName: 'temperature τ', step: stepInfoNCE, paramRange: [0.05, 1.5], paramDefault: 0.2, paramStep: 0.01, onSphere: true, lr: 0.05 },
+  clip:      { name: 'Symmetric NCE (CLIP-inspired)', param: 'tau', paramName: 'temperature τ', step: stepCLIP, paramRange: [0.05, 1.5], paramDefault: 0.2, paramStep: 0.01, onSphere: true, lr: 0.05 },
+  siglip:    { name: 'SigLIP (pairwise sigmoid)', param: 'target', paramName: 'logistic transition cosine', step: stepSigLIP, paramRange: [-1.0, 0.0], paramDefault: -0.3, paramStep: 0.02, onSphere: true, lr: 0.01 },
+  supcon:    { name: 'Supervised Contrastive (SupCon)', param: 'tau', paramName: 'temperature τ', step: stepSupCon, paramRange: [0.05, 1.5], paramDefault: 0.2, paramStep: 0.01, onSphere: true, lr: 0.05 },
+  alignunif: { name: 'Alignment + Uniformity', param: 'lambda', paramName: 'λ (uniformity weight)', step: stepAlignUnif, paramRange: [0.0, 10.0], paramDefault: 1.0, paramStep: 0.1, onSphere: true, lr: 0.04 },
+  orthog:    { name: 'Cosine→0 (orthogonality)', param: 'unused', paramName: '', step: stepOrthog, paramRange: [0, 1], paramDefault: 0, paramStep: 1, onSphere: true, lr: 0.08 },
+};
+
+const PRESETS = {
+  "hadsell": [
+    {
+      "id": "default",
+      "name": "random labels",
+      "dataset": "random",
+      "param": 1.2,
+      "note": "Positions are free parameters; class labels define the pair mask. This fits the displayed points, not an encoder."
+    },
+    {
+      "id": "moons",
+      "name": "two-moons",
+      "dataset": "moons",
+      "param": 1.2,
+      "note": "The initial geometry is two noisy moons. Labels still supervise every update."
+    },
+    {
+      "id": "rings",
+      "name": "concentric rings",
+      "dataset": "rings",
+      "param": 1.2,
+      "note": "Normalization removes radial signal initially. Because labels directly move each point, this sandbox can still fit the labels; it does not test an encoder’s ability to recover that lost signal."
+    },
+    {
+      "id": "small-margin",
+      "name": "small margin",
+      "dataset": "blobs",
+      "param": 0.2,
+      "note": "A smaller margin switches negative terms off at a smaller distance. Positive terms can keep changing the positions."
+    },
+    {
+      "id": "large-margin",
+      "name": "large margin",
+      "dataset": "blobs",
+      "param": 3.5,
+      "note": "A larger finite margin asks for a larger separation. Free Euclidean class centers can meet any finite margin; perpetual divergence is not implied."
+    }
+  ],
+  "triplet": [
+    {
+      "id": "default",
+      "name": "random labels",
+      "dataset": "random",
+      "param": 0.3,
+      "note": "Positions are free parameters; class labels define the pair mask. This fits the displayed points, not an encoder."
+    },
+    {
+      "id": "moons",
+      "name": "two-moons",
+      "dataset": "moons",
+      "param": 0.3,
+      "note": "The initial geometry is two noisy moons. Labels still supervise every update."
+    },
+    {
+      "id": "rings",
+      "name": "concentric rings",
+      "dataset": "rings",
+      "param": 0.3,
+      "note": "Normalization removes radial signal initially. Because labels directly move each point, this sandbox can still fit the labels; it does not test an encoder’s ability to recover that lost signal."
+    },
+    {
+      "id": "easy-triplets",
+      "name": "small margin",
+      "dataset": "blobs",
+      "param": 0.05,
+      "note": "One positive and one negative are sampled for each eligible anchor per step. Satisfied triplets contribute zero. A fresh sample may still be active."
+    },
+    {
+      "id": "huge-margin",
+      "name": "larger margin",
+      "dataset": "rings",
+      "param": 1.3,
+      "note": "The margin is relative to positive distance. Compare stochastic trajectories; this is not a hard-negative miner."
+    }
+  ],
+  "infonce": [
+    {
+      "id": "default",
+      "name": "random labels",
+      "dataset": "random",
+      "param": 0.2,
+      "note": "Positions are free parameters; class labels define the pair mask. This fits the displayed points, not an encoder."
+    },
+    {
+      "id": "moons",
+      "name": "two-moons",
+      "dataset": "moons",
+      "param": 0.2,
+      "note": "The initial geometry is two noisy moons. Labels still supervise every update."
+    },
+    {
+      "id": "rings",
+      "name": "concentric rings",
+      "dataset": "rings",
+      "param": 0.2,
+      "note": "Normalization removes radial signal initially. Because labels directly move each point, this sandbox can still fit the labels; it does not test an encoder’s ability to recover that lost signal."
+    },
+    {
+      "id": "low-tau",
+      "name": "low temperature",
+      "dataset": "moons",
+      "param": 0.05,
+      "note": "Low temperature concentrates row probabilities on high similarities. Stability also depends on step size and the sampled positives."
+    },
+    {
+      "id": "high-tau",
+      "name": "high temperature",
+      "dataset": "moons",
+      "param": 1.2,
+      "note": "Higher temperature flattens row probabilities and scales their derivatives by 1/τ."
+    }
+  ],
+  "clip": [
+    {
+      "id": "default",
+      "name": "random labels",
+      "dataset": "random",
+      "param": 0.2,
+      "note": "Positions are free parameters; class labels define the pair mask. This fits the displayed points, not an encoder."
+    },
+    {
+      "id": "moons",
+      "name": "two-moons",
+      "dataset": "moons",
+      "param": 0.2,
+      "note": "The initial geometry is two noisy moons. Labels still supervise every update."
+    },
+    {
+      "id": "rings",
+      "name": "concentric rings",
+      "dataset": "rings",
+      "param": 0.2,
+      "note": "Normalization removes radial signal initially. Because labels directly move each point, this sandbox can still fit the labels; it does not test an encoder’s ability to recover that lost signal."
+    },
+    {
+      "id": "low-tau",
+      "name": "low temperature",
+      "dataset": "random",
+      "param": 0.05,
+      "note": "This single-pool analogue averages an anchor→positive row with the reverse row. Real CLIP uses separate image and text towers with matched pairs."
+    }
+  ],
+  "supcon": [
+    {
+      "id": "default",
+      "name": "random labels: four classes",
+      "dataset": "random-4",
+      "param": 0.2,
+      "note": "Each eligible row averages log probabilities over all same-class positives. Every candidate receives its gradient contribution too."
+    },
+    {
+      "id": "four",
+      "name": "four blobs",
+      "dataset": "four",
+      "param": 0.2,
+      "note": "Class membership supplies the positive sets. The displayed circle cannot host a four-vertex regular simplex."
+    },
+    {
+      "id": "imbalanced",
+      "name": "80/20 labels",
+      "dataset": "imbalanced",
+      "param": 0.2,
+      "note": "Anchors are averaged equally. More majority anchors and candidates change the objective’s weighting; averaging over positives does not by itself amplify a row."
+    },
+    {
+      "id": "noisy",
+      "name": "10% flipped labels",
+      "dataset": "noisy",
+      "param": 0.2,
+      "note": "These are the labels used by the loss and the fit readout. Fitting them does not measure agreement with the underlying uncorrupted classes."
+    }
+  ],
+  "siglip": [
+    {
+      "id": "default",
+      "name": "random labels",
+      "dataset": "random",
+      "param": -0.3,
+      "note": "Positions are free parameters; class labels define the pair mask. This fits the displayed points, not an encoder."
+    },
+    {
+      "id": "moons",
+      "name": "two-moons",
+      "dataset": "moons",
+      "param": -0.3,
+      "note": "The initial geometry is two noisy moons. Labels still supervise every update."
+    },
+    {
+      "id": "rings",
+      "name": "concentric rings",
+      "dataset": "rings",
+      "param": -0.3,
+      "note": "Normalization removes radial signal initially. Because labels directly move each point, this sandbox can still fit the labels; it does not test an encoder’s ability to recover that lost signal."
+    },
+    {
+      "id": "opposition",
+      "name": "transition at −1",
+      "dataset": "random",
+      "param": -1,
+      "note": "The sigmoid argument is 10(c−c₀). Moving c₀ changes the transition, not a finite point where negative gradients vanish."
+    },
+    {
+      "id": "shallow",
+      "name": "transition at −0.5",
+      "dataset": "random-4",
+      "param": -0.5,
+      "note": "Scale and bias are fixed for this teaching panel. Real SigLIP learns them; its original training uses matched image-text pairs."
+    }
+  ],
+  "alignunif": [
+    {
+      "id": "default",
+      "name": "random labels",
+      "dataset": "random",
+      "param": 1,
+      "note": "Positions are free parameters; class labels define the pair mask. This fits the displayed points, not an encoder."
+    },
+    {
+      "id": "moons",
+      "name": "two-moons",
+      "dataset": "moons",
+      "param": 1,
+      "note": "The initial geometry is two noisy moons. Labels still supervise every update."
+    },
+    {
+      "id": "rings",
+      "name": "concentric rings",
+      "dataset": "rings",
+      "param": 1,
+      "note": "Normalization removes radial signal initially. Because labels directly move each point, this sandbox can still fit the labels; it does not test an encoder’s ability to recover that lost signal."
+    },
+    {
+      "id": "no-uniform",
+      "name": "λ = 0",
+      "dataset": "moons",
+      "param": 0,
+      "note": "Only same-class alignment remains. Each class can collapse separately; collapsing all classes together is also a minimum, but is not required."
+    },
+    {
+      "id": "no-align",
+      "name": "λ = 8",
+      "dataset": "moons",
+      "param": 8,
+      "note": "The uniformity term gets eight times its usual weight; the alignment term is still present."
+    }
+  ],
+  "orthog": [
+    {
+      "id": "default",
+      "name": "random labels",
+      "dataset": "random",
+      "param": 0,
+      "note": "Positions are free parameters; class labels define the pair mask. This fits the displayed points, not an encoder."
+    },
+    {
+      "id": "moons",
+      "name": "two-moons",
+      "dataset": "moons",
+      "param": 0,
+      "note": "The initial geometry is two noisy moons. Labels still supervise every update."
+    },
+    {
+      "id": "rings",
+      "name": "concentric rings",
+      "dataset": "rings",
+      "param": 0,
+      "note": "Normalization removes radial signal initially. Because labels directly move each point, this sandbox can still fit the labels; it does not test an encoder’s ability to recover that lost signal."
+    },
+    {
+      "id": "four",
+      "name": "four classes",
+      "dataset": "random-4",
+      "param": 0,
+      "note": "Four nonzero class directions cannot all be orthogonal in two dimensions. Nonzero minimum loss does not imply impossible classification."
+    },
+    {
+      "id": "eight",
+      "name": "eight classes",
+      "dataset": "eight",
+      "param": 0,
+      "note": "Eight class directions also frustrate the orthogonality target. Multiple compromises may exist; evenly spaced angles are not guaranteed."
+    }
+  ]
+};
+
+const accuracy = (pts, labels) => {
+  const sum = {}, cnt = {};
+  for (let i = 0; i < pts.length; i++) { const y = labels[i]; if (!(y in sum)) { sum[y] = [0, 0]; cnt[y] = 0; } sum[y][0] += pts[i][0]; sum[y][1] += pts[i][1]; cnt[y]++; }
+  const cents = {}; for (const y in sum) cents[y] = [sum[y][0] / cnt[y], sum[y][1] / cnt[y]];
+  let correct = 0;
+  for (let i = 0; i < pts.length; i++) { let best = null, bd = Infinity; for (const y in cents) { const d = (pts[i][0] - cents[y][0]) ** 2 + (pts[i][1] - cents[y][1]) ** 2; if (d < bd) { bd = d; best = +y; } } if (best === labels[i]) correct++; }
+  return correct / pts.length;
+};
+
+// ─── drawing into one canvas: scatter on the left, curves on the right ───
+const drawScatter = (ctx, colors, box, cfg, st, api) => {
+  const { x: bx, y: by, w: W, h: H } = box;
+  ctx.fillStyle = colors.cellBg; ctx.fillRect(bx, by, W, H); ctx.strokeStyle = colors.border; ctx.lineWidth = 1; ctx.strokeRect(bx + 0.5, by + 0.5, W - 1, H - 1);
+  const pad = 12; const cx = bx + pad + (W - 2 * pad) / 2, cy = by + pad + (H - 2 * pad) / 2;
+  const range = cfg.onSphere ? 1.25 : 2.6; const s = Math.min(W, H) / (range * 2) - pad / range;
+  if (cfg.onSphere) { ctx.strokeStyle = colors.border; ctx.setLineDash([2, 3]); ctx.beginPath(); ctx.arc(cx, cy, s, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]); }
+  ctx.strokeStyle = colors.border; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(bx + pad, cy); ctx.lineTo(bx + W - pad, cy); ctx.moveTo(cx, by + pad); ctx.lineTo(cx, by + H - pad); ctx.stroke();
+  const sum = {}, cnt = {};
+  for (let i = 0; i < st.pts.length; i++) { const y = st.labels[i]; if (!(y in sum)) { sum[y] = [0, 0]; cnt[y] = 0; } sum[y][0] += st.pts[i][0]; sum[y][1] += st.pts[i][1]; cnt[y]++; }
+  for (const y in sum) { const mx = sum[y][0] / cnt[y], my = sum[y][1] / cnt[y]; cross(ctx, cx + mx * s, cy - my * s, 6, classColor(+y, 1)); }
+  for (let i = 0; i < st.pts.length; i++) dot(ctx, cx + st.pts[i][0] * s, cy - st.pts[i][1] * s, 3.2, classColor(st.labels[i], 0.85));
+  ctx.fillStyle = colors.fg; ctx.font = '600 12px ui-sans-serif, system-ui'; ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillText(cfg.name, bx + 10, by + 8);
+  ctx.fillStyle = colors.faint; ctx.font = '10px ui-monospace, monospace'; ctx.fillText(cfg.onSphere ? 'embeddings constrained to unit circle' : 'Euclidean embeddings', bx + 10, by + 24);
+  if (api.iter === 0 && !api.playing) {
+    const hint = '▶ press Play to optimize'; ctx.font = '600 13px ui-sans-serif, system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    const tm = ctx.measureText(hint); const bw = tm.width + 20, bh = 26; const hbx = cx - bw / 2, hby = by + H - pad - bh - 4;
+    ctx.fillStyle = colors.accent; ctx.globalAlpha = 0.92; ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(hbx, hby, bw, bh, 6); else ctx.rect(hbx, hby, bw, bh); ctx.fill(); ctx.globalAlpha = 1;
+    ctx.fillStyle = colors.bg; ctx.fillText(hint, cx, hby + bh / 2);
+  }
+};
+
+const drawPlots = (ctx, colors, box, st) => {
+  const { x: bx, y: by, w: W, h: H } = box;
+  ctx.fillStyle = colors.cellBg; ctx.fillRect(bx, by, W, H); ctx.strokeStyle = colors.border; ctx.lineWidth = 1; ctx.strokeRect(bx + 0.5, by + 0.5, W - 1, H - 1);
+  const padL = 36, padR = 14, padT = 18, padB = 18; const halfH = (H - 2 * padT - padB - 8) / 2;
+  const top = { x: bx + padL, y: by + padT, w: W - padL - padR, h: halfH };
+  const bot = { x: bx + padL, y: by + padT + halfH + 16, w: W - padL - padR, h: halfH };
+  const drawPanel = (R, data, label, ymin, ymax, color, axisFmt) => {
+    ctx.strokeStyle = colors.border; ctx.lineWidth = 1; ctx.strokeRect(R.x + 0.5, R.y + 0.5, R.w - 1, R.h - 1);
+    ctx.fillStyle = colors.fg; ctx.font = '600 11px ui-sans-serif, system-ui'; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom'; ctx.fillText(label, R.x, R.y - 4);
+    ctx.fillStyle = colors.faint; ctx.font = '10px ui-monospace, monospace'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    const yTicks = 4; ctx.strokeStyle = colors.border; ctx.setLineDash([2, 3]);
+    for (let k = 0; k <= yTicks; k++) { const yv = ymin + (k / yTicks) * (ymax - ymin); const yy = R.y + R.h - (k / yTicks) * R.h; ctx.beginPath(); ctx.moveTo(R.x, yy); ctx.lineTo(R.x + R.w, yy); ctx.stroke(); ctx.fillText(axisFmt(yv), R.x - 4, yy); }
+    ctx.setLineDash([]);
+    if (data.length > 1) {
+      const xMax = Math.max(60, data.length); ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.beginPath();
+      for (let k = 0; k < data.length; k++) { const xx = R.x + (k / (xMax - 1)) * R.w; const t = (data[k] - ymin) / (ymax - ymin); const yy = R.y + R.h - t * R.h; if (k === 0) ctx.moveTo(xx, yy); else ctx.lineTo(xx, yy); }
+      ctx.stroke();
+    }
+  };
+  const recent = st.lossHistory.slice(-200); let lmin = 0, lmax = 1;
+  if (recent.length) { lmin = Math.min(0, ...recent); lmax = Math.max(...recent, 0.001); if (lmax - lmin < 1e-6) lmax = lmin + 1; }
+  drawPanel(top, st.lossHistory, 'loss', lmin, lmax, colors.accent, (v) => v.toFixed(2));
+  drawPanel(bot, st.accHistory, 'in-sample centroid fit', 0, 1, colors.green, (v) => (v * 100).toFixed(0) + '%');
+};
+
+defineViz('lossexplorer', (root) => {
+  const loss = root.dataset.loss; const presetId = root.dataset.preset || 'default';
+  const cfg = CONFIG[loss], presets = PRESETS[loss];
+  const pre = presets.find((p) => p.id === presetId) || presets[0];
+  const hasParam = cfg.param !== 'unused';
+  const controls = [
+    { type: 'select', name: 'preset', label: 'preset', value: pre.id, options: presets.map((p) => ({ value: p.id, label: p.name })) },
+    { type: 'select', name: 'data', label: 'data', value: pre.dataset, options: DATA_OPTS },
+    ...(hasParam ? [{ type: 'range', name: 'param', label: cfg.paramName, min: cfg.paramRange[0], max: cfg.paramRange[1], step: cfg.paramStep, value: pre.param, reset: false, fmt: (v) => (+v).toFixed(2) }] : []),
+    { type: 'newrow' }, { type: 'play' }, { type: 'step' }, { type: 'reset' }, { type: 'speed' }, { type: 'readout', name: 'ro' },
+  ];
+  return {
+    title: cfg.name,
+    height: 360, autoplay: false, annotation: true, stepsPerFrame: 1, controls,
+    onControl(name, value, api) {
+      if (name !== 'preset') return;
+      const p = presets.find((x) => x.id === value) || presets[0];
+      api.setControl('data', p.dataset); if (hasParam) api.setControl('param', p.param); api.note(p.note);
+    },
+    setup(api) {
+      const ds = api.get('data'); const n = (ds === 'eight') ? 80 : 60; const seed = 7;
+      const { pts, labels } = makeData(ds, n, seed); if (cfg.onSphere) projectSphere(pts);
+      const st = api.state; st.pts = pts; st.labels = labels; st.rng = rng32(seed * 17 + loss.charCodeAt(0));
+      st.lossHistory = []; st.accHistory = []; st.lastLoss = NaN; st.lastAcc = accuracy(pts, labels); st.accHistory.push(st.lastAcc);
+      const p = presets.find((x) => x.id === api.get('preset')) || presets[0]; api.note(p.note);
+    },
+    step(api) {
+      const g = hasParam ? api.get('param') : cfg.paramDefault; const param = { margin: g, tau: g, lambda: g, target: g }; const st = api.state;
+      st.lastLoss = cfg.step(st.pts, st.labels, cfg.lr, st.rng, param); st.lastAcc = accuracy(st.pts, st.labels);
+      st.lossHistory.push(st.lastLoss); st.accHistory.push(st.lastAcc);
+      if (st.lossHistory.length > 400) st.lossHistory.shift(); if (st.accHistory.length > 400) st.accHistory.shift();
+    },
+    draw(api) {
+      const { ctx, colors, size, state: st } = api; const W = size.W, H = size.H; if (W === 0 || !st.pts) return;
+      const scW = Math.round(W * 0.54);
+      drawScatter(ctx, colors, { x: 0, y: 0, w: scW, h: H }, cfg, st, api);
+      drawPlots(ctx, colors, { x: scW + 6, y: 0, w: W - scW - 6, h: H }, st);
+      api.readout('ro', `iter ${api.iter} · in-sample fit ${(st.lastAcc * 100).toFixed(0)}%` + (isFinite(st.lastLoss) ? ` · L ${st.lastLoss.toFixed(3)}` : ''));
+    },
+  };
+});
+</script>

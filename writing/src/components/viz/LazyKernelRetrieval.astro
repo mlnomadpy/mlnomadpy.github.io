@@ -1,0 +1,198 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 420 } = Astro.props;
+---
+<figure data-min-width="400" class="viz lazykernel" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+// Lazy loading, computed live on jax-js. A hidden layer of Yat-kernel units, one
+// prototype each, scattered across input space. Drag the query: only the few
+// prototypes NEAR it light up; the rest stay dormant. The activations are sparse
+// by the geometry of the kernel, so a layer can fetch just the active prototypes
+// (nearest-neighbour retrieval) instead of evaluating all of them. A ReLU layer
+// cannot, every ReLU unit is active on half of all inputs. All kernel values are
+// computed on the jax-js engine.
+import { defineViz } from './engine/vizkit.js';
+import { np, withJax, drawJaxLoading } from './engine/jax.js';
+import { parseColor } from './engine/draw.js';
+import { rng32 } from './engine/datasets.js';
+
+const B = 0.5;            // numerator bias b (≥ 0)
+const PAD = 10;
+const HM = 44;            // background field resolution
+const DOM = 2.4;          // domain half-width
+const ACTIVE_FRAC = 0.18; // active if activation ≥ this × max activation
+
+// kernel field of ONE prototype over a flat (M,2) grid, vectorised on jax-js
+const protoField = (gridFlat, wx, wy, eps) => {
+  const M = gridFlat.length / 2;
+  const Gv = np.reshape(np.array(gridFlat), [M, 2]);
+  const wv = np.reshape(np.array([wx, wy]), [1, 2]);
+  const dot = np.sum(Gv.ref.mul(wv.ref), 1);
+  const diff = np.subtract(Gv, wv);
+  const dist2 = np.sum(diff.ref.mul(diff), 1);
+  const lin = dot.add(B);
+  const num = lin.ref.mul(lin);
+  return num.div(dist2.add(eps)).js();
+};
+
+// activations of every prototype against one query, on jax-js
+const queryAct = (protos, K, qx, qy, eps) => {
+  const Pv = np.reshape(np.array(protos), [K, 2]);
+  const qv = np.reshape(np.array([qx, qy]), [1, 2]);
+  const dot = np.sum(Pv.ref.mul(qv.ref), 1);
+  const diff = np.subtract(Pv, qv);
+  const dist2 = np.sum(diff.ref.mul(diff), 1);
+  const lin = dot.add(B);
+  const num = lin.ref.mul(lin);
+  return num.div(dist2.add(eps)).js();
+};
+
+defineViz('lazykernel', {
+  title: 'Lazy loading: only the nearby prototypes fire',
+  height: 420,
+  controls: [
+    { type: 'range', name: 'K', label: 'prototypes', min: 6, max: 28, step: 1, value: 18, int: true, reset: true, fmt: (v) => v },
+    { type: 'range', name: 'eps', label: 'ε bandwidth', min: -1.4, max: 0.6, step: 0.05, value: -0.45, reset: false, fmt: (v) => Math.pow(10, v).toFixed(2) },
+    { type: 'readout', name: 'rd' },
+  ],
+
+  setup(api) {
+    const K = api.get('K');
+    const r = rng32(13);
+    // prototypes on a jittered grid for even coverage
+    const protos = new Float64Array(K * 2);
+    const cols = Math.ceil(Math.sqrt(K));
+    for (let k = 0; k < K; k++) {
+      const gx = (k % cols), gy = Math.floor(k / cols);
+      const jitter = 0.55;
+      protos[k * 2] = -DOM * 0.82 + (gx + 0.5) / cols * DOM * 1.64 + (r() - 0.5) * jitter;
+      protos[k * 2 + 1] = -DOM * 0.82 + (gy + 0.5) / cols * DOM * 1.64 + (r() - 0.5) * jitter;
+    }
+    // world grid for the background field
+    const gridFlat = new Float64Array(HM * HM * 2);
+    for (let py = 0; py < HM; py++) for (let px = 0; px < HM; px++) {
+      const i = py * HM + px;
+      gridFlat[i * 2] = -DOM + (px / (HM - 1)) * 2 * DOM;
+      gridFlat[i * 2 + 1] = DOM - (py / (HM - 1)) * 2 * DOM;
+    }
+    api.state = { K, protos, gridFlat, qx: 0.2, qy: 0.1, field: null, fieldEps: null, jaxReady: false };
+
+    // pointer drag moves the query
+    if (!api.canvas.dataset.lkDrag) {
+      api.canvas.dataset.lkDrag = '1';
+      const toWorld = (e) => {
+        const rc = api.canvas.getBoundingClientRect();
+        const W = api.size.W, H = api.size.H, footerH = 22;
+        const x0 = PAD, y0 = PAD, plotW = W - PAD * 2, plotH = H - PAD * 2 - footerH;
+        const px = (e.clientX - rc.left - x0) / plotW, py = (e.clientY - rc.top - y0) / plotH;
+        api.state.qx = Math.max(-DOM, Math.min(DOM, -DOM + px * 2 * DOM));
+        api.state.qy = Math.max(-DOM, Math.min(DOM, DOM - py * 2 * DOM));
+        api.render();
+      };
+      let drag = false;
+      api.canvas.addEventListener('pointerdown', (e) => { drag = true; api.canvas.setPointerCapture(e.pointerId); toWorld(e); });
+      api.canvas.addEventListener('pointermove', (e) => { if (drag) toWorld(e); });
+      api.canvas.addEventListener('pointerup', (e) => { drag = false; try { api.canvas.releasePointerCapture(e.pointerId); } catch {} });
+    }
+    withJax(api);
+  },
+
+  draw(api) {
+    const { ctx, colors, size, state: st } = api;
+    const W = size.W, H = size.H;
+    if (W === 0 || !st) return;
+    ctx.clearRect(0, 0, W, H);
+    if (!st.jaxReady) return drawJaxLoading(api);
+
+    const eps = Math.pow(10, api.get('eps'));
+    const footerH = 22;
+    const x0 = PAD, y0 = PAD, plotW = W - PAD * 2, plotH = H - PAD * 2 - footerH;
+    const sx = (x) => x0 + ((x + DOM) / (2 * DOM)) * plotW;
+    const sy = (y) => y0 + ((DOM - y) / (2 * DOM)) * plotH;
+
+    // ── background: max-kernel field (cached by eps on jax-js) rasterized to a
+    // bitmap (cached by eps + theme), so dragging the query is a single drawImage
+    // rather than rebuilding HM² pixels every move ──
+    const fieldKey = eps + '|' + colors.bg + '|' + colors.accent;
+    if (!st.fieldBitmap || st.fieldKey !== fieldKey) {
+      if (!st.field || st.fieldEps !== eps) {
+        const M = HM * HM;
+        const fld = new Float64Array(M);
+        for (let k = 0; k < st.K; k++) {
+          const f = protoField(st.gridFlat, st.protos[k * 2], st.protos[k * 2 + 1], eps);
+          for (let i = 0; i < M; i++) if (f[i] > fld[i]) fld[i] = f[i];
+        }
+        st.field = fld; st.fieldEps = eps;
+      }
+      let fmax = 1e-9; for (let i = 0; i < st.field.length; i++) if (st.field[i] > fmax) fmax = st.field[i];
+      const bg = parseColor(colors.bg), accent = parseColor(colors.accent);
+      const img = ctx.createImageData(HM, HM);
+      for (let i = 0; i < HM * HM; i++) {
+        const t = Math.pow(Math.min(1, st.field[i] / fmax), 0.6) * 0.5;
+        img.data[i * 4] = Math.round(bg[0] + (accent[0] - bg[0]) * t);
+        img.data[i * 4 + 1] = Math.round(bg[1] + (accent[1] - bg[1]) * t);
+        img.data[i * 4 + 2] = Math.round(bg[2] + (accent[2] - bg[2]) * t);
+        img.data[i * 4 + 3] = 255;
+      }
+      const tmp = st.fieldBitmap || (st.fieldBitmap = document.createElement('canvas'));
+      tmp.width = HM; tmp.height = HM;
+      tmp.getContext('2d').putImageData(img, 0, 0);
+      st.fieldKey = fieldKey;
+    }
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(st.fieldBitmap, x0, y0, plotW, plotH);
+    ctx.strokeStyle = colors.border; ctx.lineWidth = 1; ctx.strokeRect(x0 + 0.5, y0 + 0.5, plotW - 1, plotH - 1);
+
+    // ── query activations, on jax-js ──
+    const act = queryAct(st.protos, st.K, st.qx, st.qy, eps);
+    let amax = 1e-9; for (let k = 0; k < st.K; k++) if (act[k] > amax) amax = act[k];
+    const thresh = ACTIVE_FRAC * amax;
+    let nActive = 0;
+
+    const qpx = sx(st.qx), qpy = sy(st.qy);
+
+    // lines from the query to the active (retrieved) prototypes
+    for (let k = 0; k < st.K; k++) {
+      if (act[k] < thresh) continue;
+      ctx.strokeStyle = colors.accent; ctx.globalAlpha = 0.25 + 0.5 * (act[k] / amax); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(qpx, qpy); ctx.lineTo(sx(st.protos[k * 2]), sy(st.protos[k * 2 + 1])); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+
+    // prototypes: bright + ringed if active, faint if dormant
+    for (let k = 0; k < st.K; k++) {
+      const px = sx(st.protos[k * 2]), py = sy(st.protos[k * 2 + 1]);
+      const on = act[k] >= thresh;
+      if (on) nActive++;
+      const ratio = act[k] / amax;
+      if (on) {
+        ctx.fillStyle = colors.accent; ctx.globalAlpha = 0.55 + 0.45 * ratio;
+        ctx.beginPath(); ctx.arc(px, py, 4 + 6 * ratio, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = 1; ctx.lineWidth = 1.6; ctx.strokeStyle = colors.bg; ctx.stroke();
+      } else {
+        ctx.fillStyle = colors.faint; ctx.globalAlpha = 0.6;
+        ctx.beginPath(); ctx.arc(px, py, 3, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1;
+      }
+    }
+
+    // query marker
+    ctx.fillStyle = colors.fg;
+    ctx.beginPath(); ctx.arc(qpx, qpy, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = colors.bg; ctx.stroke();
+
+    ctx.fillStyle = colors.muted; ctx.font = '11px ui-monospace, monospace';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+    ctx.fillText('Drag the query · lit centers are the retrieval set', x0, H - 5);
+
+    const pct = ((nActive / st.K) * 100).toFixed(0);
+    api.readout('rd', `active: ${nActive} / ${st.K} prototypes (${pct}%) · a ReLU layer would fire ~50%`);
+  },
+});
+</script>

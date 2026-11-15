@@ -1,0 +1,101 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 380 } = Astro.props;
+---
+<figure data-min-width="560" class="viz roperelative" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+import { defineViz } from './engine/vizkit.js';
+import { panel, text } from './engine/draw.js';
+import { np, withJax, drawJaxLoading } from './engine/jax.js';
+
+// With unrotated q and k held fixed, (R_i q)ᵀ(R_j k) = qᵀR(j−i)k.
+// The horizontal axis uses Δ = i − j, so the relative rotation is −Δ.
+// Per plane this gives A·cos(θΔ) + B·sin(θΔ), with
+// A = q_x k_x + q_y k_y and B = q_x k_y − q_y k_x.
+// Summing planes gives an oscillatory, content-dependent score, not guaranteed
+// pointwise decay with distance. The Δ-curve is evaluated in jax-js.
+const P = 6;                                                     // rotary planes (head dim 2P)
+const G = 161, T = 18;                                           // Δ grid: −T..T
+function rng(seed) { let s = seed; return () => { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; }; }
+
+function coeffs(seed) {
+  const r = rng(seed), A = [], Bc = [];
+  for (let p = 0; p < P; p++) {
+    const qx = r() * 2 - 1, qy = r() * 2 - 1, kx = r() * 2 - 1, ky = r() * 2 - 1;
+    A.push(qx * kx + qy * ky);                                   // in-plane alignment
+    Bc.push(qx * ky - qy * kx);                                  // in-plane rotation
+  }
+  return { A, Bc };
+}
+
+function curve(seed, base) {
+  const { A, Bc } = coeffs(seed);
+  const deltas = Array.from({ length: G }, (_, i) => -T + (2 * T * i) / (G - 1));
+  const D = np.array(deltas);
+  let acc = np.zeros([G]);
+  let baseline = 0;
+  for (let p = 0; p < P; p++) {
+    const theta = Math.pow(base, -p / (P - 1));                  // θ₀ = 1 (fast) … geometric falloff
+    const term = np.add(np.cos(D.ref.mul(theta)).mul(A[p]), np.sin(D.ref.mul(theta)).mul(Bc[p]));
+    acc = np.add(acc, term);
+    baseline += A[p];                                            // Δ=0 value / un-rotated q·k
+  }
+  D.delete?.();
+  return { y: acc.js(), deltas, baseline };
+}
+
+defineViz('roperelative', {
+  title: 'RoPE turns the bilinear score into a relative-position function',
+  height: 380,
+  controls: [
+    { type: 'range', name: 'base', label: 'frequency spread', min: 4, max: 200, step: 2, value: 40, reset: false, fmt: v => v.toFixed(0) },
+    { type: 'button', name: 'reroll', label: 'reroll q,k' },
+    { type: 'readout', name: 'rd' },
+  ],
+  setup(api) { api.state.seed = 7; withJax(api); },
+  onAction(name, api) { if (name === 'reroll') { api.state.seed = (api.state.seed * 7 + 13) & 0x7fffffff; } },
+  draw(api) {
+    if (!api.state.jaxReady) return drawJaxLoading(api);
+    const { ctx, colors, size, state } = api;
+    const box = { x: 6, y: 4, w: size.W - 12, h: size.H - 8 };
+    panel(ctx, box, colors, {});
+    const { y, deltas, baseline } = curve(state.seed || 7, api.get('base'));
+
+    const plot = { x: box.x + 44, y: box.y + 28, w: box.w - 64, h: box.h - 74 };
+    text(ctx, 'Head score vs relative position Δ = i − j', box.x + 14, box.y + 11, colors, { size: 12, weight: '600' });
+    panel(ctx, plot, colors, {});
+    let ymax = 1e-6; for (const v of y) ymax = Math.max(ymax, Math.abs(v));
+    ymax = Math.max(ymax, Math.abs(baseline)) * 1.1;
+    const sx = (d) => plot.x + ((d + T) / (2 * T)) * plot.w;
+    const sy = (v) => plot.y + plot.h / 2 - (v / ymax) * (plot.h / 2 - 6);
+
+    // zero axis + Δ=0 marker
+    ctx.strokeStyle = colors.border; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(plot.x, sy(0)); ctx.lineTo(plot.x + plot.w, sy(0)); ctx.stroke();
+    ctx.strokeStyle = colors.faint; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(sx(0), plot.y + 4); ctx.lineTo(sx(0), plot.y + plot.h - 4); ctx.stroke(); ctx.setLineDash([]);
+    // baseline (no RoPE): constant q·k
+    ctx.strokeStyle = colors.blue; ctx.setLineDash([5, 4]); ctx.lineWidth = 1.3;
+    ctx.beginPath(); ctx.moveTo(plot.x, sy(baseline)); ctx.lineTo(plot.x + plot.w, sy(baseline)); ctx.stroke(); ctx.setLineDash([]);
+    text(ctx, 'no RoPE: q·k (constant)', plot.x + plot.w - 8, sy(baseline) - 10, colors, { align: 'right', size: 9.5, mono: true, color: colors.blue });
+    // the relative-position score
+    ctx.strokeStyle = colors.accent; ctx.lineWidth = 2; ctx.beginPath();
+    for (let i = 0; i < G; i++) { const px = sx(deltas[i]), py = sy(y[i]); i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); }
+    ctx.stroke();
+    // axis ticks
+    ctx.fillStyle = colors.muted;
+    for (let d = -T + 2; d < T; d += 6) text(ctx, String(d), sx(d), plot.y + plot.h + 5, colors, { align: 'center', size: 9, mono: true, color: colors.muted });
+    text(ctx, '0', sx(0), plot.y + plot.h + 5, colors, { align: 'center', size: 9, mono: true, color: colors.fg });
+
+    text(ctx, 'Fixed q,k · relative gap i−j · decay is not guaranteed',
+      box.x + 14, box.y + box.h - 14, colors, { size: 10, mono: true, color: colors.muted });
+    api.readout('rd', `Δ=0 score ${baseline.toFixed(2)} · relative, not absolute · live`);
+  },
+});
+</script>

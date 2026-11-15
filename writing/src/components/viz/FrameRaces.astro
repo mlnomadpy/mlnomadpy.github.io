@@ -1,0 +1,88 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 320 } = Astro.props;
+---
+<figure data-min-width="480" class="viz frameraces" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+import { defineViz } from './engine/vizkit.js';
+import { panel, text, roundRect, PALETTE } from './engine/draw.js';
+
+// Finite projected descent on off-diagonal frame energy, not minimax coherence.
+const K = 6, D = 3;
+function randUnit() { let x, y, z, n; do { x = 2 * Math.random() - 1; y = 2 * Math.random() - 1; z = 2 * Math.random() - 1; n = x * x + y * y + z * z; } while (n > 1 || n < 1e-6); n = Math.sqrt(n); return [x / n, y / n, z / n]; }
+function fp(P) { let s = 0; for (let i = 0; i < P.length; i++) for (let j = 0; j < P.length; j++) { if (i === j) continue; const c = P[i][0] * P[j][0] + P[i][1] * P[j][1] + P[i][2] * P[j][2]; s += c * c; } return s; }
+
+defineViz('frameraces', {
+  title: 'Six starts descending frame-potential energy',
+  height: 320, stepsPerFrame: 0.5, maxStep: 240,
+  controls: [
+    { type: 'play' }, { type: 'button', name: 'reroll', label: 're-roll', reset: true }, { type: 'speed' },
+    { type: 'newrow' },
+    { type: 'range', name: 'C', label: 'vectors C', min: 4, max: 10, step: 1, value: 7, int: true, reset: true, fmt: v => v },
+    { type: 'readout', name: 'rd' },
+  ],
+  setup(api) {
+    const C = api.get('C'); const sys = [];
+    for (let k = 0; k < K; k++) { const P = []; for (let i = 0; i < C; i++) P.push(randUnit()); sys.push({ P, hist: [fp(P)] }); }
+    api.state.sys = sys; api.state.C = C;
+  },
+  step(api) {
+    const C = api.state.C, lr = 0.06 / C;
+    for (const sysk of api.state.sys) {
+      const P = sysk.P, G = P.map(() => [0, 0, 0]);
+      for (let i = 0; i < C; i++) for (let j = 0; j < C; j++) { if (i === j) continue; const c = P[i][0] * P[j][0] + P[i][1] * P[j][1] + P[i][2] * P[j][2], w = 2 * c; G[i][0] += w * P[j][0]; G[i][1] += w * P[j][1]; G[i][2] += w * P[j][2]; }
+      for (let i = 0; i < C; i++) { const gu = G[i][0] * P[i][0] + G[i][1] * P[i][1] + G[i][2] * P[i][2]; let x = P[i][0] - lr * (G[i][0] - gu * P[i][0]), y = P[i][1] - lr * (G[i][1] - gu * P[i][1]), z = P[i][2] - lr * (G[i][2] - gu * P[i][2]); const n = Math.hypot(x, y, z) + 1e-12; P[i] = [x / n, y / n, z / n]; }
+      sysk.hist.push(fp(P));
+    }
+  },
+  draw(api) {
+    const { ctx, colors, size, state } = api;
+    const box = { x: 6, y: 4, w: size.W - 12, h: size.H - 8 };
+    const m = panel(ctx, box, colors, { header: 22 });
+    const C = state.C, floor = C * C / D - C;
+    const pad = { l: 44, r: 14, t: 28, b: 26 };
+    const px = box.x + pad.l, py = box.y + pad.t, pw = box.w - pad.l - pad.r, ph = box.h - pad.t - pad.b;
+    // y-range
+    let ymax = floor; for (const s of state.sys) ymax = Math.max(ymax, s.hist[0]); ymax *= 1.05;
+    const ymin = Math.max(0, floor - 0.15 * ymax);
+    const sx = (i, n) => px + (n <= 1 ? 0 : i / (n - 1)) * pw;
+    const sy = (v) => py + ph - ((v - ymin) / (ymax - ymin)) * ph;
+    // floor line
+    ctx.strokeStyle = colors.green; ctx.setLineDash([5, 4]); ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(px, sy(floor)); ctx.lineTo(px + pw, sy(floor)); ctx.stroke(); ctx.setLineDash([]);
+    // floor label, on a semi-transparent rounded chip in the clear top-right corner,
+    // away from the floor line where all the converging curves pile up and run through text
+    {
+      const label = `Energy floor  C²/d − C = ${floor.toFixed(1)}`;
+      ctx.save();
+      ctx.font = '10px ui-monospace, monospace';
+      const tw = ctx.measureText(label).width;
+      const chw = tw + 12, chh = 16;
+      const chx = px + pw - chw, chy = py + 2;
+      ctx.globalAlpha = 0.9;
+      roundRect(ctx, chx, chy, chw, chh, 4); ctx.fillStyle = colors.cellBg; ctx.fill();
+      ctx.globalAlpha = 0.5; ctx.strokeStyle = colors.green; ctx.lineWidth = 1; ctx.stroke();
+      ctx.globalAlpha = 1;
+      ctx.restore();
+      text(ctx, label, chx + 6, chy + chh / 2, colors, { align: 'left', baseline: 'middle', size: 10, color: colors.green });
+    }
+    // axis labels
+    text(ctx, 'off-diagonal frame energy', box.x + 8, box.y + 4, colors, { size: 11.5, color: colors.fg });
+    text(ctx, 'gradient-descent steps →', px + pw / 2, box.y + box.h - 14, colors, { align: 'center', size: 10, color: colors.muted });
+    // traces
+    state.sys.forEach((s, k) => {
+      ctx.strokeStyle = PALETTE[k % PALETTE.length]; ctx.lineWidth = 1.6; ctx.globalAlpha = 0.85; ctx.beginPath();
+      const n = s.hist.length; for (let i = 0; i < n; i++) { const x = sx(i, Math.max(n, api.iter + 1)), y = sy(s.hist[i]); i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); }
+      ctx.stroke(); ctx.globalAlpha = 1;
+    });
+    const gaps=state.sys.map(s=>s.hist.at(-1)-floor);
+    api.readout('rd', `${K} starts · C=${C}, d=${D} · energy gap ${Math.min(...gaps).toExponential(2)}–${Math.max(...gaps).toExponential(2)} · ${api.iter} steps`);
+  },
+});
+</script>

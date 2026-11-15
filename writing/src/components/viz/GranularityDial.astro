@@ -1,0 +1,67 @@
+---
+interface Props { caption?: string; height?: number; }
+const { caption, height = 470 } = Astro.props;
+---
+<figure data-min-width="720" class="viz granularitydial" data-caption={caption} data-height={height} data-height-mobile="600" tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+<script>
+// Turn the granularity dial and watch the prototypes go from whole garments to
+// strokes, while the audit's four readings move (or stubbornly fail to).
+import { defineViz } from './engine/vizkit.js';
+import { T, fmt, gate, loadingText } from './engine/draw.js';
+import { load, patchGlyph } from './patchparts.js';
+
+defineViz('granularitydial', {
+  title: 'From garments to strokes: the granularity dial',
+  height: 470,
+  controls: [
+    { type: 'range', name: 'i', label: 'patch size', min: 0, max: 3, step: 1, value: 0, int: true, play: { period: 5200, loop: 'pingpong' }, fmt: (v) => ['28', '14', '7', '4'][Math.round(v)] + 'px' },
+    { type: 'readout', name: 'rd' },
+  ],
+  setup(api) {
+    gate(api, () => Promise.all([load('sizes'), load('parts')]), (a, [s, p]) => {
+      a.state.sizes = s.sizes; a.state.parts = p;
+    });
+  },
+  draw(api) {
+    const { ctx, colors, size: { W, H } } = api, st = api.state;
+    if (!st.ready) { loadingText(api, 'loading the sweep…'); return; }
+    const i = Math.round(api.get('i'));
+    const s = st.sizes[i], parts = st.parts[String(s.P)];
+    const pad = 14, top = 32;
+    // the prototype gallery for this granularity
+    const cols = 12, rows = 4;
+    const gw = Math.min(46, (W * 0.52 - pad) / cols - 4);
+    T(ctx, colors, 'label'); ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText(`the bank at ${s.P}x${s.P}: ${s.npatch} patch${s.npatch > 1 ? 'es' : ''} per image`, pad, top - 8);
+    for (let k = 0; k < Math.min(48, parts.protos.length); k++) {
+      const x = pad + (k % cols) * (gw + 4), y = top + Math.floor(k / cols) * (gw + 4);
+      patchGlyph(ctx, parts.protos[k].map((v) => v * 255), s.P, x, y, gw, gw, `gp${s.P}:${k}`);
+      ctx.strokeStyle = colors.border; ctx.strokeRect(x + 0.5, y + 0.5, gw - 1, gw - 1);
+    }
+    // the audit's readings at this granularity
+    const rx = pad + cols * (gw + 4) + 24, rw = W - rx - pad;
+    const readings = [
+      { l: 'accuracy', v: `${fmt(s.acc_mean, 2)}%`, sub: `+- ${fmt(s.acc_std, 2)} over 3 seeds` },
+      { l: 'ε / median distance²', v: s.eps_ratio.toExponential(1), sub: s.eps_ratio > 0.01 ? 'the softening engages' : 'the softening is still idle' },
+      { l: 'closest patch, in units of ε', v: fmt(s.min_d2 / s.eps, 1) + '×', sub: s.min_d2 / s.eps < 5 ? 'near enough to feel the floor' : 'never close enough' },
+      { l: 'concept 1 carried by place', v: `${fmt(100 * s.concepts[0].place, 0)}%`, sub: `${fmt(100 * s.concepts[0].align, 0)}% by alignment` },
+      { l: 'concept support', v: `${fmt(s.concepts[0].support, 0)} of ${s.m}`, sub: 'prototypes carrying concept 1' },
+    ];
+    readings.forEach((r, k) => {
+      const y = top + k * 62;
+      T(ctx, colors, 'small'); ctx.fillText(r.l, rx, y + 10);
+      T(ctx, colors, 'title'); ctx.fillStyle = colors.accent;
+      ctx.font = '600 21px ui-sans-serif, system-ui, sans-serif';
+      ctx.fillText(r.v, rx, y + 34);
+      T(ctx, colors, 'small'); ctx.fillText(r.sub, rx, y + 50);
+    });
+    T(ctx, colors, 'small'); ctx.textAlign = 'left';
+    ctx.fillText('Same kernel, 256 units and readout; patch size changes.', pad, H - 28);
+    ctx.fillText('Prototype appearance changes; three diagnostic readings barely move.', pad, H - 13);
+    api.readout('rd', `${s.P}x${s.P}: ${fmt(s.acc_mean, 2)}% accuracy, ε ratio ${s.eps_ratio.toExponential(1)}, support ${fmt(s.concepts[0].support, 0)}/${s.m}`);
+  },
+});
+</script>

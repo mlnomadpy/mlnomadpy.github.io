@@ -1,0 +1,93 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 360 } = Astro.props;
+---
+<figure data-min-width="800" class="viz hbvote" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+// Scores are recomputed from saved features; ignore archived sample pred fields.
+// K-means centers were fitted using labeled training subsets.
+import { defineViz } from './engine/vizkit.js';
+import { loadHB, samplesImg, exemplarImg, classify, ensureJax, CLASS_COL } from './handbuilt.js';
+import { gate, loadingText } from './engine/draw.js';
+
+const PER = 20;
+
+defineViz('hbvote', {
+  title: 'Fixed measurements, fitted centers, one kernel vote',
+  height: 360,
+  controls: [
+    { type: 'range', name: 'sample', label: 'garment', min: 0, max: 59, step: 1, value: 5, int: true, reset: false, fmt: (v) => v },
+    { type: 'readout', name: 'rd' },
+  ],
+
+  setup(api) {
+    api.state._cache = new Map();
+    gate(api, () => ensureJax().then(() => Promise.all([loadHB(), samplesImg(), exemplarImg()])), (api, [d, imgs, exe]) => {
+      Object.assign(api.state, { d, imgs, exe });
+    });
+  },
+
+  draw(api) {
+    const { ctx, colors, size, state: st } = api;
+    const W = size.W, H = size.H;
+    if (W === 0 || !st) return;
+    ctx.clearRect(0, 0, W, H);
+    if (!st.ready) { loadingText(api, 'computing in your browser…'); return; }
+    const d = st.d, k = api.get('sample'), s = d.samples[k];
+    let res = st._cache.get(k);
+    if (!res) { res = classify(d, s.feat); st._cache.set(k, res); }
+    let best = 0; for (let u = 1; u < res.act.length; u++) if (res.act[u] > res.act[best]) best = u;
+    const matchClass = d.vote[best];
+
+    const pad = 16, top = 26;
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = colors.muted; ctx.font = '11px ui-sans-serif, system-ui';
+    ctx.fillText('garment → exemplar near the winning center → class score; zero gradient steps.', pad, 16);
+
+    // input garment
+    const imS = Math.min(96, (H - top - 40) * 0.6);
+    const iy = top + 6;
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(st.imgs, (k % 10) * 28, ((k / 10) | 0) * 28, 28, 28, pad, iy, imS, imS);
+    ctx.strokeStyle = colors.border; ctx.lineWidth = 1; ctx.strokeRect(pad - 0.5, iy - 0.5, imS + 1, imS + 1);
+    ctx.fillStyle = colors.muted; ctx.font = '10px ui-sans-serif, system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText('true: ' + d.classes[s.label], pad + imS / 2, iy + imS + 5);
+
+    // matched prototype exemplar
+    const mx = pad + imS + 30;
+    // resemblance arrow
+    ctx.strokeStyle = colors.faint; ctx.lineWidth = 1.4; const my = iy + imS / 2;
+    ctx.beginPath(); ctx.moveTo(pad + imS + 6, my); ctx.lineTo(mx - 6, my); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(mx - 11, my - 4); ctx.lineTo(mx - 6, my); ctx.lineTo(mx - 11, my + 4); ctx.stroke();
+    ctx.drawImage(st.exe, (best % PER) * 28, ((best / PER) | 0) * 28, 28, 28, mx, iy, imS, imS);
+    ctx.lineWidth = 2; ctx.strokeStyle = CLASS_COL[matchClass]; ctx.strokeRect(mx - 0.5, iy - 0.5, imS + 1, imS + 1);
+    ctx.fillStyle = CLASS_COL[matchClass]; ctx.font = '10px ui-sans-serif, system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText('exemplar: ' + d.classes[matchClass], mx + imS / 2, iy + imS + 5);
+
+    // class score bars
+    const bx = mx + imS + 40, bw = W - pad - bx - 44;
+    let smax = 0; for (let c = 0; c < 10; c++) if (res.scores[c] > smax) smax = res.scores[c];
+    const bbT = top + 4, bbH = (H - bbT - 20) / 10;
+    for (let c = 0; c < 10; c++) {
+      const yy = bbT + c * bbH, win = c === res.pred;
+      ctx.fillStyle = colors.muted; ctx.font = (win ? 'bold ' : '') + '10px ui-sans-serif, system-ui'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = win ? colors.fg : colors.muted;
+      ctx.fillText(d.classes[c], bx - 6, yy + bbH / 2);
+      const w = Math.max(1, (res.scores[c] / smax) * bw);
+      ctx.fillStyle = CLASS_COL[c]; ctx.globalAlpha = win ? 1 : 0.5;
+      ctx.fillRect(bx, yy + 2, w, bbH - 4); ctx.globalAlpha = 1;
+      if (win) { ctx.fillStyle = colors.fg; ctx.font = 'bold 10px ui-sans-serif, system-ui'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText('winner', bx + w + 5, yy + bbH / 2); }
+    }
+
+    const ok = res.pred === s.label;
+    api.readout('rd', `343 detector readings, scored against 200 prototypes, strongest match is a ${d.classes[matchClass]}. vote: ${d.classes[res.pred]} ${ok ? '(correct)' : '(true ' + d.classes[s.label] + ')'} · computed live`);
+  },
+});
+</script>

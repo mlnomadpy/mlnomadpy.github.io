@@ -1,0 +1,56 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 320 } = Astro.props;
+---
+<figure data-min-width="400" class="viz alignpull" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+import { defineViz } from './engine/vizkit.js';
+import { panel, dot, text } from './engine/draw.js';
+
+// Wish 1: alignment. One class of points; the slider is how hard alignment pulls
+// them toward their own centroid. At full strength the cloud becomes a single
+// point, zero within-class variance. Interactive: drag and watch the spread.
+const N = 90;
+const randn = () => { const u = Math.random() || 1e-9, v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+
+defineViz('alignpull', {
+  title: 'Wish 1, pull each class together',
+  height: 320,
+  controls: [
+    { type: 'range', name: 'a', label: 'alignment strength', min: 0, max: 1, step: 0.01, value: 0.15, fmt: v => v.toFixed(2) },
+    { type: 'button', name: 'reroll', label: 're-roll' },
+    { type: 'readout', name: 'rd' },
+  ],
+  setup(api) {
+    const off = []; for (let i = 0; i < N; i++) off.push([randn() * 0.62, randn() * 0.62]);
+    api.state.off = off;
+  },
+  onAction(name, api) { if (name === 'reroll') { const off = []; for (let i = 0; i < N; i++) off.push([randn() * 0.62, randn() * 0.62]); api.state.off = off; } },
+  draw(api) {
+    const { ctx, colors, size, state } = api;
+    const box = { x: 6, y: 4, w: size.W - 12, h: size.H - 8 };
+    const m = panel(ctx, box, colors, { header: 18 });
+    const a = api.get('a'), s = 1 - a;
+    // faint spread ring
+    let rms = 0; for (const o of state.off) rms += (o[0] * o[0] + o[1] * o[1]); rms = Math.sqrt(rms / N) * s;
+    ctx.strokeStyle = colors.border; ctx.setLineDash([3, 4]); ctx.beginPath(); ctx.arc(m.cx, m.cy, Math.max(0, rms * m.R), 0, 2 * Math.PI); ctx.stroke(); ctx.setLineDash([]);
+    // points
+    ctx.globalAlpha = 0.7;
+    for (const o of state.off) { const [px, py] = m.map([o[0] * s, o[1] * s]); dot(ctx, px, py, 2.6, colors.accent); }
+    ctx.globalAlpha = 1;
+    // centroid
+    ctx.beginPath(); ctx.arc(m.cx, m.cy, 6, 0, 2 * Math.PI); ctx.fillStyle = colors.accent; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = colors.bg; ctx.stroke();
+    text(ctx, 'One class, pulled toward its centroid', box.x + 8, box.y + 3, colors, { size: 11.5, color: colors.fg });
+    const tag = a > 0.97 ? 'collapsed to a point, variance 0' : `within-class spread ${rms.toFixed(3)}`;
+    text(ctx, tag, box.x + 8, box.y + box.h - 15, colors, { size: 10.5, mono: true, color: colors.muted });
+    api.readout('rd', `alignment ${a.toFixed(2)}`);
+  },
+});
+</script>

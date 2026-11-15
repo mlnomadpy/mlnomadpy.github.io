@@ -1,0 +1,108 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 320 } = Astro.props;
+---
+<figure data-min-width="640" class="viz ladder" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+// Historical references from related protocols; not a matched causal ablation.
+import { defineViz } from './engine/vizkit.js';
+import { loadHB } from './handbuilt.js';
+import { gate, loadingText } from './engine/draw.js';
+
+defineViz('ladder', {
+  title: 'Archived construction scores and learned references',
+  height: 320,
+  controls: [{ type: 'readout', name: 'rd' }],
+
+  setup(api) {
+    api.state.hover = -1;
+    gate(api, loadHB, (api, d) => { api.state.d = d; bind(api); });
+  },
+
+  draw(api) {
+    const { ctx, colors, size, state: st } = api;
+    const W = size.W, H = size.H;
+    if (W === 0 || !st) return;
+    ctx.clearRect(0, 0, W, H);
+    if (!st.ready) { loadingText(api); return; }
+    const L = st.d.ladder, ACC = colors.accent, BLU = colors.blue;
+    // featTrained / headTrained flags drive the colour; story order bottom-up
+    const rows = [
+      { acc: L.pixels, feat: 'raw pixels', head: 'built head', ft: false, ht: false },
+      { acc: L.handbuilt, feat: 'hand-built features', head: 'built head', ft: false, ht: false, star: true },
+      { acc: L.trainedConstructed, feat: 'trained features', head: 'built head', ft: true, ht: false },
+      { acc: L.trainedHead, feat: 'trained features', head: 'trained head', ft: true, ht: true },
+    ];
+    const pad = 16, top = 30, labelW = 150, valW = 46;
+    const x0 = pad + labelW, x1 = W - pad - valW;
+    const sx = (a) => x0 + (a / 100) * (x1 - x0);
+    const rowH = (H - top - 28) / rows.length, bh = Math.min(26, rowH * 0.52);
+
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = colors.muted; ctx.font = '11px ui-sans-serif, system-ui';
+    ctx.fillText('blue: zero gradient; orange: gradient fitted. Related Fashion-MNIST protocols.', pad, 18);
+
+    // chance gridline
+    ctx.strokeStyle = colors.border; ctx.setLineDash([2, 3]); ctx.beginPath(); ctx.moveTo(sx(L.chance), top); ctx.lineTo(sx(L.chance), top + rows.length * rowH); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = colors.faint; ctx.font = '9px ui-sans-serif, system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillText('chance', sx(L.chance), top - 1);
+
+    st._rows = [];
+    rows.forEach((r, i) => {
+      const cy = top + i * rowH + rowH / 2, by = cy - bh / 2;
+      const focus = st.hover < 0 || st.hover === i;
+      ctx.globalAlpha = focus ? 1 : 0.4;
+      // label: features + head
+      ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = r.ft ? ACC : BLU; ctx.font = '11px ui-sans-serif, system-ui';
+      ctx.fillText(r.feat, x0 - 10, cy - 7);
+      ctx.fillStyle = r.ht ? ACC : BLU;
+      ctx.fillText(r.head, x0 - 10, cy + 7);
+      // bar: blue if fully built, orange if anything trained
+      const allBuilt = !r.ft && !r.ht;
+      ctx.fillStyle = allBuilt ? BLU : ACC; ctx.globalAlpha = (focus ? 1 : 0.4) * (allBuilt ? 0.92 : 0.85);
+      ctx.fillRect(x0, by, sx(r.acc) - x0, bh);
+      if (r.star) { ctx.lineWidth = 2; ctx.strokeStyle = colors.fg; ctx.strokeRect(x0 + 0.5, by + 0.5, sx(r.acc) - x0 - 1, bh - 1); }
+      ctx.globalAlpha = focus ? 1 : 0.4;
+      ctx.fillStyle = colors.fg; ctx.font = 'bold 13px ui-sans-serif, system-ui'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.fillText(`${r.acc.toFixed(1)}%`, sx(r.acc) + 6, cy);
+      ctx.globalAlpha = 1;
+      st._rows.push({ y: by - rowH * 0.24, h: rowH, i });
+    });
+
+    // the gap: hand-built (83.3) to fully trained (85.7)
+    const yb = top + 1.5 * rowH, yt = top + 3.5 * rowH, gx = sx(L.handbuilt);
+    ctx.strokeStyle = colors.muted; ctx.lineWidth = 1; ctx.setLineDash([2, 2]);
+    ctx.beginPath(); ctx.moveTo(gx, yb); ctx.lineTo(gx, yt); ctx.stroke(); ctx.setLineDash([]);
+
+    api.readout('rd', st.hover < 0
+      ? `archived hand-built ${L.handbuilt}%; learned-feature references ${L.trainedConstructed}% and ${L.trainedHead}%. Different protocols; no causal score decomposition.`
+      : rowText(rows[st.hover], L));
+  },
+});
+
+function rowText(r, L) {
+  if (!r.ft && !r.ht && r.feat.includes('pixels')) return `raw pixels into a built head: ${r.acc}%, a separate pixel-space reference`;
+  if (r.star) return `hand-built edge + corner detectors into a built head: ${r.acc}%, no gradient steps; labeled-data-fitted centers`;
+  if (r.ft && !r.ht) return `a trained backbone with a built head: ${r.acc}%, the features are learned but prototype centers are refitted`;
+  return `the fully trained network: ${r.acc}%, features and classifier jointly optimized`;
+}
+
+function bind(api) {
+  if (api.canvas.dataset.ldBound) return; api.canvas.dataset.ldBound = '1';
+  api.canvas.addEventListener('pointermove', (e) => {
+    const st = api.state; if (!st || !st._rows) return;
+    const rc = api.canvas.getBoundingClientRect(), py = (e.clientY - rc.top) * api.size.H / rc.height;
+    let h = -1; for (const r of st._rows) if (py >= r.y && py <= r.y + r.h) h = r.i;
+    if (h !== st.hover) { st.hover = h; api.render(); }
+  });
+  api.canvas.addEventListener('pointerleave', () => { if (api.state) { api.state.hover = -1; api.render(); } });
+}
+</script>

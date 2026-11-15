@@ -549,3 +549,131 @@
     break-inside: avoid;
   }
 }
+
+.article-references {
+  min-width: 0;
+  margin-top: 40px;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.7;
+}
+.article-references h2 {
+  color: var(--ink);
+  font-size: 1.5rem;
+}
+.article-references ol {
+  padding-left: 22px;
+}
+.article-references li {
+  margin-bottom: 14px;
+}
+.writing-prose .viz {
+  --accent: var(--sand);
+  --fg: var(--ink);
+  --fg-muted: var(--muted);
+  --fg-faint: #988d7c;
+  --bg-elev: var(--surface);
+  --bg-sunken: var(--bg);
+  --border: var(--line);
+  --serif: var(--body);
+  --mono: ui-monospace, monospace;
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  margin: 36px 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  font: 0.85rem/1.6 var(--ui);
+}
+.viz .viz-cell {
+  width: 100%;
+  min-width: 0;
+}
+.viz figcaption {
+  color: var(--muted);
+  margin-top: 16px;
+  line-height: 1.7;
+}
+.viz canvas {
+  display: block;
+  max-width: 100%;
+}
+.viz .vk-play,
+.viz .vk-s.active {
+  color: var(--bg);
+}
+.viz .vk-controls button,
+.viz .vk-controls select,
+.viz .vk-tool {
+  min-height: 36px;
+}
+@media (min-width: 1080px) {
+  .writing-site .article-references {
+    grid-column: 2;
+  }
+}
+@media (max-width: 720px) {
+  .writing-prose .viz {
+    padding: 10px;
+  }
+  .viz .vk-controls button,
+  .viz .vk-controls select,
+  .viz .vk-tool {
+    min-height: 44px;
+  }
+}
+.viz .vk-readout {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.viz .vk-controls label,
+.viz .vk-controls select {
+  max-width: 100%;
+}
+.viz .vk-play:hover,
+.viz .vk-s.active:hover {
+  color: var(--bg);
+}
+.viz .vk-plot {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+}
+.viz .vk-plot canvas {
+  min-width: var(--viz-min-width, 640px);
+  max-width: none;
+}
+@media (max-width: 720px) {
+  .viz .vk-range {
+    width: 100%;
+    min-width: 0;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .viz .vk-range-name {
+    grid-column: 1 / -1;
+    white-space: normal;
+  }
+  .viz .vk-controls label {
+    flex-wrap: wrap;
+  }
+}
+.viz .vk-scroll-note {
+  display: none;
+}
+@media (max-width: 720px) {
+  .viz.vk-overflow .vk-scroll-note {
+    display: block;
+    margin: 8px 0 0;
+    color: var(--muted);
+    font-size: 12px;
+  }
+}
+
+/* Figure controls inherit the portfolio type; data readouts get their own row. */
+.viz .vk-heading h4 { margin: 0; font-family: var(--ui); }
+.viz .vk-readout { margin-left: 0; color: var(--ink); }
+.viz .vk-heading .vk-tools { margin-left: auto; }
+.viz .vk-controls button, .viz .vk-controls select { min-height: 40px; }
+@media (max-width: 720px) { .viz .vk-controls button, .viz .vk-controls select { min-height: 44px; } }

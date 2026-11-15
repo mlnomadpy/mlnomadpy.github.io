@@ -1,0 +1,80 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 460 } = Astro.props;
+---
+<figure data-min-width="800" class="viz randomsurprise" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+// One untrained network, two heads. The backbone has random weights. Its trained
+// linear head has learned nothing, so it sorts the test images into class bins at
+// chance, the bins a rainbow of every true class. Place a prototype head on the
+// same random features and it sorts them into mostly-pure bins, 74% right, with
+// no training. The classifier never needed the gradient steps; even random
+// features carry enough structure to sort. Constructed labels run live on jax-js.
+import { defineViz } from './engine/vizkit.js';
+import { loadFold, classifyStage, ensureJax, CLASS_COL, CLASSES } from './trainfeat.js';
+import { gate, loadingText } from './engine/draw.js';
+
+function bins(pred, labels) {                                   // dots assigned to each predicted class, coloured by true class
+  const out = Array.from({ length: 10 }, () => []); let ok = 0;
+  for (let i = 0; i < pred.length; i++) { out[pred[i]].push(labels[i]); if (pred[i] === labels[i]) ok++; }
+  return { out, acc: 100 * ok / pred.length };
+}
+
+defineViz('randomsurprise', {
+  title: 'A random network sorts nothing, until you place a head on it',
+  height: 460,
+  controls: [{ type: 'readout', name: 'rd' }],
+
+  setup(api) {
+    gate(api, () => ensureJax().then(loadFold), (api, d) => {
+      api.state.trained = bins(d.frames[0].trainedPred, d.labels);
+      api.state.constructed = bins(classifyStage(d, 0).pred, d.labels);
+    });
+  },
+
+  draw(api) {
+    const { ctx, colors, size, state: st } = api;
+    const W = size.W, H = size.H;
+    if (W === 0 || !st) return;
+    ctx.clearRect(0, 0, W, H);
+    if (!st.ready) { loadingText(api, 'computing in your browser…'); return; }
+
+    const pad = 14;
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = colors.muted; ctx.font = '11px ui-sans-serif, system-ui';
+    ctx.fillText('Same untrained features, two heads. Dots show true image classes.', pad, pad + 11);
+
+    const panel = (label, data, y0, h) => {
+      ctx.fillStyle = colors.fg; ctx.font = 'bold 12px ui-sans-serif, system-ui'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+      ctx.fillText(label, pad, y0 + 12);
+      ctx.fillStyle = data.acc > 50 ? (colors.green || '#3a8f5e') : colors.accent; ctx.font = 'bold 16px ui-sans-serif, system-ui';
+      ctx.fillText(`${data.acc.toFixed(0)}% correct`, W - pad - 90, y0 + 13);
+      const bw = (W - pad * 2) / 10, top = y0 + 20, bh = h - 26;
+      for (let c = 0; c < 10; c++) {
+        const bx = pad + c * bw;
+        ctx.strokeStyle = colors.border; ctx.lineWidth = 1; ctx.strokeRect(bx + 1.5, top + 0.5, bw - 3, bh - 1);
+        const dots = data.out[c], cols = 6, dr = Math.min((bw - 8) / cols, 5);
+        for (let i = 0; i < dots.length; i++) {
+          const dx = bx + 4 + (i % cols) * dr, dy = top + bh - 6 - Math.floor(i / cols) * dr;
+          if (dy < top + 4) break;
+          ctx.fillStyle = CLASS_COL[dots[i]]; ctx.beginPath(); ctx.arc(dx + dr / 2, dy, dr * 0.42, 0, 6.283); ctx.fill();
+        }
+        ctx.fillStyle = colors.faint; ctx.font = '8px ui-sans-serif, system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+        ctx.fillText(CLASSES[c], bx + bw / 2, top + bh + 1);
+      }
+    };
+    const avail = H - pad - 28, ph = (avail - 20) / 2;
+    panel('untrained network · its trained linear head', st.trained, pad + 22, ph);
+    panel('the same network · a placed prototype head, no training', st.constructed, pad + 28 + ph, ph);
+
+    api.readout('rd', `random backbone: the trained head sorts at ${st.trained.acc.toFixed(0)}% (chance, bins are a rainbow), the placed head at ${st.constructed.acc.toFixed(0)}% (bins mostly one colour) with no training`);
+  },
+});
+</script>

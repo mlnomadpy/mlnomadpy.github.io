@@ -30,7 +30,8 @@
     "dev:portfolio": "vite",
     "build:portfolio": "vite-ssg build",
     "build:writing": "npm run build --workspace writing",
-    "check:blog": "node --test scripts/blog-publication.test.mjs && node scripts/check-blog.mjs"
+    "check:blog": "node --test scripts/blog-publication.test.mjs && node scripts/check-blog.mjs",
+    "test:visualizations": "node --test scripts/viz-engine.test.mjs"
   },
   "dependencies": {
     "@unhead/vue": "^2.1.2",

@@ -1,0 +1,128 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 440 } = Astro.props;
+---
+<figure data-min-width="720" class="viz contractionpull" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+// Finite diagnostic trajectories; stopping rules and guarantees are distinguished in the article.
+import { defineViz } from './engine/vizkit.js';
+import { gate, loadingText } from './engine/draw.js';
+import { loadReady, compute, makeRunner, CLS_A, CLS_B } from './yatdeq.js';
+
+const MAXK = 40, NSTART = 4;
+const START_COL = ['#4a7fb3', '#c2553a', '#3a8f5e', '#9a4f9c'];
+
+// tiny deterministic PRNG so the scattered starts are reproducible (no Math.random)
+function lcg(seed) { let s = seed >>> 0; return () => (s = (s * 1664525 + 1013904223) >>> 0) / 4294967296; }
+
+defineViz('contractionpull', {
+  title: 'Four sampled starts approach one neighborhood',
+  height: 440,
+  controls: [
+    { type: 'select', name: 'pick', label: 'input', value: '0', reset: false,
+      options: [{ value: '0', label: 'input A' }, { value: '1', label: 'input B' }, { value: '2', label: 'input C' }] },
+    { type: 'range', name: 'k', label: 'iteration', min: 0, max: MAXK, step: 1, value: MAXK, int: true,
+      reset: false, fmt: (v) => v, play: { period: 3600, loop: false } },
+    { type: 'readout', name: 'rd' },
+  ],
+
+  setup(api) {
+    gate(api, loadReady, (api, model) => {
+      const cmp = compute(model), D = cmp.D, T = model.test, n = T.y.length;
+      const idxs = [Math.round(n * 0.2), Math.round(n * 0.55), Math.round(n * 0.8)];
+      const maxPair = (P) => { let m = 0; for (let a = 0; a < NSTART; a++) for (let b = a + 1; b < NSTART; b++) {
+        let s = 0; for (let j = 0; j < D; j++) { const d = P[a][j] - P[b][j]; s += d * d; } m = Math.max(m, Math.sqrt(s)); } return m; };
+      const runs = idxs.map((ix, gi) => {
+        const x = T.x[ix], rnd = lcg(1234 + gi * 77);
+        // four starts: origin, and three scattered far across state space (inside tanh's range)
+        const Z0 = Array.from({ length: NSTART }, (_, s) => {
+          const r = new Array(D).fill(0);
+          if (s > 0) for (let j = 0; j < D; j++) r[j] = (rnd() * 2 - 1) * 0.95;
+          return r;
+        });
+        const r = makeRunner(cmp, Array.from({ length: NSTART }, () => x), Z0);
+        const traj = [r.proj()], spread = [maxPair(r.stateJS())];
+        for (let k = 0; k < MAXK; k++) { r.step(); traj.push(r.proj()); spread.push(maxPair(r.stateJS())); }
+        const zstar = r.proj()[0]; r.dispose();
+        // geometric contraction rate: median of consecutive ratios while the spread is meaningful
+        const ratios = []; for (let k = 1; k < spread.length; k++) if (spread[k - 1] > 1e-4) ratios.push(spread[k] / spread[k - 1]);
+        ratios.sort((a, b) => a - b); const rho = ratios.length ? ratios[ratios.length >> 1] : 0;
+        return { y: T.y[ix], traj, spread, rho, zstar };
+      });
+      // per-input bounds: each input's trajectories fill the panel instead of
+      // huddling in one corner of a box shared across all three inputs
+      runs.forEach((r) => {
+        let xa = 1e9, xb = -1e9, ya = 1e9, yb = -1e9;
+        r.traj.forEach((P) => P.forEach((p) => { xa = Math.min(xa, p[0]); xb = Math.max(xb, p[0]); ya = Math.min(ya, p[1]); yb = Math.max(yb, p[1]); }));
+        const mx = (xb - xa) * 0.1 || 0.1, my = (yb - ya) * 0.1 || 0.1;
+        r.bnd = [xa - mx, xb + mx, ya - my, yb + my];
+      });
+      api.state.M = { runs };
+    });
+  },
+
+  onControl(name, v, api) { if (name === 'pick') api.setControl('k', MAXK); },
+
+  draw(api) {
+    const { ctx, colors, size, state: st } = api;
+    const W = size.W, H = size.H;
+    if (W === 0) return;
+    ctx.clearRect(0, 0, W, H);
+    if (!st.ready || !st.M) { loadingText(api, 'iterating from scattered starts…'); return; }
+
+    const run = st.M.runs[+api.get('pick')], k = Math.min(api.get('k'), MAXK);
+    const pad = 16, gap = 26;
+    const leftW = Math.round((W - pad * 2 - gap) * 0.58);
+    const L = { x: pad, y: pad + 24, w: leftW, h: H - pad * 2 - 24 };
+    const R = { x: pad + leftW + gap, y: pad + 24, w: W - pad * 2 - gap - leftW, h: H - pad * 2 - 24 };
+    const [xa, xb, ya, yb] = run.bnd;
+    const sx = (x) => L.x + ((x - xa) / (xb - xa)) * L.w;
+    const sy = (y) => L.y + L.h - ((y - ya) / (yb - ya)) * L.h;
+
+    // left: four collapsing trajectories
+    ctx.fillStyle = colors.fg; ctx.font = '12px ui-sans-serif, system-ui'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('four starts, one destination', L.x, L.y - 8);
+    ctx.strokeStyle = colors.border; ctx.lineWidth = 1; ctx.strokeRect(L.x + 0.5, L.y + 0.5, L.w - 1, L.h - 1);
+    // z*
+    ctx.strokeStyle = run.y ? CLS_B : CLS_A; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.arc(sx(run.zstar[0]), sy(run.zstar[1]), 9, 0, 6.283); ctx.stroke();
+    ctx.fillStyle = colors.muted; ctx.font = '10px ui-sans-serif, system-ui'; ctx.textAlign = 'center'; ctx.fillText('final shown', sx(run.zstar[0]), sy(run.zstar[1]) - 13);
+    for (let s = 0; s < NSTART; s++) {
+      ctx.strokeStyle = START_COL[s]; ctx.globalAlpha = 0.75; ctx.lineWidth = 1.6; ctx.beginPath();
+      for (let i = 0; i <= k; i++) { const p = run.traj[i][s]; i ? ctx.lineTo(sx(p[0]), sy(p[1])) : ctx.moveTo(sx(p[0]), sy(p[1])); }
+      ctx.stroke(); ctx.globalAlpha = 1;
+      const p0 = run.traj[0][s]; ctx.fillStyle = START_COL[s]; ctx.globalAlpha = 0.5;
+      ctx.beginPath(); ctx.arc(sx(p0[0]), sy(p0[1]), 3, 0, 6.283); ctx.fill(); ctx.globalAlpha = 1;
+      const pc = run.traj[k][s]; ctx.fillStyle = START_COL[s];
+      ctx.beginPath(); ctx.arc(sx(pc[0]), sy(pc[1]), 4.5, 0, 6.283); ctx.fill();
+      ctx.strokeStyle = colors.bg; ctx.lineWidth = 1.2; ctx.stroke();
+    }
+
+    // right: spread collapse (log)
+    ctx.fillStyle = colors.fg; ctx.font = '12px ui-sans-serif, system-ui'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('spread between the starts', R.x, R.y - 8);
+    ctx.strokeStyle = colors.border; ctx.lineWidth = 1; ctx.strokeRect(R.x + 0.5, R.y + 0.5, R.w - 1, R.h - 1);
+    const lo = -5, hi = 1;
+    const lg = (v) => Math.log10(Math.max(1e-6, v));
+    const rx = (i) => R.x + (i / MAXK) * R.w;
+    const ry = (v) => R.y + R.h - ((lg(v) - lo) / (hi - lo)) * R.h;
+    ctx.font = '9px ui-monospace, monospace';
+    for (let e = lo; e <= hi; e++) { const yy = R.y + R.h - ((e - lo) / (hi - lo)) * R.h;
+      ctx.strokeStyle = colors.border; ctx.globalAlpha = 0.35; ctx.beginPath(); ctx.moveTo(R.x, yy); ctx.lineTo(R.x + R.w, yy); ctx.stroke(); ctx.globalAlpha = 1;
+      ctx.fillStyle = colors.faint; ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillText('1e' + e, R.x - 3, yy); }
+    ctx.strokeStyle = colors.faint; ctx.globalAlpha = 0.5; ctx.lineWidth = 1.2; ctx.beginPath();
+    for (let i = 0; i <= MAXK; i++) { const x = rx(i), y = ry(run.spread[i]); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } ctx.stroke(); ctx.globalAlpha = 1;
+    ctx.strokeStyle = colors.accent; ctx.lineWidth = 2.2; ctx.beginPath();
+    for (let i = 0; i <= k; i++) { const x = rx(i), y = ry(run.spread[i]); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } ctx.stroke();
+    ctx.fillStyle = colors.accent; ctx.beginPath(); ctx.arc(rx(k), ry(run.spread[k]), 3.5, 0, 6.283); ctx.fill();
+
+    api.readout('rd', `median observed spread ratio ${run.rho.toFixed(2)} · current spread ${run.spread[k].toExponential(2)} · four starts, not a global certificate`);
+  },
+});
+</script>

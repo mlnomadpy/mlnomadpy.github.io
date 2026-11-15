@@ -1,0 +1,167 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 360 } = Astro.props;
+---
+<figure data-min-width="480" class="viz yatextrap" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<style>
+  .yatextrap :global(.vk-scroll-note) { display: none; }
+  .yatextrap :global(.vk-plot canvas) { min-width: 0; }
+  .yatextrap :global(.vk-readout) { white-space: normal; line-height: 1.6; }
+</style>
+<script>
+// Untrained response laws, not confidence or OOD scores. The same W appears
+// in both alignment and distance: (Wx+b)^2 / ((x-W)^2+eps). The far-field limit
+// is W^2, so boundedness does not imply decay to zero.
+import { defineViz } from './engine/vizkit.js';
+import { np, withJax, drawJaxLoading } from './engine/jax.js';
+
+const XMIN = -6, XMAX = 6, M = 260;
+const W = 1.0, BIAS = 0.6;                  // center W and shared kernel bias b
+const BAND = 2.0;                          // shaded reference interval |x| ≤ BAND
+const PADL = 40, PADR = 14, PADT = 16, PADB = 40;
+
+defineViz('yatextrap', {
+  title: 'The response can remain nonzero far from its center',
+  height: 360,
+  controls: [
+    { type: 'range', name: 'eps', label: 'ε bandwidth', min: -1.2, max: 0.8, step: 0.05, value: -0.2, reset: false, fmt: (v) => Math.pow(10, v).toFixed(2) },
+    { type: 'readout', name: 'rd' },
+  ],
+
+  setup(api) {
+    api.state = { qx: 3.2 };
+    if (!api.canvas.dataset.exDrag) {
+      api.canvas.dataset.exDrag = '1';
+      const onP = (e) => {
+        const r = api.canvas.getBoundingClientRect();
+        const plotW = api.size.W - PADL - PADR;
+        const t = (e.clientX - r.left - PADL) / plotW;
+        api.state.qx = Math.max(XMIN, Math.min(XMAX, XMIN + t * (XMAX - XMIN)));
+        api.render();
+      };
+      let drag = false;
+      api.canvas.addEventListener('pointerdown', (e) => { drag = true; api.canvas.setPointerCapture(e.pointerId); onP(e); });
+      api.canvas.addEventListener('pointermove', (e) => { if (drag) onP(e); });
+      api.canvas.addEventListener('pointerup', (e) => { drag = false; try { api.canvas.releasePointerCapture(e.pointerId); } catch {} });
+    }
+    withJax(api);
+  },
+
+  draw(api) {
+    const { ctx, colors, size, state } = api;
+    const Wd = size.W, Hd = size.H;
+    if (Wd === 0) return;
+    if (!state.jaxReady) return drawJaxLoading(api);
+
+    const eps = Math.pow(10, api.get('eps'));
+    // compute curves on jax-js
+    const xg = new Float64Array(M);
+    for (let i = 0; i < M; i++) xg[i] = XMIN + (i / (M - 1)) * (XMAX - XMIN);
+    const X = np.array(xg);
+    const lin = X.ref.mul(W).add(BIAS);
+    const linJs = lin.ref.js();
+    const cen = X.add(-W);                         // x − W  (same center as the numerator)
+    const dist2 = cen.ref.mul(cen);
+    const num = lin.ref.mul(lin);                 // (w·x+b)²   (lin consumed here)
+    const yat = num.div(dist2.add(eps)).js();
+    const relu = Float64Array.from(linJs, (v) => Math.max(v, 0));
+
+    const plotW = Wd - PADL - PADR, plotH = Hd - PADT - PADB;
+    const yMax = 5.0;                             // fixed cap so ReLU visibly exits the top
+    const sx = (x) => PADL + ((x - XMIN) / (XMAX - XMIN)) * plotW;
+    const sy = (y) => PADT + (1 - Math.min(y, yMax) / yMax) * plotH;
+
+    // reference interval
+    ctx.fillStyle = colors.faint; ctx.globalAlpha = 0.12;
+    ctx.fillRect(sx(-BAND), PADT, sx(BAND) - sx(-BAND), plotH);
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = colors.faint; ctx.font = '10px ui-monospace, monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText('reference interval', sx(0), PADT + 2);
+
+    // axes
+    ctx.strokeStyle = colors.border; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(PADL, sy(0)); ctx.lineTo(Wd - PADR, sy(0)); ctx.stroke();
+    ctx.fillStyle = colors.faint; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    for (let gx = XMIN; gx <= XMAX; gx += 2) ctx.fillText(String(gx), sx(gx), Hd - PADB + 8);
+    ctx.save(); ctx.translate(12, PADT + plotH / 2); ctx.rotate(-Math.PI / 2);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('response', 0, 0); ctx.restore();
+
+    const plot = (arr, color, lw) => {
+      ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.beginPath();
+      let started = false;
+      for (let i = 0; i < M; i++) {
+        const px = sx(xg[i]), py = sy(arr[i]);
+        if (arr[i] > yMax * 1.02) { started = false; continue; }   // break where it exits top
+        started ? ctx.lineTo(px, py) : ctx.moveTo(px, py); started = true;
+      }
+      ctx.stroke();
+    };
+    ctx.save(); ctx.strokeStyle = colors.muted; ctx.setLineDash([5, 4]); ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(PADL, sy(W * W)); ctx.lineTo(Wd - PADR, sy(W * W)); ctx.stroke(); ctx.restore();
+    ctx.fillStyle = colors.muted; ctx.font = '10px ui-monospace, monospace'; ctx.textAlign = 'right'; ctx.textBaseline = 'bottom';
+    ctx.fillText('far-tail limit W² = 1', Wd - PADR - 4, sy(W * W) - 4);
+    plot(relu, colors.blue, 2);
+    plot(yat, colors.accent, 2);
+
+    // ReLU "→ ∞" marker where it leaves the top. Anchor it to the right of the
+    // exit point but clamp so the text stays inside the plot box.
+    let exitX = null;
+    for (let i = 0; i < M; i++) if (relu[i] > yMax) { exitX = xg[i]; break; }
+    if (exitX !== null) {
+      ctx.font = '11px ui-sans-serif, system-ui';
+      const label = '→ ∞';
+      const lw = ctx.measureText(label).width;
+      let lx = sx(exitX) + 6;
+      lx = Math.min(lx, Wd - PADR - lw - 4);   // keep inside the right edge
+      ctx.fillStyle = colors.blue; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+      ctx.fillText(label, lx, PADT + 14);
+    }
+
+    // legend on a semi-transparent rounded chip, placed top-left where ReLU sits
+    // on the axis (w·x+b ≤ 0 for x < −0.6) so no curve crosses the text.
+    {
+      ctx.font = '11px ui-sans-serif, system-ui'; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+      const lines = ['ReLU  σ(Wx+b)', 'Yat  k(W,x)'];
+      let tw = 0; for (const s of lines) tw = Math.max(tw, ctx.measureText(s).width);
+      const cx = PADL + 8, cy = PADT + 6;
+      const chipW = 22 + tw + 12, chipH = 16 * lines.length + 8;
+      const rr = 6;
+      ctx.fillStyle = colors.bg; ctx.globalAlpha = 0.82;
+      ctx.beginPath();
+      ctx.moveTo(cx + rr, cy);
+      ctx.arcTo(cx + chipW, cy, cx + chipW, cy + chipH, rr);
+      ctx.arcTo(cx + chipW, cy + chipH, cx, cy + chipH, rr);
+      ctx.arcTo(cx, cy + chipH, cx, cy, rr);
+      ctx.arcTo(cx, cy, cx + chipW, cy, rr);
+      ctx.closePath();
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = colors.border; ctx.lineWidth = 1; ctx.stroke();
+      const tx = cx + 8, swW = 14;
+      const row0 = cy + 12, row1 = cy + 28;
+      ctx.fillStyle = colors.blue; ctx.fillRect(tx, row0 - 1, swW, 3);
+      ctx.fillStyle = colors.fg; ctx.fillText(lines[0], tx + swW + 6, row0);
+      ctx.fillStyle = colors.accent; ctx.fillRect(tx, row1 - 1, swW, 3);
+      ctx.fillStyle = colors.fg; ctx.fillText(lines[1], tx + swW + 6, row1);
+    }
+
+    // query
+    const qx = state.qx;
+    const rq = Math.max(W * qx + BIAS, 0), yq = (W * qx + BIAS) ** 2 / ((qx - W) ** 2 + eps);
+    ctx.strokeStyle = colors.fg; ctx.lineWidth = 1; ctx.setLineDash([3, 4]);
+    ctx.beginPath(); ctx.moveTo(sx(qx), PADT); ctx.lineTo(sx(qx), PADT + plotH); ctx.stroke(); ctx.setLineDash([]);
+    if (yq <= yMax) { ctx.fillStyle = colors.accent; ctx.beginPath(); ctx.arc(sx(qx), sy(yq), 4, 0, Math.PI * 2); ctx.fill(); }
+    if (rq <= yMax) { ctx.fillStyle = colors.blue; ctx.beginPath(); ctx.arc(sx(qx), sy(rq), 4, 0, Math.PI * 2); ctx.fill(); }
+
+    api.readout('rd', `x ${qx.toFixed(2)} · ReLU ${rq.toFixed(2)} · Yat ${yq.toFixed(2)} · Yat far-tail limit ${W * W}`);
+  },
+});
+</script>

@@ -1,0 +1,85 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 520 } = Astro.props;
+---
+<figure data-min-width="800" class="viz pixelexemplar" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+// The prototype moved spaces. On raw pixels a class prototype is a k-means
+// average, a blurry mean garment. On the backbone's features the prototype is a
+// point whose nearest real image is a specific, sharp example. Same idea, this
+// looks like that, but feature space groups a class tightly enough that the
+// stand-in is one crisp picture instead of a smear. Hover a row to focus a class.
+import { defineViz } from './engine/vizkit.js';
+import { pixelImg, exemplarImg, CLASS_COL, CLASSES } from './trainfeat.js';
+import { gate, loadingText } from './engine/draw.js';
+const PE = 8;
+
+defineViz('pixelexemplar', {
+  title: 'On pixels a prototype is a blur; on features it is a real example',
+  height: 520,
+  controls: [{ type: 'readout', name: 'rd' }],
+
+  setup(api) {
+    api.state.hover = -1;
+    gate(api, () => Promise.all([pixelImg(), exemplarImg()]), (api, [pix, feat]) => {
+      Object.assign(api.state, { pix, feat }); bind(api);
+    });
+  },
+
+  draw(api) {
+    const { ctx, colors, size, state: st } = api;
+    const W = size.W, H = size.H;
+    if (W === 0 || !st) return;
+    ctx.clearRect(0, 0, W, H);
+    if (!st.ready) { loadingText(api); return; }
+
+    const pad = 12, topH = 30, nameW = 56, gap = 24;
+    const colW = (W - pad * 2 - nameW - gap) / 2;
+    const cell = Math.min((colW - (PE - 1) * 2) / PE, (H - pad - topH - 8) / 10 - 3);
+    const gx0 = pad + nameW, gx1 = gx0 + colW + gap;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = colors.muted; ctx.font = '11px ui-sans-serif, system-ui';
+    ctx.fillText('PIXEL PROTOTYPES (k-means averages)', gx0 + colW / 2, pad + 12);
+    ctx.fillText('FEATURE EXEMPLARS (nearest real image)', gx1 + colW / 2, pad + 12);
+
+    const y0 = pad + topH, rowH = (H - y0 - pad) / 10;
+    st._rows = [];
+    for (let c = 0; c < 10; c++) {
+      const ry = y0 + c * rowH, cy = ry + rowH / 2, focus = st.hover === c || st.hover < 0;
+      ctx.globalAlpha = focus ? 1 : 0.3;
+      ctx.fillStyle = CLASS_COL[c]; ctx.font = '10px ui-sans-serif, system-ui'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+      ctx.fillText(CLASSES[c], pad + nameW - 4, cy);
+      ctx.imageSmoothingEnabled = true;
+      for (let j = 0; j < PE; j++) {
+        const sxp = gx0 + j * (cell + 2), sxe = gx1 + j * (cell + 2), ty = cy - cell / 2;
+        ctx.drawImage(st.pix, j * 28, c * 28, 28, 28, sxp, ty, cell, cell);
+        ctx.drawImage(st.feat, j * 28, c * 28, 28, 28, sxe, ty, cell, cell);
+        ctx.lineWidth = 1; ctx.strokeStyle = CLASS_COL[c] + '55';
+        ctx.strokeRect(sxp - 0.5, ty - 0.5, cell + 1, cell + 1); ctx.strokeRect(sxe - 0.5, ty - 0.5, cell + 1, cell + 1);
+      }
+      st._rows.push({ y: ry, h: rowH, c });
+      ctx.globalAlpha = 1;
+    }
+    api.readout('rd', st.hover >= 0 ? `${CLASSES[st.hover]}: blurry pixel average vs a sharp real example, same prototype idea in two spaces`
+      : 'left: a prototype on pixels is a blurry average · right: on learned features it is one crisp real example');
+  },
+});
+
+function bind(api) {
+  if (api.canvas.dataset.peBound) return; api.canvas.dataset.peBound = '1';
+  api.canvas.addEventListener('pointermove', (e) => {
+    const st = api.state; if (!st || !st._rows) return;
+    const rc = api.canvas.getBoundingClientRect(), py = (e.clientY - rc.top) * api.size.H / rc.height;
+    let h = -1; for (const r of st._rows) if (py >= r.y && py <= r.y + r.h) h = r.c;
+    if (h !== st.hover) { st.hover = h; api.render(); }
+  });
+  api.canvas.addEventListener('pointerleave', () => { if (api.state) { api.state.hover = -1; api.render(); } });
+}
+</script>

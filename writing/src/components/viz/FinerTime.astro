@@ -1,0 +1,137 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 470 } = Astro.props;
+---
+<figure data-min-width="720" class="viz finertime" data-caption={caption} data-height={height} data-height-mobile="560" tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+// Same seed-0 trained weights and fixed total time for both models.
+// Accuracy uses 240 archived test examples, not the three-seed table.
+import { defineViz } from './engine/vizkit.js';
+import { T, dot, fmt, axes, gate, loadingText, legend } from './engine/draw.js';
+import { load, netForward, accuracy } from './hamnet.js';
+
+const LS = [4, 8, 12, 16, 24, 32, 48, 64, 96, 128];
+const GRID = 44;
+
+defineViz('finertime', {
+  title: 'Train at one depth, run at every depth',
+  height: 470,
+  stepsPerFrame: 1,
+  autoplay: false,
+  controls: [
+    { type: 'play' }, { type: 'reset' }, { type: 'speed' },
+    { type: 'select', name: 'ds', label: 'dataset', value: 'spirals',
+      options: [{ value: 'moons', label: 'moons' }, { value: 'rings', label: 'rings' }, { value: 'spirals', label: 'spirals' }] },
+    { type: 'readout', name: 'rd' },
+  ],
+
+  setup(api) {
+    const st = api.state;
+    st.ds = api.get('ds');
+    st.meas = []; st.li = 0; st.bounds = null;
+    gate(api, () => load('models'), (a, d) => {
+      a.state.models = d;
+      a.state.range = 2.2;
+    });
+  },
+
+  step(api) {
+    const st = api.state;
+    if (!st.ready || !st.models || st.li >= LS.length) return;
+    const L = LS[st.li];
+    const dp = st.models[`${st.ds}_plain`], dh = st.models[`${st.ds}_ham`];
+    const X = dp.X.slice(0, 240), y = dp.y.slice(0, 240);
+    const accP = accuracy(dp.model, 'plain', X, y, L);
+    const accH = accuracy(dh.model, 'ham', X, y, L);
+    // boundary maps at this depth (both nets, one pass)
+    const R = st.range, bp = new Float32Array(GRID * GRID), bh = new Float32Array(GRID * GRID);
+    for (let r = 0; r < GRID; r++) for (let c = 0; c < GRID; c++) {
+      const x = [-R + (2 * R * c) / (GRID - 1), R - (2 * R * r) / (GRID - 1)];
+      const lp = netForward(dp.model, 'plain', x, L);
+      const lh = netForward(dh.model, 'ham', x, L);
+      bp[r * GRID + c] = 1 / (1 + Math.exp(lp[0] - lp[1]));
+      bh[r * GRID + c] = 1 / (1 + Math.exp(lh[0] - lh[1]));
+    }
+    st.meas.push({ L, accP, accH });
+    st.bounds = { L, bp, bh };
+    st.li++;
+  },
+
+  draw(api) {
+    const { ctx, colors, size: { W, H } } = api, st = api.state;
+    if (!st.ready || !st.models) { loadingText(api); return; }
+    const pad = 14, half = (W - 3 * pad) / 2, mapH = H - 240;
+    const dp = st.models[`${st.ds}_plain`];
+
+    // ---- boundary maps at the latest computed depth
+    const mkOff = (vals) => {
+      const off = document.createElement('canvas'); off.width = GRID; off.height = GRID;
+      const octx = off.getContext('2d'), img = octx.createImageData(GRID, GRID);
+      for (let i = 0; i < vals.length; i++) {
+        const t = vals[i];
+        img.data[i * 4] = 58 + (154 - 58) * t;      // green -> purple ramp
+        img.data[i * 4 + 1] = 143 - (143 - 79) * t;
+        img.data[i * 4 + 2] = 94 + (156 - 94) * t;
+        img.data[i * 4 + 3] = 90;
+      }
+      octx.putImageData(img, 0, 0);
+      return off;
+    };
+    const boxes = [
+      { x: pad, y: 34, w: half, h: mapH, name: 'plain residual net' },
+      { x: 2 * pad + half, y: 34, w: half, h: mapH, name: 'leapfrog net' },
+    ];
+    const R = st.range, cls = ['#3a8f5e', '#9a4f9c'];
+    boxes.forEach((b, bi) => {
+      if (st.bounds) {
+        const off = mkOff(bi === 0 ? st.bounds.bp : st.bounds.bh);
+        ctx.imageSmoothingEnabled = true;
+        ctx.drawImage(off, b.x, b.y, b.w, b.h);
+      }
+      axes(ctx, b, { xMin: -R, xMax: R, yMin: -R, yMax: R }, colors);
+      T(ctx, colors, 'label');
+      ctx.fillText(`${b.name}${st.bounds ? `, depth ${st.bounds.L}` : ''}`, b.x, b.y - 8);
+      for (let i = 0; i < 200; i++) {
+        const x = b.x + ((dp.X[i][0] + R) / (2 * R)) * b.w;
+        const y = b.y + (1 - (dp.X[i][1] + R) / (2 * R)) * b.h;
+        dot(ctx, x, y, 1.8, cls[dp.y[i]]);
+      }
+    });
+
+    // ---- accuracy vs depth, accumulating live
+    const abox = { x: pad, y: 34 + mapH + 32, w: W - 2 * pad, h: H - mapH - 140 };
+    axes(ctx, abox, { xMin: 0, xMax: LS.length - 1, yMin: 0.45, yMax: 1.0, grid: true,
+                      fmtX: (v) => String(LS[Math.round(v)] ?? ''),
+                      xTicks: LS.map((_, i) => i), yTicks: [0.5, 0.75, 1.0] }, colors);
+    T(ctx, colors, 'label'); ctx.fillText('held-out accuracy vs run depth (train depth 16 marked)', abox.x, abox.y - 8);
+    const xi = LS.indexOf(16);
+    const xTrain = abox.x + (xi / (LS.length - 1)) * abox.w;
+    ctx.setLineDash([4, 4]); ctx.strokeStyle = colors.border;
+    ctx.beginPath(); ctx.moveTo(xTrain, abox.y); ctx.lineTo(xTrain, abox.y + abox.h); ctx.stroke(); ctx.setLineDash([]);
+    [['accP', '#c2553a'], ['accH', '#4a7fb3']].forEach(([key, col]) => {
+      ctx.strokeStyle = col; ctx.lineWidth = 1.8; ctx.beginPath();
+      st.meas.forEach((mrow, i) => {
+        const x = abox.x + (i / (LS.length - 1)) * abox.w;
+        const y = abox.y + (1 - (mrow[key] - 0.45) / 0.55) * abox.h;
+        i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+        dot(ctx, x, y, 3, col);
+      });
+      ctx.stroke();
+    });
+    legend(ctx, pad, H - 44, [
+      { color: '#c2553a', label: 'plain' }, { color: '#4a7fb3', label: 'leapfrog' },
+    ], colors);
+    const last = st.meas[st.meas.length - 1];
+    api.readout('rd', last
+      ? `depth ${last.L}: plain ${fmt(last.accP * 100, 1)}%  leapfrog ${fmt(last.accH * 100, 1)}%`
+      : 'press play: each tick re-runs both nets at the next depth, live');
+  },
+});
+</script>

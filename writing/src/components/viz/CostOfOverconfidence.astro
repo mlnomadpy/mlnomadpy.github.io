@@ -1,0 +1,114 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 360 } = Astro.props;
+---
+<figure data-min-width="520" class="viz confcost" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+// What a confidence number costs when you act on it. Pick a threshold: the
+// net only answers when its confidence clears it, and abstains otherwise.
+// The curves trace, for every possible threshold, the fraction of inputs each
+// net keeps answering (coverage) against how often those kept answers are
+// wrong (selective error), built live from the exported test logits. The
+// readout also counts how many MNIST digits, which have no right answer here,
+// sneak past the same gate. Data: scripts/yat_calibration.py, seed 0.
+import { defineViz } from './engine/vizkit.js';
+import { gate, loadingText, frame, T as Ty, fmt } from './engine/draw.js';
+import { loadCalib, maxConf } from './calib.js';
+
+defineViz('confcost', {
+  title: 'Answer only when sure: coverage vs error',
+  height: 360,
+  controls: [
+    { type: 'range', name: 'tau', label: 'act only above', min: 0.5, max: 0.995, step: 0.005, value: 0.9, fmt: (v) => (v * 100).toFixed(1) + '%' },
+    { type: 'readout', name: 'rd' },
+  ],
+
+  setup(api) {
+    gate(api, loadCalib, (api, d) => {
+      const st = api.state; st.nets = {};
+      for (const name of ['yat', 'relu']) {
+        const conf = maxConf(d[name].test, 1);
+        const ood = maxConf(d[name].ood, 1);
+        const idx = Array.from(conf.keys()).sort((a, b) => conf[b] - conf[a]);
+        // risk-coverage curve: keep the k most-confident answers
+        const curve = []; let wrong = 0;
+        for (let k = 0; k < idx.length; k++) {
+          wrong += 1 - d[name].correct[idx[k]];
+          if ((k + 1) % 10 === 0) curve.push([(k + 1) / idx.length, wrong / (k + 1), conf[idx[k]]]);
+        }
+        st.nets[name] = { conf, ood, correct: d[name].correct, curve };
+      }
+    });
+  },
+
+  draw(api) {
+    const { ctx, colors, size, state: st } = api;
+    const W = size.W, H = size.H;
+    if (W === 0 || !st) return;
+    if (!st.ready) { loadingText(api); return; }
+    const tau = api.get('tau');
+
+    const padL = 46, padR = 14, top = 26, bottom = 42;
+    const pw = W - padL - padR, ph = H - top - bottom;
+    const yMax = 0.16;
+    const sx = (v) => padL + v * pw;
+    const sy = (v) => top + ph - Math.min(1, v / yMax) * ph;
+
+    frame(ctx, colors, padL, top, pw, ph);
+    Ty(ctx, colors, 'small', { align: 'right' });
+    for (const t of [0, 0.05, 0.1, 0.15]) {
+      ctx.fillStyle = colors.faint;
+      ctx.fillText((t * 100).toFixed(0) + '%', padL - 5, sy(t) + 3);
+      ctx.strokeStyle = colors.border; ctx.globalAlpha = 0.5;
+      ctx.beginPath(); ctx.moveTo(padL, sy(t)); ctx.lineTo(padL + pw, sy(t)); ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+    Ty(ctx, colors, 'small', { align: 'center' });
+    for (const t of [0, 0.25, 0.5, 0.75, 1]) ctx.fillText((t * 100).toFixed(0) + '%', sx(t), top + ph + 13);
+    ctx.fillText('coverage (fraction of inputs it still answers)', padL + pw / 2, top + ph + 27);
+    ctx.save(); ctx.translate(padL - 32, top + ph / 2); ctx.rotate(-Math.PI / 2);
+    Ty(ctx, colors, 'small', { align: 'center' });
+    ctx.fillText('error among kept answers', 0, 0); ctx.restore();
+
+    const nets = [
+      { key: 'yat', label: 'Yat', col: colors.accent },
+      { key: 'relu', label: 'ReLU', col: colors.blue },
+    ];
+    const stats = {};
+    for (const net of nets) {
+      const n = st.nets[net.key];
+      ctx.strokeStyle = net.col; ctx.lineWidth = 2.2; ctx.lineJoin = 'round';
+      ctx.beginPath();
+      n.curve.forEach(([c, e], i) => { i === 0 ? ctx.moveTo(sx(c), sy(e)) : ctx.lineTo(sx(c), sy(e)); });
+      ctx.stroke();
+      // the current gate on this curve
+      let kept = 0, wrong = 0, leak = 0;
+      for (let i = 0; i < n.conf.length; i++) if (n.conf[i] >= tau) { kept++; wrong += 1 - n.correct[i]; }
+      for (const v of n.ood) if (v >= tau) leak++;
+      const cov = kept / n.conf.length, err = kept ? wrong / kept : 0;
+      stats[net.key] = { cov, err, leak: leak / n.ood.length };
+      ctx.fillStyle = net.col; ctx.beginPath(); ctx.arc(sx(cov), sy(err), 5.5, 0, 6.283); ctx.fill();
+      ctx.strokeStyle = colors.bg; ctx.lineWidth = 1.5; ctx.stroke();
+    }
+
+    // legend
+    let ly = top + 16;
+    for (const net of nets) {
+      const s = stats[net.key];
+      ctx.fillStyle = net.col; ctx.fillRect(padL + 12, ly - 8, 18, 3.5);
+      Ty(ctx, colors, 'label');
+      ctx.fillText(`${net.label}: coverage ${(s.cov * 100).toFixed(0)}% · error ${(s.err * 100).toFixed(1)}% · MNIST kept ${(s.leak * 100).toFixed(1)}%`, padL + 36, ly);
+      ly += 17;
+    }
+
+    api.readout('rd', `gate at ${(tau * 100).toFixed(1)}% confidence`);
+  },
+});
+</script>

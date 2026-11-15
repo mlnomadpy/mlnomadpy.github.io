@@ -1,0 +1,122 @@
+---
+interface Props { caption?: string; height?: number; }
+const { caption, height = 500 } = Astro.props;
+---
+<figure data-min-width="880" class="viz taxonomylens" data-caption={caption} data-height={height} data-height-mobile="640" tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+<script>
+// Output loading vectors against the declared taxonomy and a seed-0 random-direction reference.
+import { defineViz } from './engine/vizkit.js';
+import { T, fmt, gate, loadingText } from './engine/draw.js';
+import { load } from './fifteen.js';
+
+defineViz('taxonomylens', {
+  title: 'Output axes against an external taxonomy',
+  height: 500,
+  controls: [
+    { type: 'range', name: 'j', label: 'output-axis rank', min: 1, max: 24, step: 1, value: 1, int: true, play: { period: 14000, loop: false } },
+    { type: 'readout', name: 'rd' },
+  ],
+  setup(api) {
+    const st = api.state;
+    st.hover = null;
+    gate(api, () => load('taxonomy'), (a, d) => {
+      a.state.d = d;
+      // group the 100 fine classes by superclass, in superclass order
+      const groups = Array.from({ length: 20 }, () => []);
+      d.fine2coarse.forEach((c, f) => groups[c].push(f));
+      a.state.groups = groups;
+    });
+    api.canvas.addEventListener('pointermove', (e) => {
+      if (!st.ready || !st.cells) return;
+      const r = api.canvas.getBoundingClientRect();
+      const p = { x: e.clientX - r.left, y: e.clientY - r.top };
+      let hit = null;
+      for (const c of st.cells) {
+        if (p.x >= c.x && p.x <= c.x + c.s && p.y >= c.y && p.y <= c.y + c.s) { hit = c; break; }
+      }
+      st.hover = hit;
+      api.render();
+    });
+  },
+  draw(api) {
+    const { ctx, colors, size: { W, H } } = api, st = api.state;
+    if (!st.ready) { loadingText(api, 'loading the taxonomy…'); return; }
+    const d = st.d, j = Math.round(api.get('j')) - 1;
+    const load_ = d.loadings[j];
+    const pad = 14, top = 34;
+    let mx = 1e-9;
+    for (const v of load_) mx = Math.max(mx, Math.abs(v));
+
+    // 20 superclass boxes in a 5 x 4 grid, 5 class chips each
+    const cols = 5, rows = 4;
+    const gw = (W * 0.66 - pad) / cols, gh = (H - top - 64) / rows;
+    st.cells = [];
+    st.groups.forEach((g, ci) => {
+      const bx = pad + (ci % cols) * gw, by = top + Math.floor(ci / cols) * gh;
+      ctx.strokeStyle = colors.border;
+      ctx.strokeRect(bx + 0.5, by + 0.5, gw - 8, gh - 10);
+      T(ctx, colors, 'small');
+      ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+      ctx.fillStyle = colors.faint;
+      ctx.fillText(d.coarse_names[ci].slice(0, 20), bx + 4, by + 12);
+      const s = Math.min((gw - 20) / 5 - 3, gh - 34);
+      g.forEach((f, i) => {
+        const x = bx + 6 + i * (s + 3), y = by + 18;
+        const v = load_[f] / mx;
+        const a = Math.min(1, Math.abs(v));
+        ctx.fillStyle = v >= 0 ? `rgba(74,127,179,${0.12 + 0.85 * a})`
+                              : `rgba(194,85,58,${0.12 + 0.85 * a})`;
+        ctx.fillRect(x, y, s, s);
+        st.cells.push({ x, y, s, f });
+      });
+    });
+
+    // the alignment score by rank, with the null band
+    const rx = pad + cols * gw + 8, rw = W - rx - pad;
+    const rb = { x: rx, y: top, w: rw, h: H - top - 130 };
+    const etas = d.eta.map((e) => e[j] ?? 0);
+    const etaMean = etas.reduce((a, b) => a + b, 0) / etas.length;
+    const allEta = d.eta[0].map((_, r) => d.eta.reduce((a, e) => a + (e[r] ?? 0), 0) / d.eta.length);
+    const ly = (v) => rb.y + rb.h - Math.min(1, v) * rb.h;
+    ctx.strokeStyle = colors.border;
+    ctx.strokeRect(rb.x + 0.5, rb.y + 0.5, rb.w - 1, rb.h - 1);
+    // null band
+    ctx.fillStyle = colors.muted; ctx.globalAlpha = 0.25;
+    ctx.fillRect(rb.x, ly(d.null.mean + 2 * d.null.sd), rb.w,
+                 ly(Math.max(0, d.null.mean - 2 * d.null.sd)) - ly(d.null.mean + 2 * d.null.sd));
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = '#4a7fb3'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    allEta.slice(0, 60).forEach((v, r) => {
+      const x = rb.x + (r / 59) * rb.w, y = ly(v);
+      r === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+    ctx.stroke(); ctx.lineWidth = 1;
+    const jx = rb.x + (Math.min(j, 59) / 59) * rb.w;
+    ctx.strokeStyle = colors.faint; ctx.setLineDash([2, 3]);
+    ctx.beginPath(); ctx.moveTo(jx, rb.y); ctx.lineTo(jx, rb.y + rb.h); ctx.stroke();
+    ctx.setLineDash([]);
+    T(ctx, colors, 'label');
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('superclass alignment by rank', rx, top - 8);
+    T(ctx, colors, 'small');
+    ctx.fillText('grey band: what a random', rx, rb.y + rb.h + 16);
+    ctx.fillText('direction scores (±2 sd)', rx, rb.y + rb.h + 30);
+    ctx.fillText(`this axis: ${fmt(etaMean, 2)}`, rx, rb.y + rb.h + 50);
+    ctx.fillText(`stability ${fmt(d.stability[j] ?? 0, 2)}`, rx, rb.y + rb.h + 64);
+
+    T(ctx, colors, 'small');
+    ctx.fillText('tiles: seed-0 output loadings; curve: three-seed mean taxonomy alignment', pad, H - 28);
+    ctx.fillText('null band: seed-0 random directions, ±2 SD; not a confidence interval', pad, H - 13);
+    if (st.hover) {
+      const f = st.hover.f;
+      api.readout('rd', `${d.names[f]} (${d.coarse_names[d.fine2coarse[f]]}): loading ${fmt(load_[f], 3)}`);
+    } else {
+      api.readout('rd', `output axis ${j + 1}: superclass alignment ${fmt(etaMean, 2)} (null ${fmt(d.null.mean, 2)} ± ${fmt(d.null.sd, 2)})`);
+    }
+  },
+});
+</script>

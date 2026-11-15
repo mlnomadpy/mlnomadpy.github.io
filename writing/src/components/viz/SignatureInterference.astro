@@ -1,0 +1,78 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 360 } = Astro.props;
+---
+<figure data-min-width="720" class="viz siginterf" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+import { defineViz } from './engine/vizkit.js';
+import { panel, unitCircle, text, PALETTE } from './engine/draw.js';
+
+// Welch's 1974 problem, in 2-D. N users share a channel; each gets a unit
+// "signature" vector. Interference between two users grows with the square of
+// their correlation, so total interference is the frame potential Σ⟨sᵢ,sⱼ⟩². Up
+// to N = d (=2) you can make signatures orthogonal, zero interference. Past
+// that there is no room, and the best you can do is the Welch floor. Live descent.
+function randUnit() { const a = 2 * Math.PI * Math.random(); return [Math.cos(a), Math.sin(a)]; }
+
+defineViz('siginterf', {
+  title: "Total squared interference, signatures sharing a channel",
+  height: 360, stepsPerFrame: 0.6, maxStep: 220,
+  controls: [
+    { type: 'play' }, { type: 'button', name: 'reroll', label: 're-roll', reset: true }, { type: 'speed' },
+    { type: 'newrow' },
+    { type: 'range', name: 'N', label: 'users N', min: 2, max: 9, step: 1, value: 5, int: true, reset: true, fmt: v => v },
+    { type: 'readout', name: 'rd' },
+  ],
+  setup(api) { const N = api.get('N'); const S = []; for (let i = 0; i < N; i++) S.push(randUnit()); api.state.S = S; },
+  step(api) {
+    const S = api.state.S, N = S.length, lr = 0.05 / N, G = S.map(() => [0, 0]);
+    for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) { if (i === j) continue; const c = S[i][0] * S[j][0] + S[i][1] * S[j][1], w = 2 * c; G[i][0] += w * S[j][0]; G[i][1] += w * S[j][1]; }
+    for (let i = 0; i < N; i++) { const gu = G[i][0] * S[i][0] + G[i][1] * S[i][1]; let x = S[i][0] - lr * (G[i][0] - gu * S[i][0]), y = S[i][1] - lr * (G[i][1] - gu * S[i][1]); const n = Math.hypot(x, y) + 1e-12; S[i] = [x / n, y / n]; }
+  },
+  draw(api) {
+    const { ctx, colors, size, state } = api;
+    const W = size.W, H = size.H; if (!W) return;
+    const S = state.S, N = S.length;
+    // left: signatures on the circle ; right: interference gauge
+    const leftW = Math.min(W * 0.56, H + 30);
+    const lbox = { x: 6, y: 4, w: leftW - 12, h: H - 8 };
+    const m = panel(ctx, lbox, colors, { header: 18 });
+    unitCircle(ctx, m, colors);
+    for (let i = 0; i < N; i++) {
+      const col = PALETTE[i % PALETTE.length]; const [px, py] = m.map(S[i]);
+      ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(m.cx, m.cy); ctx.lineTo(px, py); ctx.stroke();
+      ctx.beginPath(); ctx.arc(px, py, 4.5, 0, 2 * Math.PI); ctx.fillStyle = col; ctx.fill();
+    }
+    text(ctx, 'unit signatures', lbox.x + 8, lbox.y + 3, colors, { size: 11.5, color: colors.fg });
+
+    // interference = frame potential ; Welch floor for d = 2
+    let FP = 0; for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) { if (i === j) continue; const c = S[i][0] * S[j][0] + S[i][1] * S[j][1]; FP += c * c; }
+    const floor = Math.max(0, N * N / 2 - N);
+    const rbox = { x: leftW + 6, y: 4, w: W - leftW - 12, h: H - 8 };
+    panel(ctx, rbox, colors, {});
+    text(ctx, 'total interference', rbox.x + 12, rbox.y + 12, colors, { size: 11.5, color: colors.fg });
+    text(ctx, '(Σᵢ≠ⱼ ⟨sᵢ,sⱼ⟩²)', rbox.x + 12, rbox.y + 28, colors, { size: 10, color: colors.muted });
+    // gauge
+    const gx = rbox.x + 22, gy = rbox.y + 56, gw = rbox.w - 44, gh = rbox.h - 96;
+    const scale = Math.max(floor * 1.4, N * (N - 1) * 0.5, 1);
+    const barH = (v) => Math.max(0, Math.min(1, v / scale)) * gh;
+    ctx.fillStyle = colors.cellBg; ctx.strokeStyle = colors.border; ctx.lineWidth = 1; ctx.fillRect(gx, gy, gw, gh); ctx.strokeRect(gx + 0.5, gy + 0.5, gw - 1, gh - 1);
+    // current
+    const h = barH(FP); ctx.fillStyle = colors.accent; ctx.fillRect(gx, gy + gh - h, gw, h);
+    // floor line
+    const fh = barH(floor); ctx.strokeStyle = colors.green; ctx.setLineDash([5, 4]); ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(gx, gy + gh - fh); ctx.lineTo(gx + gw, gy + gh - fh); ctx.stroke(); ctx.setLineDash([]);
+    text(ctx, 'Energy floor', gx + gw - 4, gy + gh - fh - 4, colors, { align: 'right', baseline: 'bottom', size: 10, color: colors.green });
+    text(ctx, `now ${FP.toFixed(2)}`, gx + 2, gy + gh - h - 4, colors, { baseline: 'bottom', size: 11, mono: true, color: colors.accent });
+    const verdict = N <= 2 ? 'orthogonal, zero interference possible' : 'no room, total energy cannot beat the floor';
+    text(ctx, verdict, rbox.x + 12, rbox.y + rbox.h - 16, colors, { size: 10.5, color: colors.muted });
+    api.readout('rd', `N=${N} in d=2 · E ${FP.toFixed(3)} · energy floor ${floor.toFixed(2)}`);
+  },
+});
+</script>

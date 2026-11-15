@@ -1,0 +1,161 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 460 } = Astro.props;
+---
+<figure data-min-width="480" class="viz kerntrick" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+// The finite feature map, made spatial. The Yat numerator (w·x+b)² is a degree-2
+// polynomial kernel, and a degree-2 kernel has an EXACT, finite feature map
+// φ(x) = [x₁, x₂, x₁², x₂², x₁x₂, 1]. So a *flat* hyperplane in that 6-D space is
+// a curved boundary in input space, the kernel trick. We fit that flat separator
+// live on jax-js (np.linalg.solve in feature space), then lift the 2-D data into
+// 3-D by its quadratic score and let the plane slice it. Raise "lift": the data
+// rises off the floor and the single flat plane separates the classes. Look at
+// the floor: the same flat plane is a conic (a circle for rings, a hyperbola for
+// XOR). No infinite expansion, no activation, a finite kernel doing the work.
+import { defineViz } from './engine/vizkit.js';
+import { np, withJax, drawJaxLoading } from './engine/jax.js';
+import { rng32 } from './engine/datasets.js';
+
+const N = 170, F = 6, R3 = 1.0;
+const phi = (x1, x2) => [x1, x2, x1 * x1, x2 * x2, x1 * x2, 1];
+
+function makeData(kind, seed) {
+  const r = rng32(seed);
+  const randn = () => { let u = 0, v = 0; while (!u) u = r(); while (!v) v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+  const X = new Float64Array(N * 2); const lab = new Int8Array(N);
+  for (let i = 0; i < N; i++) {
+    let x, y, c; const u = r();
+    if (kind === 'rings') { c = u < 0.5 ? 0 : 1; const a = 2 * Math.PI * r(); const rad = (c ? 1.25 : 0.55) + randn() * 0.07; x = rad * Math.cos(a); y = rad * Math.sin(a); }
+    else if (kind === 'xor') { const qx = r() < 0.5 ? -1 : 1, qy = r() < 0.5 ? -1 : 1; c = (qx * qy > 0) ? 1 : 0; x = qx * 0.85 + randn() * 0.18; y = qy * 0.85 + randn() * 0.18; }
+    else if (kind === 'spiral') { c = u < 0.5 ? 0 : 1; const a = r(); const ang = a * 3.3 + c * Math.PI; const rad = 0.2 + a * 1.1; x = rad * Math.cos(ang) + randn() * 0.05; y = rad * Math.sin(ang) + randn() * 0.05; }
+    else { c = u < 0.5 ? 0 : 1; x = (c ? 1 : -1) * 0.85 + randn() * 0.4; y = randn() * 0.6; }
+    X[i * 2] = x; X[i * 2 + 1] = y; lab[i] = c;
+  }
+  return { X, lab };
+}
+
+defineViz('kerntrick', {
+  title: 'The kernel trick: a flat plane in the finite feature map',
+  height: 460, stepsPerFrame: 1,
+  controls: [
+    { type: 'play' },
+    { type: 'select', name: 'data', label: 'data', value: 'rings', reset: true,
+      options: [{ value: 'rings', label: 'rings' }, { value: 'xor', label: 'XOR' }, { value: 'blobs', label: 'blobs' }, { value: 'spiral', label: 'spiral' }] },
+    { type: 'range', name: 'lift', label: 'lift', min: 0, max: 1, step: 0.02, value: 1, reset: false, fmt: (v) => v.toFixed(2) },
+    { type: 'toggle', name: 'plane', label: 'separating plane', value: true },
+    { type: 'readout', name: 'rd' },
+  ],
+
+  setup(api) {
+    const kind = api.get('data');
+    const { X, lab } = makeData(kind, 5);
+    api.state = { kind, X, lab, spin: 0.7, v: null, Q: null, L: null, sc: 1, acc: 0, jaxReady: false };
+    withJax(api, () => {
+      // fit the flat separator in feature space:  (ΦᵀΦ + λI) v = Φᵀ y, solved on jax-js
+      const A = new Float64Array(F * F), b = new Float64Array(F);
+      for (let i = 0; i < N; i++) {
+        const p = phi(X[i * 2], X[i * 2 + 1]); const y = lab[i] ? 1 : -1;
+        for (let a = 0; a < F; a++) { b[a] += p[a] * y; for (let c = 0; c < F; c++) A[a * F + c] += p[a] * p[c]; }
+      }
+      for (let a = 0; a < F; a++) A[a * F + a] += 1e-3;
+      const sol = np.linalg.solve(np.reshape(np.array(A), [F, F]), np.reshape(np.array(b), [F, 1])).js();
+      const v = Array.from({ length: F }, (_, k) => (Array.isArray(sol[k]) ? sol[k][0] : sol[k]));
+      // per-point quadratic lift Q and (negated) linear plane height L; score s = Q + L
+      const Q = new Float64Array(N), L = new Float64Array(N); let mq = 1e-9, ok = 0;
+      for (let i = 0; i < N; i++) {
+        const x1 = X[i * 2], x2 = X[i * 2 + 1];
+        const q = v[2] * x1 * x1 + v[3] * x2 * x2 + v[4] * x1 * x2;
+        const l = v[0] * x1 + v[1] * x2 + v[5];
+        Q[i] = q; L[i] = l;
+        if (Math.abs(q) > mq) mq = Math.abs(q); if (Math.abs(l) > mq) mq = Math.abs(l);
+        if (((q + l) > 0 ? 1 : -1) === (lab[i] ? 1 : -1)) ok++;
+      }
+      api.state.v = v; api.state.Q = Q; api.state.L = L; api.state.sc = R3 / mq; api.state.acc = ok / N;
+    });
+  },
+
+  step(api) { if (api.state) api.state.spin += 0.012; },
+
+  draw(api) {
+    const { ctx, colors, size, state: st } = api;
+    const Wd = size.W, Hd = size.H;
+    if (Wd === 0 || !st) return;
+    ctx.clearRect(0, 0, Wd, Hd);
+    if (!st.jaxReady || !st.v) return drawJaxLoading(api);
+
+    const t = api.get('lift');
+    const v = st.v, sc = st.sc;
+    const cx = Wd / 2, cy = Hd / 2 + 14, S = Math.min(Wd, Hd) * 0.30;
+    const a = 0.62, b = st.spin;                       // tilt, spin
+    const ca = Math.cos(a), sa = Math.sin(a), cb = Math.cos(b), sb = Math.sin(b);
+    const rot = (p) => { const x1 = p[0] * cb + p[2] * sb, z1 = -p[0] * sb + p[2] * cb, y1 = p[1]; const y2 = y1 * ca - z1 * sa, z2 = y1 * sa + z1 * ca; return [x1, y2, z2]; };
+    const proj = (X3, Y3, Z3) => { const q = rot([X3, Y3, Z3]); return { x: cx + S * q[0], y: cy - S * q[1], d: q[2] }; };
+    const DS = 1.6;                                     // domain scale (data → world)
+
+    // ── floor (z=0) frame + the conic boundary s(x)=0 ──
+    const corners = [[-1, -1], [1, -1], [1, 1], [-1, 1]];
+    ctx.strokeStyle = colors.border; ctx.lineWidth = 1; ctx.globalAlpha = 0.7;
+    ctx.beginPath();
+    corners.forEach((c, i) => { const p = proj(c[0] * DS, c[1] * DS, 0); i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y); });
+    ctx.closePath(); ctx.stroke(); ctx.globalAlpha = 1;
+    // conic: sample grid, dot where |s| small (drawn on the floor)
+    const G = 46;
+    ctx.fillStyle = colors.fg;
+    for (let iy = 0; iy < G; iy++) for (let ix = 0; ix < G; ix++) {
+      const x1 = (-1 + 2 * ix / (G - 1)) * 1.55, x2 = (-1 + 2 * iy / (G - 1)) * 1.55;
+      const s = v[0] * x1 + v[1] * x2 + v[5] + v[2] * x1 * x1 + v[3] * x2 * x2 + v[4] * x1 * x2;
+      if (Math.abs(s) < 0.05) { const p = proj(x1 / 1.55 * DS, x2 / 1.55 * DS, 0); ctx.globalAlpha = 0.5; ctx.fillRect(p.x - 1, p.y - 1, 2, 2); }
+    }
+    ctx.globalAlpha = 1;
+
+    // ── separating plane z = −t·L(x)·sc  (flat, tilted) ──
+    const showPlane = api.get('plane') && t > 0.02;
+    const planeZ = (x1, x2) => -t * (v[0] * x1 + v[1] * x2 + v[5]) * sc;
+    let planeDepth = -2;
+    if (showPlane) {
+      const pc = corners.map((c) => { const x1 = c[0] * 1.55, x2 = c[1] * 1.55; return proj(c[0] * DS, c[1] * DS, planeZ(x1, x2)); });
+      planeDepth = (pc[0].d + pc[1].d + pc[2].d + pc[3].d) / 4;
+      ctx.beginPath(); pc.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)); ctx.closePath();
+      ctx.fillStyle = colors.muted; ctx.globalAlpha = 0.16; ctx.fill();
+      ctx.globalAlpha = 0.5; ctx.strokeStyle = colors.muted; ctx.lineWidth = 1; ctx.stroke(); ctx.globalAlpha = 1;
+    }
+
+    // ── lifted points, depth-sorted ──
+    const pts = [];
+    for (let i = 0; i < N; i++) {
+      const x1 = st.X[i * 2], x2 = st.X[i * 2 + 1];
+      const z = t * st.Q[i] * sc;
+      const p = proj((x1 / 1.55) * DS, (x2 / 1.55) * DS, z);
+      pts.push({ x: p.x, y: p.y, d: p.d, c: st.lab[i], z });
+    }
+    pts.sort((u, w) => u.d - w.d);
+    for (const pt of pts) {
+      const col = pt.c ? colors.accent : colors.blue;
+      const shade = 0.55 + 0.45 * ((pt.d + 1) / 2);
+      ctx.globalAlpha = shade;
+      ctx.fillStyle = col;
+      ctx.beginPath(); ctx.arc(pt.x, pt.y, 3.1, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // labels
+    ctx.fillStyle = colors.muted; ctx.font = '11px ui-sans-serif, system-ui';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.fillText(t < 0.06 ? 'Flat: a line cannot separate these classes' : 'Degree-2 lift: a plane separates the classes', 10, 8);
+    ctx.textBaseline = 'bottom';
+    ctx.fillStyle = colors.faint; ctx.font = '10px ui-monospace, monospace';
+    ctx.fillText('floor: the flat plane is a conic boundary', 10, Hd - 6);
+
+    const conic = st.kind === 'rings' ? 'a circle' : st.kind === 'xor' ? 'a hyperbola' : 'a conic';
+    api.readout('rd', `flat separator in the 6-D feature map: ${(st.acc * 100).toFixed(1)}% · upstairs a plane, downstairs ${conic} · solved live`);
+  },
+});
+</script>

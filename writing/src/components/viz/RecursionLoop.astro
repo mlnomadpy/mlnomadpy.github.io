@@ -1,0 +1,118 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 270 } = Astro.props;
+---
+<figure data-min-width="720" class="viz recursionloop" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+// Finite diagnostic trajectories; stopping rules and guarantees are distinguished in the article.
+import { defineViz } from './engine/vizkit.js';
+import { gate, loadingText, mix, parseColor, roundRect } from './engine/draw.js';
+import { loadReady, compute, makeRunner, CLS_A, CLS_B } from './yatdeq.js';
+
+const MAXK = 40, LSTACK = 6;
+
+defineViz('recursionloop', {
+  title: 'A recursion is one shared operator, fed back into itself',
+  height: 270,
+  controls: [
+    { type: 'select', name: 'pick', label: 'input', value: '3', reset: false,
+      options: [{ value: '0', label: 'input A' }, { value: '1', label: 'input B' }, { value: '2', label: 'input C' }, { value: '3', label: 'input D' }] },
+    { type: 'range', name: 'k', label: 'turn', min: 0, max: MAXK, step: 1, value: 8, int: true,
+      reset: false, fmt: (v) => v, play: { period: 6000, loop: false } },
+    { type: 'readout', name: 'rd' },
+  ],
+
+  setup(api) {
+    gate(api, loadReady, (api, model) => {
+      const cmp = compute(model), T = model.test, n = T.y.length;
+      const order = [...Array(n).keys()].sort((a, b) => T.kcount[a] - T.kcount[b]);
+      const idxs = [order[Math.round(0.06 * n)], order[Math.round(0.2 * n)], order[Math.round(0.6 * n)], order[Math.round(0.985 * (n - 1))]];
+      const runs = idxs.map((idx) => {
+        const r = makeRunner(cmp, [T.x[idx]]);
+        const states = [r.stateJS()[0]], resid = [];
+        for (let k = 0; k < MAXK; k++) { resid.push(r.stepR()[0]); states.push(r.stateJS()[0]); }
+        r.dispose();
+        return { y: T.y[idx], states, resid };
+      });
+      api.state.runs = runs; api.state.D = cmp.D;
+    });
+  },
+  onControl(name, v, api) { if (name === 'pick') api.setControl('k', Math.min(8, MAXK)); },
+
+  draw(api) {
+    const { ctx, colors, size, state: st } = api;
+    const W = size.W, H = size.H;
+    if (W === 0) return;
+    ctx.clearRect(0, 0, W, H);
+    if (!st.ready || !st.runs) { loadingText(api, 'iterating the operator…'); return; }
+    const run = st.runs[+api.get('pick')], k = Math.min(api.get('k'), MAXK), D = st.D;
+    const pad = 18;
+    const lo = parseColor(CLS_A), hi = parseColor(CLS_B), bg = parseColor(colors.bg || '#fff');
+
+    // draw a state as a horizontal strip of D cells (value in [-1,1] -> blue..red through bg)
+    const strip = (z, x, y, w, h, label) => {
+      const cw = w / D;
+      for (let i = 0; i < D; i++) { const v = Math.max(-1, Math.min(1, z[i])), t = (v + 1) / 2;
+        const c = t < 0.5 ? mix(bg, lo, (0.5 - t) * 2) : mix(bg, hi, (t - 0.5) * 2);
+        ctx.fillStyle = `rgb(${c[0] | 0},${c[1] | 0},${c[2] | 0})`; ctx.fillRect(x + i * cw, y, Math.ceil(cw), h); }
+      ctx.strokeStyle = colors.border; ctx.lineWidth = 1; ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+      if (label) { ctx.fillStyle = colors.muted; ctx.font = '10px ui-sans-serif, system-ui'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; ctx.fillText(label, x, y - 5); }
+    };
+
+    // ── top band: the recursion ──
+    const topY = pad + 20, bandH = 54, sw = Math.min(220, (W - pad * 2) * 0.32);
+    ctx.fillStyle = colors.fg; ctx.font = '12px ui-sans-serif, system-ui'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('the recursion: one operator, fed back into itself', pad, topY - 8);
+    const inX = pad, opX = pad + sw + 34, opW = W - pad * 2 - 2 * (sw + 34), outX = W - pad - sw;
+    strip(run.states[k], inX, topY + 8, sw, bandH, `state after ${k} turns`);
+    // the shared operator box
+    ctx.fillStyle = `rgba(${parseColor(colors.accent).join(',')},0.12)`;
+    roundRect(ctx, opX, topY + 8, opW, bandH, 8); ctx.fill();
+    ctx.strokeStyle = colors.accent; ctx.lineWidth = 1.6; roundRect(ctx, opX, topY + 8, opW, bandH, 8); ctx.stroke();
+    ctx.fillStyle = colors.fg; ctx.font = 'bold 13px ui-sans-serif, system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('F :  φ_W → A → tanh', opX + opW / 2, topY + 8 + bandH / 2 - 8);
+    ctx.fillStyle = colors.accent; ctx.font = '10px ui-sans-serif, system-ui'; ctx.fillText('same W, A every turn', opX + opW / 2, topY + 8 + bandH / 2 + 10);
+    strip(run.states[Math.min(k + 1, MAXK)], outX, topY + 8, sw, bandH, 'next state');
+    // arrows in/out + feedback loop
+    const midY = topY + 8 + bandH / 2;
+    ctx.strokeStyle = colors.muted; ctx.lineWidth = 1.6;
+    const arr = (x0, x1, y) => { ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x1, y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x1, y); ctx.lineTo(x1 - 5, y - 3.5); ctx.lineTo(x1 - 5, y + 3.5); ctx.closePath(); ctx.fillStyle = colors.muted; ctx.fill(); };
+    arr(inX + sw, opX, midY); arr(opX + opW, outX, midY);
+    // feedback curve from out back to in
+    const fy = topY + 8 + bandH + 24;
+    ctx.strokeStyle = colors.accent; ctx.globalAlpha = 0.8; ctx.lineWidth = 1.6; ctx.beginPath();
+    ctx.moveTo(outX + sw / 2, topY + 8 + bandH); ctx.bezierCurveTo(outX + sw / 2, fy, inX + sw / 2, fy, inX + sw / 2, topY + 8 + bandH); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(inX + sw / 2, topY + 8 + bandH + 1); ctx.lineTo(inX + sw / 2 - 3.5, topY + 8 + bandH + 7); ctx.lineTo(inX + sw / 2 + 3.5, topY + 8 + bandH + 7); ctx.closePath(); ctx.fill(); ctx.globalAlpha = 1;
+    ctx.fillStyle = colors.muted; ctx.font = '10px ui-sans-serif, system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText('feed the output back in, and repeat', (inX + outX + sw) / 2, fy + 2);
+
+    // ── bottom band: the ordinary deep net (contrast) ──
+    const botY = fy + 40;
+    ctx.fillStyle = colors.fg; ctx.font = '12px ui-sans-serif, system-ui'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('an ordinary deep net: different operators, a fixed number of them', pad, botY - 6);
+    const bw = (W - pad * 2 - (LSTACK - 1) * 16) / LSTACK, by = botY + 10, bh = 40;
+    for (let l = 0; l < LSTACK; l++) {
+      const x = pad + l * (bw + 16), active = l < Math.min(k, LSTACK), spent = k > LSTACK;
+      ctx.fillStyle = active ? `rgba(${parseColor(colors.blue).join(',')},0.18)` : colors.bg;
+      roundRect(ctx, x, by, bw, bh, 6); ctx.fill();
+      ctx.strokeStyle = active ? colors.blue : colors.border; ctx.globalAlpha = spent ? 0.4 : 1; ctx.lineWidth = 1.4; roundRect(ctx, x, by, bw, bh, 6); ctx.stroke(); ctx.globalAlpha = 1;
+      ctx.fillStyle = colors.fg; ctx.globalAlpha = spent ? 0.5 : 1; ctx.font = 'bold 12px ui-sans-serif, system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('A' + '₀₁₂₃₄₅'[l], x + bw / 2, by + bh / 2); ctx.globalAlpha = 1;
+      if (l < LSTACK - 1) { ctx.strokeStyle = colors.faint; ctx.beginPath(); ctx.moveTo(x + bw, by + bh / 2); ctx.lineTo(x + bw + 16, by + bh / 2); ctx.stroke(); }
+    }
+    ctx.fillStyle = k > LSTACK ? colors.accent : colors.muted; ctx.font = '11px ui-sans-serif, system-ui'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.fillText(k > LSTACK ? `turn ${k}: the stack ran out of layers at ${LSTACK}; the loop above just keeps turning` : `each block has its own weights, so depth is capped at ${LSTACK}`, pad, by + bh + 10);
+
+    const settled = k > 0 && run.resid[k - 1] < 1e-4;
+    api.readout('rd', settled
+      ? `turn ${k}: damped step below 1e-4; approximate equilibrium under this diagnostic`
+      : `turn ${k}: the same operator applied ${k} times, the state is still moving`);
+  },
+});
+</script>

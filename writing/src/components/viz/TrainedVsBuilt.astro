@@ -1,0 +1,141 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 360 } = Astro.props;
+---
+<figure data-min-width="800" class="viz trainedbuilt" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+// The whole experiment in one diagram, so there is no confusion about which half
+// is trained. An image flows through the backbone g (the only part that is
+// TRAINED) into 64 features, and through the head h (BUILT BY HAND, zero gradient
+// steps) into a class. Slide the backbone training: the features change and the
+// accuracy climbs, while the head is stamped unchanged. You train the features;
+// you build the classifier. Feature values are the real example's, the accuracy
+// is the real constructed-head number.
+import { defineViz } from './engine/vizkit.js';
+import { loadFold, pixelImg, CLASS_COL, CLASSES } from './trainfeat.js';
+import { gate, loadingText } from './engine/draw.js';
+
+defineViz('trainedbuilt', {
+  title: 'You train the backbone; you build the head',
+  height: 360,
+  controls: [
+    { type: 'range', name: 'stage', label: 'train the backbone', min: 0, max: 4, step: 1, value: 0, int: true, reset: false, fmt: (v) => v, play: { period: 4500, loop: false } },
+    { type: 'readout', name: 'rd' },
+  ],
+
+  setup(api) {
+    gate(api, () => Promise.all([loadFold(), pixelImg()]), (api, [d, pix]) => {
+      Object.assign(api.state, { d, pix });
+    });
+  },
+
+  draw(api) {
+    const { ctx, colors, size, state: st } = api;
+    const W = size.W, H = size.H;
+    if (W === 0 || !st) return;
+    ctx.clearRect(0, 0, W, H);
+    if (!st.ready) { loadingText(api); return; }
+
+    const ACC = colors.accent, BLU = colors.blue || '#4a7fb3';
+    const fr = st.d.frames[api.get('stage')];
+    const pad = 16, topH = 36;
+    const midY = topH + (H - topH - pad) / 2;
+    const boxH = Math.min(150, H - topH - pad - 34);
+
+    // header
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = colors.muted; ctx.font = '11px ui-sans-serif, system-ui';
+    ctx.fillText('Image to prediction. Orange: trained. Blue: constructed.', pad, pad + 8);
+
+    // flexible column layout
+    const gap = Math.max(14, W * 0.022);
+    const imgS = Math.min(54, W * 0.085);
+    const gw = Math.min(118, W * 0.17), hw = gw;
+    const featS = Math.min(78, W * 0.12);
+    const outW = 70;
+    const total = imgS + gw + featS + hw + outW + gap * 4;
+    let x = pad + Math.max(0, (W - pad * 2 - total) / 2);
+
+    const arrow = (x0, x1) => {
+      ctx.strokeStyle = colors.faint; ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.moveTo(x0, midY); ctx.lineTo(x1 - 5, midY); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x1 - 10, midY - 4); ctx.lineTo(x1 - 5, midY); ctx.lineTo(x1 - 10, midY + 4); ctx.stroke();
+    };
+
+    // 1. input image (a Coat, class 4, drawn from the pixel sprite)
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(st.pix, 0, 4 * 28, 28, 28, x, midY - imgS / 2, imgS, imgS);
+    ctx.lineWidth = 1; ctx.strokeStyle = CLASS_COL[4] + '99'; ctx.strokeRect(x - 0.5, midY - imgS / 2 - 0.5, imgS + 1, imgS + 1);
+    ctx.fillStyle = colors.muted; ctx.font = '10px ui-sans-serif, system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText('image x', x + imgS / 2, midY + imgS / 2 + 6);
+    let xe = x + imgS; x = xe + gap; arrow(xe, x);
+
+    // 2. backbone box, TRAINED
+    ctx.fillStyle = ACC + '14'; ctx.strokeStyle = ACC; ctx.lineWidth = 1.6;
+    ctx.fillRect(x, midY - boxH / 2, gw, boxH); ctx.strokeRect(x, midY - boxH / 2, gw, boxH);
+    ctx.fillStyle = ACC; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = 'bold 13px ui-sans-serif, system-ui'; ctx.fillText('backbone g', x + gw / 2, midY - 16);
+    ctx.font = 'bold 11px ui-sans-serif, system-ui'; ctx.fillText('TRAINED', x + gw / 2, midY + 2);
+    ctx.fillStyle = colors.muted; ctx.font = '9px ui-sans-serif, system-ui';
+    ctx.fillText(`${fr.ep} epoch${fr.ep === 1 ? '' : 's'} of SGD`, x + gw / 2, midY + 18);
+    ctx.fillStyle = ACC; ctx.font = '9px ui-sans-serif, system-ui'; ctx.textBaseline = 'top';
+    ctx.fillText('↑ what you train', x + gw / 2, midY + boxH / 2 + 6);
+    xe = x + gw; x = xe + gap; arrow(xe, x);
+
+    // 3. the features, an 8x8 heatmap of the real example's 64 numbers at this stage
+    const feat = fr.feat[0], lo = Math.min(...feat), hi = Math.max(...feat), rng = hi - lo || 1;
+    const fy = midY - featS / 2, cellF = featS / 8;
+    for (let i = 0; i < 64; i++) {
+      const r = (i / 8) | 0, c = i % 8, t = (feat[i] - lo) / rng;
+      ctx.fillStyle = `rgba(${Math.round(40 + 150 * t)},${Math.round(70 + 90 * t)},${Math.round(120 + 40 * (1 - t))},0.92)`;
+      ctx.fillRect(x + c * cellF, fy + r * cellF, cellF - 0.5, cellF - 0.5);
+    }
+    ctx.strokeStyle = colors.border; ctx.lineWidth = 1; ctx.strokeRect(x - 0.5, fy - 0.5, featS + 1, featS + 1);
+    ctx.fillStyle = colors.fg; ctx.font = '10px ui-sans-serif, system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText('64 features', x + featS / 2, fy + featS + 6);
+    ctx.fillStyle = colors.muted; ctx.font = '9px ui-sans-serif, system-ui';
+    ctx.fillText('(they change)', x + featS / 2, fy + featS + 19);
+    xe = x + featS; x = xe + gap; arrow(xe, x);
+
+    // 4. head box, BUILT
+    ctx.fillStyle = BLU + '14'; ctx.strokeStyle = BLU; ctx.lineWidth = 1.6;
+    ctx.fillRect(x, midY - boxH / 2, hw, boxH); ctx.strokeRect(x, midY - boxH / 2, hw, boxH);
+    ctx.fillStyle = BLU; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = 'bold 13px ui-sans-serif, system-ui'; ctx.fillText('head h', x + hw / 2, midY - 16);
+    ctx.font = 'bold 11px ui-sans-serif, system-ui'; ctx.fillText('BUILT BY HAND', x + hw / 2, midY + 2);
+    ctx.fillStyle = colors.muted; ctx.font = '9px ui-sans-serif, system-ui';
+    ctx.fillText('0 gradient steps', x + hw / 2, midY + 18);
+    ctx.fillStyle = BLU; ctx.font = '9px ui-sans-serif, system-ui'; ctx.textBaseline = 'top';
+    ctx.fillText('↑ what you place', x + hw / 2, midY + boxH / 2 + 6);
+    xe = x + hw; x = xe + gap; arrow(xe, x);
+
+    // 5. outputs, 10 class nodes, the winner (Coat) lit
+    const oy0 = midY - boxH / 2 + 6, oStep = (boxH - 12) / 9;
+    for (let c = 0; c < 10; c++) {
+      const oy = oy0 + c * oStep, win = c === 4;
+      ctx.beginPath(); ctx.arc(x + 6, oy, win ? 6 : 4, 0, 6.283);
+      ctx.fillStyle = CLASS_COL[c]; ctx.globalAlpha = win ? 1 : 0.5; ctx.fill(); ctx.globalAlpha = 1;
+      if (win) { ctx.lineWidth = 1.4; ctx.strokeStyle = colors.fg; ctx.stroke();
+        ctx.fillStyle = colors.fg; ctx.font = '10px ui-sans-serif, system-ui'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+        ctx.fillText(CLASSES[c], x + 16, oy); }
+    }
+
+    // accuracy badge
+    ctx.fillStyle = ACC; ctx.font = 'bold 16px ui-sans-serif, system-ui'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText(`${fr.constructed.toFixed(0)}%`, pad, H - pad + 1);
+    ctx.fillStyle = colors.muted; ctx.font = '10px ui-sans-serif, system-ui';
+    ctx.fillText('overall accuracy of this built head on the trained features', pad + 44, H - pad);
+
+    api.readout('rd', fr.ep === 0
+      ? 'The backbone is untrained, so the 64 features are near-useless and the built head reads them at 74%. Nothing in the head will ever be trained; slide to train only the backbone.'
+      : `${fr.ep} epochs in: the backbone reshapes the 64 features, the built head reads them at ${fr.constructed.toFixed(0)}%, and not one gradient step touched the head.`);
+  },
+});
+</script>

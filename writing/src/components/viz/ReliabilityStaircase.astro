@@ -1,0 +1,136 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 360 } = Astro.props;
+---
+<figure data-min-width="720" class="viz relstair" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+// The reliability diagram, computed live: every test prediction of the two
+// trained nets is dropped into 15 equal-width confidence bins, and each bin
+// answers one question: when the net claimed this much, how often was it right?
+// The diagonal is honesty; the sag below it is overconfidence. Hover a bin to
+// read its population. Data: scripts/yat_calibration.py, seed 0.
+import { defineViz } from './engine/vizkit.js';
+import { gate, loadingText, frame, T as Ty, fmt } from './engine/draw.js';
+import { localPoint } from './engine/pointer.js';
+import { loadCalib, maxConf, binStats } from './calib.js';
+
+const NBINS = 15;
+
+defineViz('relstair', {
+  title: 'When it says 80%, is it right 80% of the time?',
+  height: 360,
+  controls: [{ type: 'readout', name: 'rd' }],
+
+  setup(api) {
+    api.state.hover = null; // {net, bin}
+    gate(api, loadCalib, (api, d) => {
+      api.state.nets = {};
+      for (const name of ['yat', 'relu']) {
+        const conf = maxConf(d[name].test, 1);
+        api.state.nets[name] = { ...binStats(conf, d[name].correct, NBINS) };
+      }
+      bind(api);
+    });
+  },
+
+  draw(api) {
+    const { ctx, colors, size, state: st } = api;
+    const W = size.W, H = size.H;
+    if (W === 0 || !st) return;
+    if (!st.ready) { loadingText(api); return; }
+
+    const pad = 14, gapX = 26, top = 34, bottom = 30;
+    const pw = (W - 2 * pad - gapX) / 2, ph = H - top - bottom;
+    st._panels = [];
+    const nets = [
+      { key: 'yat', label: 'Yat MLP', col: colors.accent },
+      { key: 'relu', label: 'ReLU MLP', col: colors.blue },
+    ];
+
+    nets.forEach((net, pi) => {
+      const bx = pad + pi * (pw + gapX), by = top;
+      const b = st.nets[net.key];
+      const sx = (v) => bx + v * pw, sy = (v) => by + ph - v * ph;
+
+      Ty(ctx, colors, 'label', { color: net.col, weight: 'b' });
+      ctx.fillText(net.label, bx, by - 8);
+      Ty(ctx, colors, 'small', { align: 'right' });
+      ctx.fillText(`ECE ${(b.ece * 100).toFixed(1)}%`, bx + pw, by - 8);
+
+      frame(ctx, colors, bx, by, pw, ph);
+      // the honesty diagonal
+      ctx.strokeStyle = colors.faint; ctx.setLineDash([3, 3]);
+      ctx.beginPath(); ctx.moveTo(sx(0), sy(0)); ctx.lineTo(sx(1), sy(1)); ctx.stroke();
+      ctx.setLineDash([]);
+
+      const bw = pw / NBINS;
+      for (let i = 0; i < NBINS; i++) {
+        if (!b.count[i]) continue;
+        const x = sx(i / NBINS) + 1.5, w = bw - 3;
+        const hov = st.hover && st.hover.net === net.key && st.hover.bin === i;
+        // a near-empty bin is noise (a dozen predictions can all be right by
+        // luck); fade it so it cannot dominate the picture. Hover for its count.
+        const low = b.count[i] < 8;
+        // accuracy bar
+        ctx.globalAlpha = hov ? 1 : low ? 0.22 : 0.75;
+        ctx.fillStyle = net.col;
+        ctx.fillRect(x, sy(b.acc[i]), w, ph - (sy(b.acc[i]) - by));
+        ctx.globalAlpha = 1;
+        // the overconfidence gap: claimed confidence sits above delivered accuracy
+        if (b.conf[i] > b.acc[i] + 1e-4) {
+          ctx.fillStyle = colors.fg; ctx.globalAlpha = hov ? 0.28 : low ? 0.05 : 0.13;
+          ctx.fillRect(x, sy(b.conf[i]), w, sy(b.acc[i]) - sy(b.conf[i]));
+          ctx.globalAlpha = 1;
+        }
+        // claimed-confidence tick
+        if (low && !hov) ctx.globalAlpha = 0.35;
+        ctx.strokeStyle = colors.fg; ctx.lineWidth = hov ? 2 : 1.2;
+        ctx.beginPath(); ctx.moveTo(x, sy(b.conf[i])); ctx.lineTo(x + w, sy(b.conf[i])); ctx.stroke();
+        ctx.globalAlpha = 1;
+        if (hov) { ctx.strokeStyle = colors.fg; ctx.lineWidth = 1; ctx.strokeRect(x - 1, by, w + 2, ph); }
+      }
+
+      // axis labels
+      Ty(ctx, colors, 'small', { align: 'center' });
+      for (const t of [0, 0.5, 1]) ctx.fillText(fmt(t, 1), sx(t), by + ph + 14);
+      ctx.fillText('claimed confidence', bx + pw / 2, by + ph + 26);
+      ctx.save(); ctx.translate(bx - 6, by + ph / 2); ctx.rotate(-Math.PI / 2);
+      Ty(ctx, colors, 'small', { align: 'center' });
+      ctx.fillText('fraction correct', 0, 0); ctx.restore();
+
+      st._panels.push({ x: bx, y: by, w: pw, h: ph, key: net.key });
+    });
+
+    const hv = st.hover;
+    if (hv && st.nets[hv.net].count[hv.bin]) {
+      const b = st.nets[hv.net], i = hv.bin;
+      api.readout('rd', `${hv.net === 'yat' ? 'Yat' : 'ReLU'} bin ${(i / NBINS).toFixed(2)}..${((i + 1) / NBINS).toFixed(2)}: ${b.count[i]} preds, claims ${(b.conf[i] * 100).toFixed(1)}%, delivers ${(b.acc[i] * 100).toFixed(1)}%`);
+    } else {
+      api.readout('rd', `4000 test predictions each, binned live. bar = delivered accuracy, tick = claimed confidence, shaded = the gap`);
+    }
+  },
+});
+
+function bind(api) {
+  if (api.canvas.dataset.rsBound) return; api.canvas.dataset.rsBound = '1';
+  api.canvas.addEventListener('pointermove', (e) => {
+    const st = api.state; if (!st || !st._panels) return;
+    const p = localPoint(api.canvas, e);
+    let hover = null;
+    for (const pn of st._panels) {
+      if (p.x >= pn.x && p.x <= pn.x + pn.w && p.y >= pn.y && p.y <= pn.y + pn.h) {
+        hover = { net: pn.key, bin: Math.min(NBINS - 1, Math.max(0, Math.floor(((p.x - pn.x) / pn.w) * NBINS))) };
+      }
+    }
+    if (JSON.stringify(hover) !== JSON.stringify(st.hover)) { st.hover = hover; api.render(); }
+  });
+  api.canvas.addEventListener('pointerleave', () => { if (api.state) { api.state.hover = null; api.render(); } });
+}
+</script>

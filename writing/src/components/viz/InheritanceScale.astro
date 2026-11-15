@@ -1,0 +1,129 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 330 } = Astro.props;
+---
+<figure data-min-width="800" class="viz kdscale" data-caption={caption} data-height={height} data-height-mobile="380" tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+// Archived probe accuracy for five training conditions. The random-to-label
+// reference gap is a descriptive comparison, not a ceiling or a knowledge fraction.
+import { defineViz } from './engine/vizkit.js';
+import { gate, loadingText, T, softPanel, parseColor, rgba } from './engine/draw.js';
+import { drag } from './engine/pointer.js';
+import { loadKD } from './kdistill.js';
+
+defineViz('kdscale', {
+  title: 'Frozen-feature probes after relational training',
+  height: 330,
+  controls: [
+    { type: 'select', name: 'probe', label: 'probe', reset: false, value: 'linear',
+      options: [{ value: 'linear', label: 'linear probe' }, { value: 'centroid', label: 'nearest centroid' }] },
+    { type: 'readout', name: 'rd' },
+  ],
+
+  setup(api) {
+    api.state.hover = -1;
+    gate(api, loadKD, (api, d) => { api.state.d = d; bind(api); });
+  },
+
+  draw(api) {
+    const { ctx, colors, size, state: st } = api;
+    const W = size.W, H = size.H;
+    if (!st || !st.ready) { loadingText(api); return; }
+    const d = st.d, probe = api.get('probe');
+    const A = d.accs;
+    const runs = [
+      { name: 'random init', acc: A.random[probe], col: colors.faint, note: 'random-feature reference: untrained student, same labeled probes' },
+      { name: 'relations only', acc: A.kernel[probe], col: colors.accent, star: true,
+        seeds: Object.values(A.kernel.seeds).map((s) => s[probe]),
+        note: 'no integer labels in the student loss; pairs derived from a label-trained teacher' },
+      { name: 'soft targets (KD)', acc: A.kd[probe], col: colors.blue, note: 'classic distillation: KL to the teacher’s softened outputs' },
+      { name: 'true labels', acc: A.label[probe], col: colors.green, note: 'label-trained reference, one seed; not an upper bound' },
+      { name: 'teacher', acc: A.teacher[probe], col: colors.muted, note: 'the larger network the geometry came from' },
+    ];
+    const lo = Math.floor(Math.min(...runs.map((r) => r.acc)) - 2);
+    const hi2 = Math.ceil(Math.max(...runs.map((r) => r.acc)) + 1);
+    const pad = 18, axY = H - 96, x0 = pad + 8, x1 = W - pad - 8;
+    const sx = (a) => x0 + ((a - lo) / (hi2 - lo)) * (x1 - x0);
+
+    // The observed random-to-label reference interval, not an upper bound.
+    const gx0 = sx(runs[0].acc), gx1 = sx(runs[3].acc);
+    ctx.fillStyle = rgba(parseColor(colors.green), 0.08);
+    ctx.fillRect(gx0, axY - 46, gx1 - gx0, 46);
+    const share = (runs[1].acc - runs[0].acc) / (runs[3].acc - runs[0].acc);
+    const kx = sx(runs[1].acc);
+    ctx.fillStyle = rgba(parseColor(colors.accent), 0.16);
+    ctx.fillRect(gx0, axY - 46, kx - gx0, 46);
+
+    T(ctx, colors, 'kicker');
+    ctx.fillText(`${probe === 'linear' ? 'linear-probe' : 'nearest-centroid'} accuracy on Fashion-MNIST test, all five runs`, pad, 20);
+    T(ctx, colors, 'title', { color: colors.accent });
+    ctx.fillText(`${Math.round(share * 100)}%`, pad, 48);
+    T(ctx, colors, 'sub');
+    ctx.fillText('of this random-to-label-trained gap (seed 0)', pad + 46, 48);
+
+    // axis
+    ctx.strokeStyle = colors.border; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(x0 - 6, axY); ctx.lineTo(x1 + 6, axY); ctx.stroke();
+    for (let a = lo; a <= hi2; a += 2) {
+      const x = sx(a);
+      ctx.strokeStyle = colors.border; ctx.beginPath(); ctx.moveTo(x, axY - 3); ctx.lineTo(x, axY + 3); ctx.stroke();
+      T(ctx, colors, 'small', { align: 'center', color: colors.faint });
+      ctx.fillText(`${a}%`, x, axY + 16);
+    }
+
+    // markers: lollipops, label rows staggered by accuracy rank so close markers
+    // never share a row
+    const rank = runs.map((_, i) => i).sort((a, b) => runs[a].acc - runs[b].acc);
+    const lvlOf = []; rank.forEach((idx, k) => { lvlOf[idx] = k % 3; });
+    st._marks = [];
+    runs.forEach((r, i) => {
+      const x = sx(r.acc), lvl = lvlOf[i], ty = axY - 52 - lvl * 36;
+      const focus = st.hover < 0 || st.hover === i;
+      ctx.globalAlpha = focus ? 1 : 0.35;
+      ctx.strokeStyle = r.col; ctx.lineWidth = r.star ? 2.2 : 1.4;
+      ctx.beginPath(); ctx.moveTo(x, axY); ctx.lineTo(x, ty + 26); ctx.stroke();
+      if (r.seeds) for (const s of r.seeds) {           // the other seeds, small dots
+        ctx.fillStyle = rgba(parseColor(r.col), 0.55);
+        ctx.beginPath(); ctx.arc(sx(s), axY - 8, 2.4, 0, 6.283); ctx.fill();
+      }
+      ctx.fillStyle = r.col;
+      ctx.beginPath(); ctx.arc(x, axY, r.star ? 5.5 : 4, 0, 6.283); ctx.fill();
+      const lw = Math.max(78, ctx.measureText(r.name).width + 18);
+      // Labels stay inside the canvas; the accuracy marker remains at its measured x.
+      const labelX = Math.max(pad + lw / 2, Math.min(W - pad - lw / 2, x));
+      softPanel(ctx, labelX - lw / 2, ty, lw, 30, colors, { r: 6, border: r.star ? r.col : undefined });
+      T(ctx, colors, 'small', { align: 'center', color: focus ? colors.fg : colors.muted });
+      ctx.fillText(r.name, labelX, ty + 12);
+      T(ctx, colors, 'value', { align: 'center', color: r.col, weight: 'b' });
+      ctx.fillText(`${r.acc.toFixed(1)}%`, labelX, ty + 25);
+      ctx.globalAlpha = 1;
+      st._marks.push({ x: labelX - lw / 2, y: ty, w: lw, h: 30, i });
+    });
+
+    api.readout('rd', st.hover < 0
+      ? (probe === 'centroid' && runs[1].acc >= runs[3].acc
+        ? 'centroid accuracy exceeds this one label-trained control; all decoders use training labels'
+        : `relations alone reach ${runs[1].acc.toFixed(1)}%, seeds ${runs[1].seeds.map((s) => s.toFixed(1)).join(' / ')}`)
+      : runs[st.hover].note);
+  },
+});
+
+function bind(api) {
+  drag(api.canvas, {
+    onHover: (p) => {
+      const st = api.state; if (!st || !st._marks) return;
+      let h = -1;
+      for (const m of st._marks) if (p.x >= m.x && p.x <= m.x + m.w && p.y >= m.y && p.y <= m.y + m.h) h = m.i;
+      if (h !== st.hover) { st.hover = h; api.render(); }
+    },
+  });
+  api.canvas.addEventListener('pointerleave', () => { if (api.state) { api.state.hover = -1; api.render(); } });
+}
+</script>

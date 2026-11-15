@@ -1,0 +1,163 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 500 } = Astro.props;
+---
+<figure data-min-width="800" class="viz conceptscalpel" data-caption={caption} data-height={height} data-height-mobile="640" tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+// Cut a concept out of the trained network, live. Click any of the top modes
+// to delete it from the readout; every prediction on the page is recomputed
+// from the real model's mode coordinates, and the confusion matrix shows
+// where the damage lands. The cut is exact: deleting a mode is zeroing one
+// row of the readout in the kernel's own basis.
+import { defineViz } from './engine/vizkit.js';
+import { T, fmt, gate, loadingText } from './engine/draw.js';
+import { load, thumb, predictWith, confusion, accuracy } from './surgery.js';
+
+defineViz('conceptscalpel', {
+  title: 'Delete a concept and watch where it hurts',
+  height: 500,
+  controls: [
+    { type: 'button', name: 'restore', label: 'Restore all concepts' },
+    { type: 'readout', name: 'rd' },
+  ],
+
+  setup(api) {
+    const st = api.state;
+    st.deleted = new Set();
+    gate(api, () => load('live'), (a, data) => {
+      a.state.data = data;
+      recompute(a);
+    });
+    api.canvas.addEventListener('pointerdown', (e) => {
+      if (!st.ready || !st.bars) return;
+      const r = api.canvas.getBoundingClientRect();
+      const p = { x: e.clientX - r.left, y: e.clientY - r.top };
+      const hit = st.bars.find((b) => p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h);
+      if (!hit) return;
+      st.deleted.has(hit.k) ? st.deleted.delete(hit.k) : st.deleted.add(hit.k);
+      recompute(api);
+      api.render();
+    });
+  },
+
+  onAction(name, api) {
+    if (name === 'restore') {
+      api.state.deleted = new Set();
+      recompute(api);
+      api.render();
+    }
+  },
+
+  draw(api) {
+    const { ctx, colors, size: { W, H } } = api, st = api.state;
+    if (!st.ready) { loadingText(api, 'loading the model…'); return; }
+    const d = st.data;
+    const pad = 14, top = 32;
+    const NB = 16;
+
+    // ── the concept switches ──
+    const barBox = { x: pad, y: top, w: W - 2 * pad, h: 42 };
+    const bw = barBox.w / NB;
+    st.bars = [];
+    for (let k = 0; k < NB; k++) {
+      const x = barBox.x + k * bw + 2;
+      const on = !st.deleted.has(k);
+      ctx.fillStyle = on ? colors.accent : colors.cellBg;
+      ctx.globalAlpha = on ? 0.85 : 1;
+      ctx.fillRect(x, barBox.y, bw - 4, barBox.h);
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = on ? colors.accent : colors.border;
+      ctx.strokeRect(x + 0.5, barBox.y + 0.5, bw - 5, barBox.h - 1);
+      T(ctx, colors, 'small');
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = on ? '#fff' : colors.muted;
+      ctx.fillText(String(k + 1), x + (bw - 4) / 2, barBox.y + barBox.h / 2);
+      st.bars.push({ x, y: barBox.y, w: bw - 4, h: barBox.h, k });
+    }
+    T(ctx, colors, 'label');
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('the network’s top 16 concepts: click to cut one out (click again to restore)', pad, top - 8);
+
+    // ── confusion matrix, live ──
+    const my = barBox.y + barBox.h + 34;
+    const side = Math.min(W * 0.44, H - my - 62);
+    const cell = side / 10;
+    const CM = st.cm, CM0 = st.cm0;
+    let maxOff = 1;
+    for (let a = 0; a < 10; a++) for (let b = 0; b < 10; b++) if (a !== b) maxOff = Math.max(maxOff, CM[a][b]);
+    for (let a = 0; a < 10; a++) {
+      for (let b = 0; b < 10; b++) {
+        const v = CM[a][b], grew = v - CM0[a][b];
+        const t = a === b ? v / Math.max(1, CM[a].reduce((s, x) => s + x, 0)) : v / maxOff;
+        ctx.fillStyle = a === b
+          ? `rgba(58,143,94,${0.10 + 0.75 * t})`
+          : grew > 0 ? `rgba(194,85,58,${0.12 + 0.85 * t})`
+                     : `rgba(120,120,120,${0.08 + 0.5 * t})`;
+        ctx.fillRect(pad + 62 + b * cell, my + a * cell, cell - 1, cell - 1);
+      }
+      T(ctx, colors, 'small');
+      ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+      ctx.fillText(d.classes[a], pad + 58, my + (a + 0.5) * cell);
+    }
+    T(ctx, colors, 'small');
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('rows: true class, columns: predicted; red = errors this cut created', pad, my + 10 * cell + 16);
+
+    // ── the images that changed their mind ──
+    const gx0 = pad + 62 + 10 * cell + 24;
+    const gw = Math.min(44, (W - gx0 - pad) / 5 - 6);
+    T(ctx, colors, 'label');
+    ctx.fillText('images the cut broke', gx0, my - 8);
+    const flipped = st.flipped.slice(0, 15);
+    if (!flipped.length) {
+      T(ctx, colors, 'small');
+      ctx.fillText('nothing broken yet: every concept is in place', gx0, my + 14);
+    }
+    flipped.forEach((i, j) => {
+      const x = gx0 + (j % 5) * (gw + 6), y = my + Math.floor(j / 5) * (gw + 20);
+      thumb(ctx, d.thumbs[i], x, y, gw, gw, 'sg' + i);
+      ctx.strokeStyle = '#c2553a'; ctx.lineWidth = 2;
+      ctx.strokeRect(x + 1, y + 1, gw - 2, gw - 2);
+      ctx.lineWidth = 1;
+      T(ctx, colors, 'small');
+      ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+      ctx.fillText(d.classes[st.pred[i]].slice(0, 8), x, y + gw + 2);
+    });
+
+    T(ctx, colors, 'small');
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('every prediction recomputed from the trained model’s own mode coordinates; the deletion is exact, not an approximation', pad, H - 14);
+    const n = st.deleted.size;
+    api.readout('rd', `${n} concept${n === 1 ? '' : 's'} cut: accuracy ${fmt(st.acc, 1)}% (intact ${fmt(st.acc0, 1)}%)`);
+  },
+});
+
+function recompute(api) {
+  const st = api.state, d = st.data;
+  if (!d) return;
+  if (!st.pred0) {
+    st.pred0 = predictWith(d, new Set());
+    st.cm0 = confusion(st.pred0, d.y);
+    st.acc0 = accuracy(st.pred0, d.y);
+  }
+  st.pred = predictWith(d, st.deleted);
+  st.cm = confusion(st.pred, d.y);
+  st.acc = accuracy(st.pred, d.y);
+  st.flipped = [];
+  for (let i = 0; i < 24; i++) {
+    if (st.pred[i] !== st.pred0[i] && st.pred0[i] === d.y[i]) st.flipped.push(i);
+  }
+  if (st.flipped.length < 15) {
+    for (let i = 24; i < st.pred.length && st.flipped.length < 15; i++) {
+      if (st.pred[i] !== st.pred0[i] && st.pred0[i] === d.y[i] && i < d.thumbs.length) st.flipped.push(i);
+    }
+  }
+}
+</script>

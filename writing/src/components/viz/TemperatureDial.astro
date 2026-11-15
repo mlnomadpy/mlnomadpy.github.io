@@ -1,0 +1,109 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 340 } = Astro.props;
+---
+<figure data-min-width="520" class="viz tempdial" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+// Temperature scaling as a single dial. Every logit vector of both trained nets
+// is divided by T before the softmax, the 4000 test predictions are re-binned,
+// and the two reliability curves redraw live. T > 1 softens the claims; the
+// dashed diagonal is honesty. Markers show each net's fitted temperature (the
+// T that minimizes held-out NLL in scripts/yat_calibration.py).
+import { defineViz } from './engine/vizkit.js';
+import { gate, loadingText, frame, T as Ty, fmt } from './engine/draw.js';
+import { loadCalib, maxConf, binStats } from './calib.js';
+
+const NBINS = 15;
+
+defineViz('tempdial', {
+  title: 'One shared dial: divide every logit by T',
+  height: 340,
+  controls: [
+    { type: 'range', name: 'T', label: 'temperature T', min: 0.5, max: 3.5, step: 0.01, value: 1, fmt: (v) => v.toFixed(2) },
+    { type: 'button', name: 'fitYat', label: 'Yat’s fitted T' },
+    { type: 'button', name: 'fitRelu', label: 'ReLU’s fitted T' },
+    { type: 'readout', name: 'rd' },
+  ],
+
+  setup(api) {
+    gate(api, loadCalib, (api, d) => { api.state.d = d; });
+  },
+
+  onAction(name, api) {
+    const d = api.state.d; if (!d) return;
+    if (name === 'fitYat') api.setControl('T', +d.yat.T.toFixed(2));
+    if (name === 'fitRelu') api.setControl('T', +d.relu.T.toFixed(2));
+  },
+
+  draw(api) {
+    const { ctx, colors, size, state: st } = api;
+    const W = size.W, H = size.H;
+    if (W === 0 || !st) return;
+    if (!st.ready) { loadingText(api); return; }
+    const d = st.d, T = api.get('T');
+
+    const padL = 46, padR = 14, top = 30, bottom = 42;
+    const pw = W - padL - padR, ph = H - top - bottom;
+    const sx = (v) => padL + v * pw, sy = (v) => top + ph - v * ph;
+
+    frame(ctx, colors, padL, top, pw, ph);
+    ctx.strokeStyle = colors.faint; ctx.setLineDash([3, 3]);
+    ctx.beginPath(); ctx.moveTo(sx(0), sy(0)); ctx.lineTo(sx(1), sy(1)); ctx.stroke();
+    ctx.setLineDash([]);
+    Ty(ctx, colors, 'small', { align: 'center' });
+    ctx.fillText('honest', sx(0.55), sy(0.55) - 8);
+
+    const nets = [
+      { key: 'yat', label: 'Yat', col: colors.accent },
+      { key: 'relu', label: 'ReLU', col: colors.blue },
+    ];
+    const eces = {};
+    for (const net of nets) {
+      const conf = maxConf(d[net.key].test, T);
+      const b = binStats(conf, d[net.key].correct, NBINS);
+      eces[net.key] = b.ece;
+      // curve through occupied bins: (claimed, delivered)
+      ctx.strokeStyle = net.col; ctx.lineWidth = 2.2;
+      ctx.lineJoin = 'round'; ctx.beginPath();
+      let started = false;
+      for (let i = 0; i < NBINS; i++) {
+        if (b.count[i] < 8) continue; // skip near-empty bins, they are noise
+        const x = sx(b.conf[i]), y = sy(api.tween(`${net.key}${i}`, b.acc[i], 120));
+        started ? ctx.lineTo(x, y) : ctx.moveTo(x, y); started = true;
+      }
+      ctx.stroke();
+      for (let i = 0; i < NBINS; i++) {
+        if (b.count[i] < 8) continue;
+        ctx.fillStyle = net.col; ctx.beginPath();
+        ctx.arc(sx(b.conf[i]), sy(api.tween(`${net.key}${i}`, b.acc[i], 120)), 3.2, 0, 6.283); ctx.fill();
+      }
+    }
+
+    // legend with each net's fitted T
+    Ty(ctx, colors, 'label');
+    let lx = padL + 12, ly = top + 16;
+    for (const net of nets) {
+      ctx.fillStyle = net.col; ctx.fillRect(lx, ly - 8, 18, 3.5);
+      Ty(ctx, colors, 'label');
+      ctx.fillText(`${net.label}: fitted T = ${d[net.key].T.toFixed(2)}, ECE now ${(eces[net.key] * 100).toFixed(1)}%`, lx + 24, ly);
+      ly += 17;
+    }
+
+    Ty(ctx, colors, 'small', { align: 'center' });
+    for (const t of [0, 0.5, 1]) ctx.fillText(fmt(t, 1), sx(t), top + ph + 13);
+    ctx.fillText('claimed confidence (after dividing logits by T)', padL + pw / 2, top + ph + 27);
+    ctx.save(); ctx.translate(padL - 30, top + ph / 2); ctx.rotate(-Math.PI / 2);
+    Ty(ctx, colors, 'small', { align: 'center' });
+    ctx.fillText('fraction correct', 0, 0); ctx.restore();
+
+    api.readout('rd', `T = ${T.toFixed(2)}   ECE: Yat ${(eces.yat * 100).toFixed(1)}%, ReLU ${(eces.relu * 100).toFixed(1)}%`);
+  },
+});
+</script>

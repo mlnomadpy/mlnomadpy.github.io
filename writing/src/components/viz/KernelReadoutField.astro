@@ -1,0 +1,221 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 460 } = Astro.props;
+---
+<figure data-min-width="720" class="viz kernelreadoutfield" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<style>
+  .viz :global(.vk-readout) { white-space: normal; line-height: 1.6; }
+</style>
+<script>
+import { defineViz } from './engine/vizkit.js';
+import { panel, text, PALETTE } from './engine/draw.js';
+import { np, withJax, drawJaxLoading } from './engine/jax.js';
+
+// Nonnegative scores with a positive total define convex coefficients.
+// Normalize shifted log similarities to avoid raw-score underflow. With zero-bias
+// Yat, all scores can genuinely vanish: then the normalized readout is undefined.
+// No floor or invented uniform mixture substitutes for that state.
+const NAMES = ['u₁', 'u₂', 'u₃', 'u₄', 'u₅'];
+const P = [[-0.72, 0.58], [0.70, 0.66], [0.86, -0.42], [0.02, -0.86], [-0.86, -0.28]];
+const R = [[0.05, 0.82], [0.76, 0.18], [0.46, -0.70], [-0.56, -0.62], [-0.82, 0.36]];
+
+// monotone-chain convex hull of 2-D points → ordered vertices
+function hull(pts) {
+  const p = pts.map((q, i) => ({ x: q[0], y: q[1], i })).sort((a, b) => a.x - b.x || a.y - b.y);
+  if (p.length < 3) return p;
+  const cross = (o, a, b) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+  const lo = [];
+  for (const q of p) { while (lo.length >= 2 && cross(lo[lo.length - 2], lo[lo.length - 1], q) <= 0) lo.pop(); lo.push(q); }
+  const hi = [];
+  for (let k = p.length - 1; k >= 0; k--) { const q = p[k]; while (hi.length >= 2 && cross(hi[hi.length - 2], hi[hi.length - 1], q) <= 0) hi.pop(); hi.push(q); }
+  return lo.slice(0, -1).concat(hi.slice(0, -1));
+}
+
+// Log scores use scalar geometry; the output matmul runs on jax-js.
+function readout(x, kernel, h, eps) {
+  if (!(h > 0) || !Number.isFinite(h) || !(eps > 0) || !Number.isFinite(eps)) {
+    throw new RangeError('Use positive, finite kernel scales.');
+  }
+  const dots = P.map(p => x[0]*p[0] + x[1]*p[1]);
+  if (kernel !== 'gaussian' && dots.every(v => v === 0)) return { a: null, y: null, status: 'zero-total' };
+  const logs = P.map((p,u) => {
+    const d2 = (x[0]-p[0]) ** 2 + (x[1]-p[1]) ** 2;
+    if (kernel === 'gaussian') return -d2 / (2*h*h);
+    const dot = dots[u];
+    return dot === 0 ? -Infinity : 2*Math.log(Math.abs(dot)) - Math.log(d2+eps);
+  });
+  const maxLog = Math.max(...logs);
+  if (!Number.isFinite(maxLog)) return { a: null, y: null, status: 'numerical-range' };
+  const shifted = logs.map(v => Math.exp(v-maxLog));
+  const total = shifted.reduce((a,b) => a+b,0);
+  const a = shifted.map(v => v/total);
+  const y = np.matmul(np.reshape(np.array(a), [1,P.length]), np.array(R)).js()[0];
+  return { a, y, status: 'defined' };
+}
+
+function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
+
+defineViz('kernelreadoutfield', {
+  title: 'Normalize the scores, and check the zero-total case',
+  height: 460,
+  controls: [
+    { type: 'select', name: 'kernel', label: 'kernel κ', value: 'gaussian', reset: false,
+      options: [
+        { value: 'gaussian', label: 'Gaussian (RBF)' },
+        { value: 'yat', label: 'Yat · zero bias' },
+      ] },
+    { type: 'range', name: 'sharp', label: 'scale', min: 0.18, max: 1.4, step: 0.02, value: 0.55, reset: false, fmt: v => v.toFixed(2) },
+    { type: 'button', name: 'origin', label: 'query at origin', reset: false },
+    { type: 'toggle', name: 'trail', label: 'readout trail', value: true },
+    { type: 'readout', name: 'rd' },
+  ],
+  setup(api) {
+    api.state.x = [-0.18, 0.30];
+    api.state.trail = [];
+    api.state.hull = hull(R);
+    if (!api.canvas.dataset.krfDrag) {
+      api.canvas.dataset.krfDrag = '1';
+      let dragging = false;
+      const onP = (e) => {
+        const m = api.state.inMap; if (!m) return;
+        const r = api.canvas.getBoundingClientRect();
+        const ix = clamp((e.clientX - r.left - m.cx) / m.R, -1.18, 1.18);
+        const iy = clamp(-(e.clientY - r.top - m.cy) / m.R, -1.18, 1.18);
+        api.state.x = [ix, iy];
+        api.render();
+      };
+      api.canvas.addEventListener('pointerdown', (e) => { dragging = true; api.canvas.setPointerCapture(e.pointerId); onP(e); });
+      api.canvas.addEventListener('pointermove', (e) => { if (dragging) onP(e); });
+      api.canvas.addEventListener('pointerup', (e) => { dragging = false; try { api.canvas.releasePointerCapture(e.pointerId); } catch {} });
+    }
+    withJax(api);
+  },
+  onAction(name, api) { if (name === 'origin') { api.state.x = [0,0]; api.state.trail = []; api.render(); } },
+  draw(api) {
+    if (!api.state.jaxReady) return drawJaxLoading(api);
+    const { ctx, colors, size, state } = api;
+    const box = { x: 6, y: 4, w: size.W - 12, h: size.H - 8 };
+    panel(ctx, box, colors, {});
+
+    const kernel = api.get('kernel'), h = api.get('sharp');
+    const eps = h * h * 0.6;
+    const x = state.x;
+    const result = readout(x, kernel, h, eps);
+    const { y, status } = result;
+    const valid = status === 'defined';
+    const a = result.a ?? P.map(() => 0); // only used to draw neutral centers when undefined
+
+    const pad = 12, topH = 24, botH = 68;
+    const colW = (box.w - pad * 3) / 2;
+    const innerY = box.y + topH, innerH = box.h - topH - botH;
+    const leftBox = { x: box.x + pad, y: innerY, w: colW, h: innerH };
+    const rightBox = { x: box.x + pad * 2 + colW, y: innerY, w: colW, h: innerH };
+
+    // ── left: input space ──
+    text(ctx, 'input space, drag the query x', leftBox.x, box.y + 9, colors, { size: 12, weight: '600' });
+    const lm = panel(ctx, leftBox, colors, {});
+    state.inMap = { cx: lm.cx, cy: lm.cy, R: lm.R };
+    ctx.strokeStyle = colors.border; ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(lm.cx - lm.R * 1.12, lm.cy); ctx.lineTo(lm.cx + lm.R * 1.12, lm.cy);
+    ctx.moveTo(lm.cx, lm.cy - lm.R * 1.12); ctx.lineTo(lm.cx, lm.cy + lm.R * 1.12);
+    ctx.stroke();
+    // similarity links + prototypes sized by weight
+    for (let i = 0; i < P.length; i++) {
+      const [px, py] = lm.map(P[i]);
+      ctx.strokeStyle = PALETTE[i]; ctx.globalAlpha = 0.18 + 0.62 * a[i];
+      ctx.lineWidth = 0.6 + 6 * a[i];
+      ctx.beginPath(); ctx.moveTo(...lm.map(x)); ctx.lineTo(px, py); ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+    for (let i = 0; i < P.length; i++) {
+      const [px, py] = lm.map(P[i]);
+      ctx.fillStyle = PALETTE[i];
+      ctx.beginPath(); ctx.arc(px, py, 4 + 7 * a[i], 0, Math.PI * 2); ctx.fill();
+      text(ctx, NAMES[i], px + 7, py - 8, colors, { size: 10, mono: true, color: colors.muted });
+    }
+    const [xpx, xpy] = lm.map(x);
+    ctx.fillStyle = colors.fg;
+    ctx.beginPath(); ctx.arc(xpx, xpy, 6, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = colors.cellBg; ctx.lineWidth = 1.6; ctx.stroke();
+    text(ctx, 'x', xpx + 9, xpy - 11, colors, { size: 12, weight: '700', mono: true });
+
+    // ── right: output space (residual stream) ──
+    text(ctx, valid ? 'output space, a convex mixture' : 'output space, readout undefined', rightBox.x, box.y + 9, colors, { size: 12, weight: '600' });
+    const rm = panel(ctx, rightBox, colors, {});
+    ctx.strokeStyle = colors.border; ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(rm.cx - rm.R * 1.12, rm.cy); ctx.lineTo(rm.cx + rm.R * 1.12, rm.cy);
+    ctx.moveTo(rm.cx, rm.cy - rm.R * 1.12); ctx.lineTo(rm.cx, rm.cy + rm.R * 1.12);
+    ctx.stroke();
+    // convex hull
+    const hv = state.hull;
+    ctx.beginPath();
+    hv.forEach((p, k) => { const [hx, hy] = rm.map([p.x, p.y]); k ? ctx.lineTo(hx, hy) : ctx.moveTo(hx, hy); });
+    ctx.closePath();
+    ctx.fillStyle = colors.accent + '14'; ctx.fill();
+    ctx.strokeStyle = colors.accent + '66'; ctx.lineWidth = 1.2; ctx.stroke();
+    // trail of past readouts
+    if (valid && api.get('trail')) {
+      state.trail.push([y[0], y[1]]);
+      if (state.trail.length > 90) state.trail.shift();
+      for (let k = 0; k < state.trail.length; k++) {
+        const [tx, ty] = rm.map(state.trail[k]);
+        ctx.fillStyle = colors.accent; ctx.globalAlpha = 0.04 + 0.18 * (k / state.trail.length);
+        ctx.beginPath(); ctx.arc(tx, ty, 2.4, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    } else if (state.trail.length) state.trail.length = 0;
+    // spokes from each prototype to y, weighted by coefficient
+    for (let i = 0; valid && i < R.length; i++) {
+      const [px, py] = rm.map(R[i]);
+      ctx.strokeStyle = PALETTE[i]; ctx.globalAlpha = 0.15 + 0.6 * a[i]; ctx.lineWidth = 0.5 + 4 * a[i];
+      ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(...rm.map(y)); ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+    for (let i = 0; i < R.length; i++) {
+      const [px, py] = rm.map(R[i]);
+      ctx.fillStyle = PALETTE[i];
+      ctx.beginPath(); ctx.arc(px, py, 4 + 6 * a[i], 0, Math.PI * 2); ctx.fill();
+      text(ctx, 'r' + (i + 1), px + 7, py - 8, colors, { size: 10, mono: true, color: colors.muted });
+    }
+    if (valid) {
+      const [ypx, ypy] = rm.map(y);
+      ctx.fillStyle = colors.fg; ctx.beginPath(); ctx.arc(ypx, ypy, 6.5, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = colors.cellBg; ctx.lineWidth = 1.6; ctx.stroke();
+      text(ctx, 'z', ypx + 9, ypy - 11, colors, { size: 12, weight: '700', mono: true });
+    } else {
+      text(ctx, status === 'zero-total' ? 'all raw scores are zero' : 'scores exceed numerical range',
+        rm.cx, rm.cy, colors, { size: 11, align: 'center', color: colors.muted });
+      text(ctx, 'no output point or mixing weights', rm.cx, rm.cy+18, colors,
+        { size: 10, align: 'center', color: colors.muted });
+      api.readout('rd', status === 'zero-total' ? 'Undefined normalized readout: total similarity is zero.' : 'Undefined: scores exceed numerical range.');
+      return;
+    }
+
+    // ── bottom: convex coefficient strip ──
+    const stripY = box.y + box.h - botH + 8, stripH = botH - 38;
+    const bw = (box.w - pad * 2) / a.length;
+    const sum = a.reduce((p, v) => p + v, 0);
+    text(ctx, `mixing weights · Σ a = ${sum.toFixed(3)} · all ≥ 0 · log-score normalization`,
+      box.x + pad, stripY - 4, colors, { size: 10.5, mono: true, color: colors.muted });
+    for (let i = 0; i < a.length; i++) {
+      const bx = box.x + pad + i * bw + 3;
+      const bh = a[i] * stripH;
+      ctx.fillStyle = PALETTE[i];
+      ctx.fillRect(bx, stripY + 14 + (stripH - bh), Math.max(10, bw - 8), bh);
+      text(ctx, a[i].toFixed(2), bx + (bw - 8) / 2, stripY + 14 + stripH + 2, colors, { align: 'center', size: 9.5, mono: true, color: colors.muted });
+    }
+
+    const top = a.indexOf(Math.max(...a));
+    api.readout('rd', `x (${x[0].toFixed(2)}, ${x[1].toFixed(2)}) · largest mixing weight ${NAMES[top]} ${a[top].toFixed(3)} · ${kernel === 'gaussian' ? 'h ' + h.toFixed(2) : 'ε ' + eps.toFixed(3)}`);
+  },
+});
+</script>

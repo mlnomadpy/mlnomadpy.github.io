@@ -1,0 +1,160 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 380 } = Astro.props;
+---
+<figure data-min-width="800" class="viz kdhandoff" data-caption={caption} data-height={height} data-height-mobile="440" tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+// The handoff, live: a tiny student network (16 -> 16 -> 8) is trained in the page
+// by real gradient descent, and its ONLY objective is to make its embedding Gram
+// match the Gram of teacher outputs on 30 selected test garments. The teacher
+// was label-trained; labels here color the plot and do not enter the fitting loss.
+// Inputs and targets are exported from the real run (scripts/kernel_distill.py).
+import { defineViz } from './engine/vizkit.js';
+import { gate, loadingText, T, frame, sparkline, parseColor, rgba, clamp01 } from './engine/draw.js';
+import { loadKD, CLASSES, CLASS_COL } from './kdistill.js';
+import { tensor, param, matmul, transpose, add, sub, mul, square, relu, normRows, sumAll, backward, Adam } from './engine/nanograd.js';
+
+const N = 30, DIN = 16, DH = 16, DE = 8, MAXSTEP = 900;
+
+defineViz('kdhandoff', {
+  title: 'Fit 30 example relations with a tiny MLP',
+  height: 380,
+  stepsPerFrame: 3,
+  maxStep: MAXSTEP,
+  autoplay: false,
+  controls: [
+    { type: 'play' }, { type: 'step' }, { type: 'reset' }, { type: 'speed' },
+    { type: 'readout', name: 'rd' },
+  ],
+
+  setup(api) {
+    api.state.losses = [];
+    gate(api, loadKD, (api, d) => {
+      const st = api.state;
+      st.d = d;
+      st.X = tensor(N, DIN, d.handoff.X.flat());
+      st.G = d.handoff.G;                          // the teacher's target Gram (30x30)
+      st.labels = d.handoff.labels;
+      // mask: learn only the relations, ignore the trivial diagonal
+      const mflat = []; for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) mflat.push(i === j ? 0 : 1);
+      st.mask = tensor(N, N, mflat);
+      const rnd = mulberry32(7);
+      st.W1 = param(DIN, DH, () => (rnd() - 0.5) * 0.5);
+      st.b1 = param(1, DH, () => 0);
+      st.W2 = param(DH, DE, () => (rnd() - 0.5) * 0.5);
+      st.b2 = param(1, DE, () => 0);
+      st.opt = new Adam([st.W1, st.b1, st.W2, st.b2], 0.02);
+      st.Gs = forward(st).js;                       // the untrained student's Gram
+    });
+  },
+
+  step(api) {
+    const st = api.state;
+    if (!st || !st.ready) return;
+    const out = forward(st);
+    // relational loss: mean squared Gram mismatch, off-diagonal only
+    const diff = mul(square(sub(out.Gs, tensor(N, N, st.G.flat()))), st.mask);
+    const loss = sumAll(diff);
+    backward(loss);
+    st.opt.step();
+    st.losses.push(loss.d[0] / (N * N - N));
+    st.Gs = out.js;
+  },
+
+  draw(api) {
+    const { ctx, colors, size, state: st } = api;
+    const W = size.W, H = size.H;
+    if (!st || !st.ready) { loadingText(api); return; }
+    const pad = 12, narrow = W < 640;
+    const mS = Math.min(H - 66, narrow ? (W - 3 * pad - 90) / 2 : (W - 4 * pad - 170) / 2);
+    const x1 = pad, x2 = pad + mS + pad + 8, xc = x2 + mS + pad + 10, top = 34;
+
+    T(ctx, colors, 'kicker'); ctx.fillText('teacher: the target Gram', x1, 20);
+    ctx.fillText('student: its Gram right now', x2, 20);
+    ctx.fillText('relational loss', xc, 20);
+
+    drawGram(ctx, x1, top, mS, st.G, st.labels, colors);
+    drawGram(ctx, x2, top, mS, st.Gs, st.labels, colors);
+
+    // mismatch tint: fade a veil over the student that thins as it converges
+    const err = st.losses.length ? st.losses[st.losses.length - 1] : meanErr(st);
+    ctx.fillStyle = rgba(parseColor(colors.bg), clamp01(Math.sqrt(err) * 4) * 0.35);
+    ctx.fillRect(x2, top, mS, mS);
+    frame(ctx, colors, x2, top, mS, mS);
+
+    const cW = W - xc - pad;
+    if (cW > 60) {
+      sparkline(ctx, { x: xc, y: top, w: cW, h: Math.min(120, mS * 0.55) },
+        [{ data: padTo(st.losses, 40), color: colors.accent, scale: (v) => Math.min(1, v / 0.06) }], colors);
+      T(ctx, colors, 'small', { color: colors.faint });
+      ctx.fillText('mean sq. mismatch', xc, top + Math.min(120, mS * 0.55) + 14);
+      T(ctx, colors, 'value', { color: colors.fg });
+      ctx.fillText(err.toExponential(1), xc, top + Math.min(120, mS * 0.55) + 34);
+      T(ctx, colors, 'small', { color: colors.faint });
+      const ly = top + Math.min(120, mS * 0.55) + 56;
+      wrapText(ctx, 'demo only: fit these 30 pairs; teacher was trained with labels', xc, ly, cW, 13);
+    }
+
+    api.readout('rd', api.iter === 0
+      ? 'press Play: gradient descent on the Gram mismatch runs in your browser'
+      : `step ${api.iter}/${MAXSTEP}, off-diagonal mismatch ${err.toExponential(1)}`);
+  },
+});
+
+function forward(st) {
+  const h = relu(add(matmul(st.X, st.W1), st.b1));
+  const e = add(matmul(h, st.W2), st.b2);
+  const en = normRows(e);
+  const Gs = matmul(en, transpose(en));
+  const js = []; for (let i = 0; i < N; i++) js.push(Array.from(Gs.d.slice(i * N, i * N + N)));
+  return { Gs, js };
+}
+
+function meanErr(st) {
+  let s = 0; for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) if (i !== j) s += (st.Gs[i][j] - st.G[i][j]) ** 2;
+  return s / (N * N - N);
+}
+
+function drawGram(ctx, x, y, s, G, labels, colors) {
+  const cell = s / N, base = parseColor(colors.cellBg), hi = parseColor(colors.accent);
+  for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
+    const t = clamp01(G[i][j]);
+    ctx.fillStyle = rgba([base[0] + (hi[0] - base[0]) * t, base[1] + (hi[1] - base[1]) * t, base[2] + (hi[2] - base[2]) * t]);
+    ctx.fillRect(x + j * cell, y + i * cell, cell + 0.5, cell + 0.5);
+  }
+  for (let i = 0; i < N; i++) {                     // class strips along the edges
+    ctx.fillStyle = CLASS_COL[labels[i]];
+    ctx.fillRect(x + i * cell, y - 4, cell, 3);
+    ctx.fillRect(x - 4, y + i * cell, 3, cell);
+  }
+  frame(ctx, colors, x, y, s, s);
+}
+
+function padTo(a, n) { return a.length >= n ? a : a.concat(Array(n - a.length).fill(a.length ? a[a.length - 1] : 0.05)); }
+
+function wrapText(ctx, str, x, y, w, lh) {
+  const words = str.split(' '); let line = '', yy = y;
+  for (const wd of words) {
+    const t = line ? line + ' ' + wd : wd;
+    if (ctx.measureText(t).width > w && line) { ctx.fillText(line, x, yy); line = wd; yy += lh; }
+    else line = t;
+  }
+  if (line) ctx.fillText(line, x, yy);
+}
+
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+</script>

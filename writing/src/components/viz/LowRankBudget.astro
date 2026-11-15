@@ -1,0 +1,96 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 410 } = Astro.props;
+---
+<figure data-min-width="800" class="viz lowrankbudget" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+import { defineViz } from './engine/vizkit.js';
+import { panel, text, parseColor } from './engine/draw.js';
+import { np, nn, eigh, withJax, drawJaxLoading } from './engine/jax.js';
+
+// B = W_Q W_Kᵀ is at most rank d_k, the head dimension. That is the head's
+// relational budget: it can match at most d_k query features against d_k key
+// features. Sweep d_k and the singular spectrum of B fills in one nonzero value at
+// a time, while the token score matrix S = X B Xᵀ sharpens. The factorization also
+// costs 2·d_model·d_k parameters instead of d_model² for a full B. Singular values
+// come from eigh(BᵀB) on the engine; the scores and softmax run in jax-js.
+const DM = 6, N = 7;
+function rng(seed) { let s = seed; return () => { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; }; }
+const rand = rng(20260604);
+const gauss = () => (rand() + rand() + rand() + rand() - 2) * 0.9;          // ~N(0,1)
+const WQ = Array.from({ length: DM }, () => Array.from({ length: DM }, gauss));
+const WK = Array.from({ length: DM }, () => Array.from({ length: DM }, gauss));
+const X = Array.from({ length: N }, () => Array.from({ length: DM }, gauss));
+
+function compute(dk, tau) {
+  const WQk = WQ.map((r) => r.slice(0, dk)), WKk = WK.map((r) => r.slice(0, dk));
+  const B = np.matmul(np.array(WQk), np.swapaxes(np.array(WKk), 0, 1)).js();   // (DM,DM), rank ≤ dk
+  const BtB = np.matmul(np.swapaxes(np.array(B), 0, 1), np.array(B)).js();
+  const sv = eigh(BtB).values.map((v) => Math.sqrt(Math.max(0, v)));            // singular values of B
+  const S = np.matmul(np.matmul(np.array(X), np.array(B)), np.swapaxes(np.array(X), 0, 1)).js();
+  const A = nn.softmax(np.array(S.map((r) => r.map((v) => v / tau))), -1).js();
+  return { sv, A };
+}
+
+defineViz('lowrankbudget', {
+  title: 'The Q/K factorization is a rank budget',
+  height: 410,
+  controls: [
+    { type: 'range', name: 'dk', label: 'head dim d_k', min: 1, max: DM, step: 1, value: 2, int: true, reset: false, fmt: v => String(v) },
+    { type: 'range', name: 'tau', label: 'temperature', min: 0.5, max: 4, step: 0.1, value: 1.4, reset: false, fmt: v => v.toFixed(1) },
+    { type: 'readout', name: 'rd' },
+  ],
+  setup(api) { withJax(api); },
+  draw(api) {
+    if (!api.state.jaxReady) return drawJaxLoading(api);
+    const { ctx, colors, size } = api;
+    const box = { x: 6, y: 4, w: size.W - 12, h: size.H - 8 };
+    panel(ctx, box, colors, {});
+    const dk = api.get('dk');
+    const { sv, A } = compute(dk, api.get('tau'));
+
+    // ── left: singular spectrum ──
+    const left = { x: box.x + 14, y: box.y + 30, w: box.w * 0.46, h: box.h - 92 };
+    text(ctx, 'singular values of B = W_Q W_Kᵀ', left.x, box.y + 11, colors, { size: 12, weight: '600' });
+    panel(ctx, left, colors, {});
+    const mx = Math.max(1e-6, ...sv);
+    const bw = (left.w - 20) / DM;
+    for (let i = 0; i < DM; i++) {
+      const bx = left.x + 12 + i * bw;
+      const bh = (sv[i] / mx) * (left.h - 36);
+      const on = i < dk;
+      ctx.fillStyle = on ? colors.accent : colors.border;
+      ctx.fillRect(bx, left.y + left.h - 18 - bh, Math.max(10, bw - 8), bh);
+      text(ctx, 'σ' + (i + 1), bx + (bw - 8) / 2, left.y + left.h - 14, colors, { align: 'center', size: 9, mono: true, color: colors.muted });
+    }
+    text(ctx, `${dk} nonzero · ${DM - dk} forced to zero`, left.x + 12, left.y + 6, colors, { size: 10, mono: true, color: colors.muted });
+
+    // ── right: token score / attention ──
+    const right = { x: box.x + box.w * 0.52, y: box.y + 30, w: box.w * 0.44, h: box.h - 92 };
+    text(ctx, 'token attention  softmax(X B Xᵀ)', right.x, box.y + 11, colors, { size: 12, weight: '600' });
+    const side = Math.min(right.w, right.h);
+    const ox = right.x + (right.w - side) / 2, oy = right.y, cs = side / N;
+    const bg = parseColor(colors.cellBg), hi = parseColor(colors.accent);
+    for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
+      const t = Math.min(1, A[i][j] * N * 0.6);
+      ctx.fillStyle = `rgb(${Math.round(bg[0] + (hi[0] - bg[0]) * t)},${Math.round(bg[1] + (hi[1] - bg[1]) * t)},${Math.round(bg[2] + (hi[2] - bg[2]) * t)})`;
+      ctx.fillRect(ox + j * cs, oy + i * cs, cs + 0.5, cs + 0.5);
+    }
+    ctx.strokeStyle = colors.border; ctx.strokeRect(ox + 0.5, oy + 0.5, side - 1, side - 1);
+
+    const params = 2 * DM * dk, full = DM * DM;
+    text(ctx, `rank(B) = ${dk} ≤ d_k.   parameters: 2·d_model·d_k = ${params}   vs full B: d_model² = ${full}`,
+      box.x + 14, box.y + box.h - 30, colors, { size: 10.5, mono: true, color: colors.fg });
+    text(ctx, 'Each head has a rank budget for query↔key relations.',
+      box.x + 14, box.y + box.h - 14, colors, { size: 10, mono: true, color: colors.muted });
+    api.readout('rd', `rank ${dk} · ${params} params (${(100 * params / full).toFixed(0)}% of full) · live`);
+  },
+});
+</script>

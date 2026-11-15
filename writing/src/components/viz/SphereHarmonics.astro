@@ -1,0 +1,123 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 460 } = Astro.props;
+---
+<figure data-min-width="800" class="viz sphereharm" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+// S² with normalized area measure. Plot eigenvalues, not Legendre coefficients.
+import { sphereSpectrum } from './engine/kernel-price-demo.js';
+import { defineViz } from './engine/vizkit.js';
+import { softPanel, barGrad, T, rgba, parseColor } from './engine/draw.js';
+
+const hex = (h) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+const KMAX = 9;
+const PROTOS = [                                        // unit vectors on the sphere; α the sign of each lobe
+  { v: [0.25, 0.35, 0.90], a: 1 }, { v: [-0.55, -0.10, 0.83], a: -1 }, { v: [0.45, -0.55, 0.70], a: 1 },
+].map((p) => ({ v: norm3(p.v), a: p.a }));
+function norm3(v) { const n = Math.hypot(v[0], v[1], v[2]) || 1; return [v[0] / n, v[1] / n, v[2] / n]; }
+
+function spectrum(sharp) {
+  const raw = sphereSpectrum(sharp, KMAX);
+  return raw.map(v => v / raw[0]);
+}
+
+defineViz('sphereharm', {
+  title: 'Kernel sections and operator eigenvalues on S²',
+  height: 460,
+  controls: [
+    { type: 'range', name: 'sharp', label: 'kernel sharpness', min: 1.5, max: 22, step: 0.5, value: 6, reset: false, fmt: (v) => v.toFixed(1) },
+    { type: 'readout', name: 'rd' },
+  ],
+
+  setup(api) { api.state = { protos: PROTOS.map((p) => ({ v: [...p.v], a: p.a })), drag: -1, off: document.createElement('canvas') }; bind(api); },
+
+  draw(api) {
+    const { ctx, colors, size, state: st } = api;
+    const W = size.W, H = size.H; if (W === 0 || !st) return;
+    const sharp = api.get('sharp'); const b = spectrum(sharp);
+    const ACC = colors.accent;
+    ctx.clearRect(0, 0, W, H);
+    const pad = 14, topH = 28;
+
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; ctx.fillStyle = colors.fg; ctx.font = 'bold 13px ui-sans-serif, system-ui';
+    ctx.fillText('f(p) = Σ αⱼ κ(⟨p,Wⱼ⟩) · κ(t) = exp(a(t−1))', pad, pad + 12);
+
+    // ── the globe (left) ──
+    const R = Math.min(150, (H - topH - pad - 14) / 2, (W - pad * 2) * 0.42 / 2 + 40);
+    const gR = Math.max(60, R);
+    const cx = pad + gR, cy = pad + topH + gR;
+    st._g = { cx, cy, gR };
+    const kap = (t) => Math.exp(sharp * (t - 1));
+    const fAt = (p) => { let s = 0; for (const pr of st.protos) s += pr.a * kap(p[0] * pr.v[0] + p[1] * pr.v[1] + p[2] * pr.v[2]); return s; };
+    // render front hemisphere to an offscreen ImageData, then drawImage (DPR-safe).
+    // The raster depends only on sharpness, the prototype vectors, the theme and the
+    // globe radius, not on any hover-only state, so it is cached and rebuilt only when
+    // one of those changes. Dragging a prototype (which moves a lobe) recomputes; a
+    // pointerdown that grabs nothing, or a repaint at the same sharpness, reuses it.
+    const S = Math.round(gR * 2); const off = st.off;
+    let fieldKey = sharp + '|' + S + '|' + (colors.cellBg || colors.bg) + '|' + ACC;
+    for (const pr of st.protos) fieldKey += '|' + pr.v[0] + ',' + pr.v[1] + ',' + pr.v[2] + ',' + pr.a;
+    if (st._fieldKey !== fieldKey) {
+      off.width = S; off.height = S;
+      const octx = off.getContext('2d'); const img = octx.createImageData(S, S);
+      const bg = hex(colors.cellBg || colors.bg), pos = hex(ACC), neg = hex('#4a7fb3');
+      // estimate scale from the prototypes' own peaks
+      let fmax = 1e-6; for (const pr of st.protos) fmax = Math.max(fmax, Math.abs(fAt(pr.v)));
+      for (let py = 0; py < S; py++) for (let px = 0; px < S; px++) {
+        const x = (px - gR) / gR, y = -(py - gR) / gR, r2 = x * x + y * y; const o = (py * S + px) * 4;
+        if (r2 > 1) { img.data[o + 3] = 0; continue; }
+        const z = Math.sqrt(1 - r2); const v = fAt([x, y, z]) / fmax; const t = Math.max(-1, Math.min(1, v));
+        const base = t >= 0 ? pos : neg, a = Math.abs(t); const shade = 0.55 + 0.45 * z;   // simple rim shading
+        img.data[o] = (bg[0] + (base[0] - bg[0]) * a) * shade; img.data[o + 1] = (bg[1] + (base[1] - bg[1]) * a) * shade; img.data[o + 2] = (bg[2] + (base[2] - bg[2]) * a) * shade; img.data[o + 3] = 255;
+      }
+      octx.putImageData(img, 0, 0);
+      st._fieldKey = fieldKey;
+    }
+    ctx.drawImage(off, cx - gR, cy - gR, gR * 2, gR * 2);
+    ctx.strokeStyle = colors.border; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(cx, cy, gR, 0, 6.283); ctx.stroke();
+    // prototypes on the front hemisphere
+    for (const pr of st.protos) { if (pr.v[2] <= 0.02) continue; const X = cx + pr.v[0] * gR, Y = cy - pr.v[1] * gR;
+      ctx.fillStyle = colors.fg; ctx.beginPath(); ctx.arc(X, Y, 4.5, 0, 6.283); ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = pr.a >= 0 ? ACC : '#4a7fb3'; ctx.stroke(); }
+    ctx.fillStyle = colors.faint; ctx.font = '10px ui-sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText('drag the prototypes', cx, cy + gR + 6);
+
+    // ── degree spectrum (right) ── header band reserved so bars never touch the title
+    const sX = cx + gR + 32, sY = pad + topH, sW = W - sX - pad, sH = gR * 2;
+    const accRGB = parseColor(colors.accent);
+    softPanel(ctx, sX, sY, sW, sH, colors, { r: 10 });
+    const HEAD = 28, FOOT = 32;                          // reserved bands: title up top, k-labels + note at bottom
+    T(ctx, colors, 'small', { align: 'left', baseline: 'top', color: colors.muted }); ctx.fillText('operator eigenvalues λℓ / λ₀ (log)', sX + 10, sY + 7);
+    const barTop = sY + HEAD, barBot = sY + sH - FOOT;
+    const lo = 1e-4; const ly = (v) => { const t = (Math.log10(Math.max(lo, v)) - Math.log10(lo)) / (0 - Math.log10(lo)); return barBot - t * (barBot - barTop); };
+    const bw = (sW - 20) / (KMAX + 1);
+    let nz = 0;
+    for (let k = 0; k <= KMAX; k++) { const bx = sX + 10 + k * bw, top = ly(b[k]); if (b[k] > 0.02 && k > 0) nz++;
+      barGrad(ctx, bx, top, Math.max(2.5, bw - 6), barBot - top, top, rgba(accRGB, 0.55), rgba(accRGB, 1));
+      T(ctx, colors, 'small', { align: 'center', baseline: 'top', color: colors.faint }); ctx.fillText('' + k, bx + (bw - 6) / 2, barBot + 4); }
+    T(ctx, colors, 'small', { align: 'left', baseline: 'bottom', color: colors.muted });
+    ctx.fillText('degrees 0–9 · normalized surface measure', sX + 10, sY + sH - 7);
+
+    api.readout('rd', `sharpness ${sharp.toFixed(1)} · ${nz} shown degrees with λℓ/λ₀ > 0.02 · drag a prototype to move a lobe`);
+  },
+});
+
+function bind(api) {
+  if (api.canvas.dataset.shBound) return; api.canvas.dataset.shBound = '1'; api.canvas.style.cursor = 'grab';
+  const at = (e) => { const rc = api.canvas.getBoundingClientRect(); return { px: (e.clientX - rc.left) * api.size.W / rc.width, py: (e.clientY - rc.top) * api.size.H / rc.height }; };
+  api.canvas.addEventListener('pointerdown', (e) => { const st = api.state, g = st && st._g; if (!g) return; const { px, py } = at(e);
+    let best = -1, bd = 18; st.protos.forEach((pr, i) => { if (pr.v[2] <= 0.02) return; const d = Math.hypot(px - (g.cx + pr.v[0] * g.gR), py - (g.cy - pr.v[1] * g.gR)); if (d < bd) { bd = d; best = i; } });
+    st.drag = best; if (best >= 0) { api.canvas.style.cursor = 'grabbing'; api.render(); } });
+  api.canvas.addEventListener('pointermove', (e) => { const st = api.state, g = st && st._g; if (!g || st.drag < 0) return; const { px, py } = at(e);
+    let x = (px - g.cx) / g.gR, y = -(py - g.cy) / g.gR; const r = Math.hypot(x, y); if (r > 0.98) { x /= r / 0.98; y /= r / 0.98; } const z = Math.sqrt(Math.max(0, 1 - x * x - y * y));
+    st.protos[st.drag].v = [x, y, z]; api.render(); });
+  const up = () => { if (api.state) api.state.drag = -1; api.canvas.style.cursor = 'grab'; };
+  api.canvas.addEventListener('pointerup', up); api.canvas.addEventListener('pointercancel', up);
+}
+</script>

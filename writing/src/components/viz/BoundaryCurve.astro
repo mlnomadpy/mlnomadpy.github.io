@@ -1,0 +1,77 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 420 } = Astro.props;
+---
+<figure data-min-width="640" class="viz boundarycurve" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+// Archived checkpoint scores for joint training versus refitted prototype heads.
+import { defineViz } from './engine/vizkit.js';
+import { loadFold } from './trainfeat.js';
+import { gate, loadingText } from './engine/draw.js';
+
+defineViz('boundarycurve', {
+  title: 'Two heads at each archived backbone checkpoint',
+  height: 420,
+  controls: [{ type: 'range', name: 'stage', label: 'backbone training', min: 0, max: 4, step: 1, value: 4, int: true, reset: false, fmt: (v) => v, play: { period: 4500, loop: false } }, { type: 'readout', name: 'rd' }],
+
+  setup(api) {
+    gate(api, loadFold, (api, d) => {
+      api.state.d = d;
+      api.state.eps = d.frames.map((f) => f.ep); api.state.trn = d.frames.map((f) => f.trained); api.state.con = d.frames.map((f) => f.constructed);
+    });
+  },
+
+  draw(api) {
+    const { ctx, colors, size, state: st } = api;
+    const W = size.W, H = size.H;
+    if (W === 0 || !st) return;
+    ctx.clearRect(0, 0, W, H);
+    if (!st.ready) { loadingText(api); return; }
+
+    const eps = st.eps, trn = st.trn, con = st.con, n = eps.length, sel = api.get('stage');
+    const pad = 16, L = pad + 30, R = W - pad - 150, T = pad + 22, Bm = H - pad - 26;
+    const epMax = eps[n - 1];
+    const X = (e) => L + (e / epMax) * (R - L), Y = (a) => Bm - (a / 100) * (Bm - T);
+
+    // axes
+    ctx.strokeStyle = colors.border; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(L, T); ctx.lineTo(L, Bm); ctx.lineTo(R, Bm); ctx.stroke();
+    ctx.fillStyle = colors.faint; ctx.font = '9px ui-sans-serif, system-ui'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    for (let a = 0; a <= 100; a += 25) { ctx.fillText(a + '', L - 5, Y(a)); }
+    ctx.fillStyle = colors.muted; ctx.font = '10px ui-sans-serif, system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText('backbone training epochs', (L + R) / 2, Bm + 10);
+
+    // raw-pixel baseline
+    ctx.strokeStyle = colors.faint; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.moveTo(L, Y(st.d.rawPixel)); ctx.lineTo(R, Y(st.d.rawPixel)); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = colors.muted; ctx.font = '9px ui-sans-serif, system-ui'; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+    ctx.fillText(`pixel reference, ${st.d.rawPixel}%`, L + 4, Y(st.d.rawPixel) - 2);
+
+    const line = (arr, col) => { ctx.strokeStyle = col; ctx.lineWidth = 2.4; ctx.beginPath();
+      for (let i = 0; i < n; i++) { const x = X(eps[i]), y = Y(arr[i]); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } ctx.stroke();
+      for (let i = 0; i < n; i++) { ctx.fillStyle = col; ctx.beginPath(); ctx.arc(X(eps[i]), Y(arr[i]), i === sel ? 5 : 3, 0, 6.283); ctx.fill(); if (i === sel) { ctx.strokeStyle = colors.bg; ctx.lineWidth = 1.5; ctx.stroke(); } } };
+    line(con, colors.blue); line(trn, colors.accent);
+
+    // selected stage marker + gap
+    ctx.strokeStyle = colors.faint; ctx.setLineDash([2, 3]); ctx.beginPath(); ctx.moveTo(X(eps[sel]), T); ctx.lineTo(X(eps[sel]), Bm); ctx.stroke(); ctx.setLineDash([]);
+
+    // legend + readout panel
+    const lx = R + 16; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = colors.accent; ctx.fillRect(lx, T + 4, 12, 3); ctx.fillStyle = colors.fg; ctx.font = '11px ui-sans-serif, system-ui'; ctx.fillText('jointly trained', lx + 18, T + 5);
+    ctx.fillStyle = colors.blue; ctx.fillRect(lx, T + 22, 12, 3); ctx.fillStyle = colors.fg; ctx.fillText('constructed head', lx + 18, T + 23);
+    const gap = trn[sel] - con[sel];
+    ctx.fillStyle = colors.muted; ctx.font = '11px ui-sans-serif, system-ui'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText(`epoch ${eps[sel]}`, lx, T + 56);
+    ctx.fillStyle = colors.accent; ctx.font = 'bold 14px ui-sans-serif, system-ui'; ctx.fillText(`${trn[sel].toFixed(0)}%`, lx, T + 76);
+    ctx.fillStyle = colors.blue; ctx.fillText(`${con[sel].toFixed(0)}%`, lx + 44, T + 76);
+    ctx.fillStyle = colors.muted; ctx.font = '11px ui-sans-serif, system-ui'; ctx.fillText(`gap ${gap.toFixed(1)} pts`, lx, T + 96);
+
+    api.readout('rd', `epoch ${eps[sel]}: archived joint ${trn[sel].toFixed(1)}%, refitted prototype ${con[sel].toFixed(1)}% · difference ${gap.toFixed(1)} points; not a causal attribution`);
+  },
+});
+</script>

@@ -1,0 +1,85 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 420 } = Astro.props;
+---
+<figure data-min-width="720" class="viz mercerclassmap" data-caption={caption} data-height={height} data-height-mobile="520" tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+// Class means in empirical sample-mode coordinates; eigenvector signs are arbitrary.
+import { defineViz } from './engine/vizkit.js';
+import { T, fmt, gate, loadingText } from './engine/draw.js';
+import { load } from './mercer.js';
+
+defineViz('mercerclassmap', {
+  title: 'Ten classes, sixteen feature modes',
+  height: 420,
+  controls: [{ type: 'readout', name: 'rd' }],
+
+  setup(api) {
+    const st = api.state;
+    st.hover = null;
+    gate(api, () => load('modes'), (a, data) => { a.state.data = data; });
+    api.canvas.addEventListener('pointermove', (e) => {
+      if (!st.ready || !st.grid) return;
+      const r = api.canvas.getBoundingClientRect();
+      const p = { x: e.clientX - r.left, y: e.clientY - r.top };
+      const g = st.grid;
+      const c = Math.floor((p.y - g.y) / g.ch), k = Math.floor((p.x - g.x) / g.cw);
+      st.hover = (c >= 0 && c < 10 && k >= 0 && k < g.n) ? { c, k } : null;
+      api.render();
+    });
+  },
+
+  draw(api) {
+    const { ctx, colors, size: { W, H } } = api, st = api.state;
+    if (!st.ready) { loadingText(api, 'loading the map…'); return; }
+    const d = st.data;
+    const pad = 14, top = 30, labelW = 64;
+    const n = d.modes.length;
+    const grid = { x: pad + labelW, y: top, n };
+    grid.cw = (W - grid.x - pad) / n;
+    grid.ch = (H - top - 76) / 10;
+    st.grid = grid;
+    let vmax = 0;
+    d.modes.forEach((md) => md.cls.forEach((v) => { vmax = Math.max(vmax, Math.abs(v)); }));
+    for (let c = 0; c < 10; c++) {
+      for (let k = 0; k < n; k++) {
+        const v = d.modes[k].cls[c] / (vmax + 1e-9);
+        const t = Math.min(1, Math.abs(v));
+        ctx.fillStyle = v >= 0
+          ? `rgba(74,127,179,${0.12 + 0.82 * t})`
+          : `rgba(194,85,58,${0.12 + 0.82 * t})`;
+        ctx.fillRect(grid.x + k * grid.cw + 1, grid.y + c * grid.ch + 1,
+                     grid.cw - 2, grid.ch - 2);
+      }
+      T(ctx, colors, 'small');
+      ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+      ctx.fillText(d.classes[c], grid.x - 6, grid.y + (c + 0.5) * grid.ch);
+    }
+    T(ctx, colors, 'small');
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    for (let k = 0; k < n; k++) ctx.fillText(String(k + 1), grid.x + (k + 0.5) * grid.cw, grid.y + 10 * grid.ch + 5);
+    T(ctx, colors, 'label');
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('mean mode value per class (blue positive, red negative), modes in eigenvalue order', pad, top - 8);
+    if (st.hover) {
+      const { c, k } = st.hover;
+      ctx.strokeStyle = colors.fg; ctx.lineWidth = 1.6;
+      ctx.strokeRect(grid.x + k * grid.cw + 0.5, grid.y + c * grid.ch + 0.5, grid.cw - 1, grid.ch - 1);
+      ctx.lineWidth = 1;
+      api.readout('rd', `${d.classes[c]} on mode ${k + 1}: ${fmt(d.modes[k].cls[c], 3)} (mode holds ${fmt(100 * d.modes[k].lam_share, 1)}% of the trace)`);
+    } else {
+      api.readout('rd', 'hover a cell; a class is the signature of signs along its row');
+    }
+    T(ctx, colors, 'small');
+    ctx.fillText('class profiles help interpret modes; they do not establish independent concepts', pad, H - 30);
+    ctx.fillText('empirical sample-mode means on the full test set; a column’s sign can flip', pad, H - 14);
+  },
+});
+</script>

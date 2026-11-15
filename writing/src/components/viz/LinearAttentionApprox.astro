@@ -1,0 +1,34 @@
+---
+interface Props { caption?: string; height?: number; }
+const { caption, height = 330 } = Astro.props;
+---
+<figure data-min-width="640" class="viz linearattentionapprox" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+<style>.viz :global(.vk-readout) { white-space: normal; line-height: 1.6; }</style>
+<script>
+import { defineViz } from './engine/vizkit.js';
+import { text, heatmap } from './engine/draw.js';
+import { toyData, exactAttention, approximateAttention, relativeError, causalPositive, reassociated } from './engine/linear-attention-demo.js';
+
+defineViz('linearattentionapprox', {
+ title: 'Exact attention and a computed finite-feature approximation',height:330,
+ controls:[{type:'range',name:'m',label:'Gaussian draws m',min:8,max:256,step:8,value:64,int:true,reset:false},
+ {type:'select',name:'mode',label:'features',value:'positive',reset:false,options:[{value:'positive',label:'positive Gaussian draws'},{value:'trig',label:'signed sine/cosine pairs'}]},
+ {type:'button',name:'resample',label:'resample'},{type:'readout',name:'rd'}],
+ setup(api){api.state.data=toyData();api.state.exact=exactAttention(...Object.values(api.state.data));api.state.seed=5;},
+ onAction(name,api){if(name==='resample'){api.state.seed++;api.render();}},
+ draw(api){const {ctx,colors,size,state}=api;const {Q,K,V}=state.data,m=api.get('m'),mode=api.get('mode');
+ const approx=approximateAttention(Q,K,V,m,state.seed,mode),err=relativeError(approx.Y,state.exact.Y);
+ const side=Math.min((size.W-40)/2,size.H-70),x=(size.W-2*side-20)/2;
+ text(ctx,'exact scaled softmax',x+side/2,12,colors,{align:'center',size:12});
+ text(ctx,'normalized feature scores',x+side*1.5+20,12,colors,{align:'center',size:12});
+ const flatten=A=>Float64Array.from(A.flatMap(row=>row??Array(Q.length).fill(0)));
+ heatmap(ctx,{x,y:36,w:side,h:side},flatten(state.exact.A),Q.length,colors);
+ heatmap(ctx,{x:x+side+20,y:36,w:side,h:side},flatten(approx.A),Q.length,colors);
+ const negatives=approx.A.flatMap(row=>row??[]).filter(v=>v<0).length;
+ api.readout('rd',`relative output error ${Number.isFinite(err)?(100*err).toFixed(2)+'%':'undefined'} · ${mode==='trig'?2*m:m} coordinates · ${negatives} negative entries · seed ${state.seed}`);
+ }
+});
+</script>

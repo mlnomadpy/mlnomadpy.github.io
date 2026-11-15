@@ -1,0 +1,45 @@
+---
+interface Props { caption?: string; height?: number; }
+const { caption, height = 430 } = Astro.props;
+---
+<figure data-min-width="800" class="viz pricelist" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+<script>
+import { defineViz } from './engine/vizkit.js';
+import { softPanel, areaCurve, T } from './engine/draw.js';
+import { candidates, partialBill } from './engine/kernel-price-demo.js';
+defineViz('pricelist', {
+  title:'What does the same function cost on the circle?', height:430,
+  controls:[
+    {type:'select',name:'kernel',label:'periodic kernel',reset:false,options:[
+      {value:'heat',label:'Heat: Gaussian frequency tail'},
+      {value:'sobolev',label:'Sobolev H¹: polynomial tail'},
+      {value:'poisson',label:'Poisson: exponential tail'},
+      {value:'finite',label:'Finite Fourier cutoff: m ≤ 5'},
+    ],value:'heat'},
+    {type:'range',name:'cutoff',label:'frequency cutoff M',min:8,max:160,step:8,value:32,reset:false},
+    {type:'readout',name:'rd'}],
+  draw(api) {
+    const {ctx,colors,size}=api;const W=size.W,H=size.H;if(!W)return;
+    ctx.clearRect(0,0,W,H);const cutoff=api.get('cutoff'),kind=api.get('kernel');
+    T(ctx,colors,'title');ctx.fillText(`Partial squared norms through frequency ${cutoff}`,14,28);
+    T(ctx,colors,'sub');ctx.fillText('Circle · dx/(2π) · exact coefficients · partial costs',14,48);
+    const gap=10,cw=(W-28-gap*4)/5,top=66,ch=H-top-16;
+    for(const [i,c] of candidates.entries()) {
+      const x=14+i*(cw+gap),b=partialBill(c.id,kind,cutoff);
+      softPanel(ctx,x,top,cw,ch,colors,{r:10});const mid=top+(ch-64)/2,half=(ch-92)/2;
+      const vals=Array.from({length:161},(_,j)=>c.value(-Math.PI+2*Math.PI*j/160));
+      const scale=Math.max(...vals.map(Math.abs),1e-9);
+      const pts=vals.map((v,j)=>[x+9+j/160*(cw-18),mid-v/scale*half]);
+      ctx.save();ctx.beginPath();ctx.rect(x+1,top+1,cw-2,ch-63);ctx.clip();
+      areaCurve(ctx,pts,mid,colors.accent,colors.bg,2);ctx.restore();
+      T(ctx,colors,'label',{align:'center',baseline:'middle',color:colors.muted});ctx.fillText(c.name,x+cw/2,top+ch-47);
+      const cost=b.unavailable?'unavailable mode':b.logCost<Math.log(1e6)?Math.exp(b.logCost).toPrecision(3):`10^${(b.logCost/Math.LN10).toFixed(1)}`;
+      T(ctx,colors,'small',{align:'center',baseline:'middle'});ctx.fillText(cost,x+cw/2,top+ch-22);
+    }
+    api.readout('rd',`M = ${cutoff}. Partial costs use log-sum-exp; large values are not displayed as infinity. Infinite membership requires the tail argument in the text.`);
+  }
+});
+</script>

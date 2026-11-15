@@ -1,0 +1,131 @@
+---
+interface Props { caption?: string; height?: number; }
+const { caption, height = 490 } = Astro.props;
+---
+<figure data-min-width="800" class="viz hundredrebuild" data-caption={caption} data-height={height} data-height-mobile="640" tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+<script>
+// Output-coordinate reconstruction and same-rank bootstrap agreement are different diagnostics.
+import { defineViz } from './engine/vizkit.js';
+import { T, fmt, gate, loadingText } from './engine/draw.js';
+import { load, thumb, rebuildAcc } from './fifteen.js';
+
+defineViz('hundredrebuild', {
+  title: 'Reconstruct from k output axes',
+  height: 490,
+  controls: [
+    { type: 'range', name: 'k', label: 'output axes kept', min: 1, max: 100, step: 1, value: 15, int: true, play: { period: 11000, loop: false } },
+    { type: 'readout', name: 'rd' },
+  ],
+  setup(api) {
+    gate(api, () => load('rebuild'), (a, d) => {
+      a.state.d = d;
+      a.state.cache = {};
+    });
+  },
+  draw(api) {
+    const { ctx, colors, size: { W, H } } = api, st = api.state;
+    if (!st.ready) { loadingText(api, 'loading the output axes…'); return; }
+    const d = st.d, k = Math.round(api.get('k'));
+    st.cache[k] ??= rebuildAcc(d, k);
+    const cur = st.cache[k];
+    const pad = 14, top = 30;
+
+    // ── the curve, with the naming gate shaded ──
+    const cw = W * 0.56;
+    const box = { x: pad + 34, y: top, w: cw - 46, h: H - top - 150 };
+    const lx = (kk) => box.x + ((kk - 1) / 99) * box.w;
+    const ly = (a) => box.y + box.h - (a / 29) * box.h;
+    // where the bootstrap gate fails for good
+    let gateK = d.stability.findIndex((v) => v < 0.9);
+    if (gateK < 0) gateK = 100;
+    ctx.fillStyle = colors.cellBg;
+    ctx.fillRect(box.x, box.y, box.w, box.h);
+    ctx.globalAlpha = 0.35;
+    ctx.fillStyle = colors.muted;
+    // Shade each failing rank, not every rank after the first failure:
+    // the shipped mean agreement clears 0.9 again at rank 19.
+    for(let j=0;j<100;j++)if(d.stability[j]<0.9){
+      const x=box.x+j/100*box.w;
+      ctx.fillRect(x,box.y,box.w/100,box.h);
+    }
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = colors.border;
+    ctx.strokeRect(box.x + 0.5, box.y + 0.5, box.w - 1, box.h - 1);
+    T(ctx, colors, 'small');
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    for (const a of [5, 10, 15, 20, 25]) ctx.fillText(a + '%', box.x - 3, ly(a));
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    for (const kk of [1, 15, 40, 70, 100]) ctx.fillText(String(kk), lx(kk), box.y + box.h + 4);
+    // chance: 1 in 100 for the class, 1 in 20 for the superclass
+    ctx.strokeStyle = colors.faint; ctx.setLineDash([3, 4]);
+    ctx.beginPath(); ctx.moveTo(box.x, ly(1)); ctx.lineTo(box.x + box.w, ly(1)); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(box.x, ly(5)); ctx.lineTo(box.x + box.w, ly(5)); ctx.stroke();
+    ctx.setLineDash([]);
+    // the three seeds' full-test curves: superclass above, class below
+    for (const c of d.coarse_curves ?? []) {
+      ctx.strokeStyle = '#4a7fb3'; ctx.globalAlpha = 0.55; ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      c.forEach((v, i) => { const x = lx(i + 1), y = ly(v); i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); });
+      ctx.stroke(); ctx.globalAlpha = 1; ctx.lineWidth = 1;
+    }
+    for (const c of d.curves) {
+      ctx.strokeStyle = '#c2553a'; ctx.globalAlpha = 0.55; ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      c.forEach((v, i) => { const x = lx(i + 1), y = ly(v); i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); });
+      ctx.stroke(); ctx.globalAlpha = 1; ctx.lineWidth = 1;
+    }
+    ctx.strokeStyle = colors.faint; ctx.setLineDash([2, 3]);
+    ctx.beginPath(); ctx.moveTo(lx(k), box.y); ctx.lineTo(lx(k), box.y + box.h); ctx.stroke();
+    ctx.setLineDash([]);
+    T(ctx, colors, 'label');
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('k-axis rebuild, full test set, three seeds', box.x, box.y - 8);
+    T(ctx, colors, 'small');
+    ctx.fillStyle = '#4a7fb3';
+    ctx.fillText('right superclass (20-way)', lx(45), ly(26.5));
+    ctx.fillStyle = '#c2553a';
+    ctx.fillText('right class (100-way)', lx(45), ly(15.5));
+    ctx.fillStyle = colors.faint;
+    ctx.fillText('grey bands: mean same-rank agreement below 0.9', lx(Math.min(gateK + 2, 52)), box.y + box.h - 6);
+
+    // ── the stability strip: where naming stops ──
+    const sy0 = box.y + box.h + 30;
+    T(ctx, colors, 'label');
+    ctx.fillText('same-rank bootstrap |cos|, mean over seeds; gate 0.9', box.x, sy0 - 6);
+    const sh = 40;
+    for (let j = 0; j < 100; j++) {
+      const v = d.stability[j];
+      const x = lx(j + 1);
+      ctx.fillStyle = v >= 0.9 ? '#3a8f5e' : colors.muted;
+      ctx.globalAlpha = v >= 0.9 ? 0.9 : 0.45;
+      ctx.fillRect(x - box.w / 220, sy0 + (1 - v) * sh, box.w / 110, v * sh);
+      ctx.globalAlpha = 1;
+    }
+    ctx.strokeStyle = colors.faint; ctx.setLineDash([3, 3]);
+    ctx.beginPath(); ctx.moveTo(box.x, sy0 + 0.1 * sh); ctx.lineTo(box.x + box.w, sy0 + 0.1 * sh); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // ── verdicts at this k ──
+    const tx = pad + cw + 6;
+    const gw = Math.min(44, (W - tx - pad) / 6 - 5);
+    T(ctx, colors, 'label');
+    ctx.fillText(`rebuilt from ${k} output axes`, tx, top - 6);
+    for (let i = 0; i < 24; i++) {
+      const gx = tx + (i % 6) * (gw + 5), gy = top + Math.floor(i / 6) * (gw + 5);
+      thumb(ctx, d.thumbs[i], gx, gy, gw, gw, 'hr' + i);
+      const good = cur.pred[i] === d.y[i];
+      ctx.strokeStyle = good ? '#3a8f5e' : '#c2553a'; ctx.lineWidth = 2;
+      ctx.strokeRect(gx + 1, gy + 1, gw - 2, gw - 2);
+      ctx.lineWidth = 1;
+    }
+    T(ctx, colors, 'small');
+    ctx.fillText('green = already right at this k (chance is 1 in 100)', tx, top + 4 * (gw + 5) + 14);
+    ctx.fillText('Prediction and stability differ; resampling can change axis order.', pad, H - 28);
+    ctx.fillText('See the text for matched axes and principal-angle subspaces.', pad, H - 13);
+    api.readout('rd', `k = ${k}: class ${fmt(cur.acc, 1)}%, superclass ${fmt(cur.coAcc, 1)}% on the subset; mean count above same-rank gate: ${fmt(d.named_mean, 1)}`);
+  },
+});
+</script>

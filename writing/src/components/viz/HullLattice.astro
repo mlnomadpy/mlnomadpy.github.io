@@ -1,0 +1,148 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 440 } = Astro.props;
+---
+<figure data-min-width="720" class="viz hulllattice" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<style>
+  .viz :global(.vk-readout) { white-space: normal; line-height: 1.6; }
+</style>
+<script>
+import { defineViz } from './engine/vizkit.js';
+import { panel, text, PALETTE } from './engine/draw.js';
+import { np, withJax, drawJaxLoading } from './engine/jax.js';
+
+// Two independent constraints, nonnegativity and summing to one, sort the same
+// readout y = Σ a_u r_u into four regimes with four allowed sets:
+//   convex (a≥0, Σa=1)  → convex hull (a segment here)
+//   conic  (a≥0)        → conical hull (a wedge from the origin)
+//   affine (Σa=1)       → affine hull (the line through the prototypes)
+//   linear (no constraint) → linear span (the whole plane)
+// The prototypes are placed collinear and off the origin on purpose: that is the
+// one configuration in 2-D where all four sets are visibly distinct and nested.
+// The four readout points are all computed live in jax-js from one score vector.
+const H = 0.5;                                   // common height of the prototype line
+const PX = [-0.85, -0.30, 0.30, 0.85];
+const P = PX.map((x) => [x, H]);
+const NAMES = ['r1', 'r2', 'r3', 'r4'];
+
+function scores(phase, bias) {
+  return [
+    0.9 * Math.cos(phase) + bias,
+    0.95 * Math.sin(phase * 0.85 + 0.6) + bias,
+    0.8 * Math.cos(phase * 1.25 + 1.2) + bias,
+    0.9 * Math.sin(phase * 1.1 - 0.5) + bias,
+  ];
+}
+
+// readout y = a @ P, run through jax-js
+function readout(a) {
+  return np.matmul(np.reshape(np.array(a), [1, a.length]), np.array(P)).js()[0];
+}
+
+defineViz('hulllattice', {
+  title: 'Two constraints, four allowed regions',
+  height: 440,
+  controls: [
+    { type: 'range', name: 'phase', label: 'feature pattern', min: 0, max: 6.28, step: 0.02, value: 1.1, reset: false, fmt: v => v.toFixed(2) },
+    { type: 'range', name: 'bias', label: 'score bias', min: -0.7, max: 0.9, step: 0.02, value: 0.15, reset: false, fmt: v => v.toFixed(2) },
+    { type: 'readout', name: 'rd' },
+  ],
+  setup(api) { withJax(api); },
+  draw(api) {
+    if (!api.state.jaxReady) return drawJaxLoading(api);
+    const { ctx, colors, size } = api;
+    const box = { x: 6, y: 4, w: size.W - 12, h: size.H - 8 };
+    panel(ctx, box, colors, {});
+
+    const stage = { x: box.x, y: box.y + 24, w: box.w, h: box.h - 92 };
+    const m = panel(ctx, stage, colors, {});
+    const map = m.map, R = m.R, cx = m.cx, cy = m.cy;
+
+    const s = scores(api.get('phase'), api.get('bias'));
+    // four coefficient vectors
+    const sum = s.reduce((p, v) => p + v, 0);
+    const mean = sum / s.length;
+    const aLin = s.slice();
+    // Centering and adding 1/m gives an affine coefficient vector even when Σs=0.
+    const aAff = s.map((v) => (v - mean) / 2 + 1 / s.length);
+    const aCon = s.map((v) => Math.max(0, v));
+    // Stable softmax stays on the simplex even when all original scores are negative.
+    const max = Math.max(...s), exp = s.map(v => Math.exp(v - max));
+    const normalizer = exp.reduce((a,b) => a + b, 0);
+    const aCvx = exp.map(v => v / normalizer);
+    const yLin = readout(aLin), yAff = readout(aAff), yCon = readout(aCon), yCvx = readout(aCvx);
+
+    const COL = { linear: colors.muted, affine: '#9a4f9c', conic: '#4a7fb3', convex: '#3a8f5e' };
+
+    // ── linear span: the whole plane (faint wash) ──
+    ctx.fillStyle = COL.linear + '0e'; ctx.fillRect(stage.x + 1, stage.y + 1, stage.w - 2, stage.h - 2);
+    // axes
+    ctx.strokeStyle = colors.border; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(stage.x + 6, cy); ctx.lineTo(stage.x + stage.w - 6, cy);
+    ctx.moveTo(cx, stage.y + 6); ctx.lineTo(cx, stage.y + stage.h - 6); ctx.stroke();
+
+    // ── conic hull: wedge from the origin through the extreme prototypes ──
+    const farL = [PX[0] * 7, H * 7], farR = [PX[PX.length - 1] * 7, H * 7];
+    ctx.beginPath();
+    ctx.moveTo(cx, cy); ctx.lineTo(...map(farL)); ctx.lineTo(...map(farR)); ctx.closePath();
+    ctx.fillStyle = COL.conic + '1c'; ctx.fill();
+    ctx.strokeStyle = COL.conic + '66'; ctx.setLineDash([4, 3]); ctx.lineWidth = 1; ctx.stroke(); ctx.setLineDash([]);
+
+    // ── affine hull: the infinite line y = H through the prototypes ──
+    ctx.strokeStyle = COL.affine + 'aa'; ctx.setLineDash([6, 4]); ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(...map([-1.15, H])); ctx.lineTo(...map([1.15, H])); ctx.stroke(); ctx.setLineDash([]);
+
+    // ── convex hull: the segment between extreme prototypes ──
+    ctx.strokeStyle = COL.convex; ctx.lineWidth = 5; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(...map(P[0])); ctx.lineTo(...map(P[P.length - 1])); ctx.stroke(); ctx.lineCap = 'butt';
+
+    // prototypes + origin
+    for (let i = 0; i < P.length; i++) {
+      const [px, py] = map(P[i]);
+      ctx.fillStyle = PALETTE[i]; ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI * 2); ctx.fill();
+      text(ctx, NAMES[i], px, py - 11, colors, { align: 'center', size: 10, mono: true, color: colors.muted });
+    }
+    ctx.fillStyle = colors.fg; ctx.beginPath(); ctx.arc(cx, cy, 3, 0, Math.PI * 2); ctx.fill();
+    text(ctx, '0', cx - 9, cy + 4, colors, { size: 10, mono: true, color: colors.muted });
+
+    // four readout markers
+    const marks = [
+      ['linear', yLin, COL.linear], ['affine', yAff, COL.affine],
+      ['conic', yCon, COL.conic], ['convex', yCvx, COL.convex],
+    ];
+    for (const [lab, yv, c] of marks) {
+      const [mx, my] = map(yv);
+      ctx.fillStyle = c; ctx.beginPath(); ctx.arc(mx, my, 5.5, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = colors.cellBg; ctx.lineWidth = 1.5; ctx.stroke();
+    }
+
+    // ── legend strip ──
+    const ly = box.y + box.h - 56;
+    const items = [
+      ['convex  a≥0, Σa=1', COL.convex, 'segment (hull)'],
+      ['conic  a≥0', COL.conic, 'wedge (cone)'],
+      ['affine  Σa=1', COL.affine, 'line'],
+      ['linear  unconstrained', COL.linear, 'plane'],
+    ];
+    const cw = (box.w - 24) / 4;
+    for (let i = 0; i < items.length; i++) {
+      const [lab, c, region] = items[i];
+      const ix = box.x + 12 + i * cw;
+      ctx.fillStyle = c; ctx.beginPath(); ctx.arc(ix + 5, ly + 4, 5, 0, Math.PI * 2); ctx.fill();
+      text(ctx, lab, ix + 16, ly, colors, { size: 10.5, weight: '600' });
+      text(ctx, '→ ' + region, ix + 16, ly + 16, colors, { size: 10, color: colors.muted });
+    }
+    text(ctx, 'same scores s, four constraint regimes, each readout obeys its coefficient constraints',
+      box.x + 12, box.y + box.h - 16, colors, { size: 10, mono: true, color: colors.muted });
+
+    api.readout('rd', `Σ convex ${aCvx.reduce((a,b)=>a+b,0).toFixed(3)} · Σ affine ${aAff.reduce((a,b)=>a+b,0).toFixed(3)}`);
+  },
+});
+</script>

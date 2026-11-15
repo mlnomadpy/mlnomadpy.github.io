@@ -1,0 +1,105 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 420 } = Astro.props;
+---
+<figure data-min-width="400" class="viz spherepack" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+import { defineViz } from './engine/vizkit.js';
+import { text, PALETTE } from './engine/draw.js';
+
+// Unit vectors on S²: projected descent on squared-correlation energy.
+// No centering or equiangularity constraint is imposed.
+function randUnit() {
+  let x = 0, y = 0, z = 0, n = 0;
+  do { x = 2 * Math.random() - 1; y = 2 * Math.random() - 1; z = 2 * Math.random() - 1; n = x * x + y * y + z * z; } while (n > 1 || n < 1e-6);
+  n = Math.sqrt(n); return [x / n, y / n, z / n];
+}
+const welch = (C) => C > 3 ? Math.sqrt((C - 3) / (3 * (C - 1))) : 0;
+
+defineViz('spherepack', {
+  title: 'Frame energy and coherence are different targets',
+  height: 420, stepsPerFrame: 0.5,
+  controls: [
+    { type: 'play' }, { type: 'button', name: 'reroll', label: 're-roll', reset: true }, { type: 'speed' },
+    { type: 'newrow' },
+    { type: 'range', name: 'C', label: 'vectors C', min: 3, max: 12, step: 1, value: 4, int: true, reset: true, fmt: v => v },
+    { type: 'readout', name: 'rd' },
+  ],
+  setup(api) {
+    const C = api.get('C'); const P = []; for (let i = 0; i < C; i++) P.push(randUnit());
+    api.state.P = P; api.state.spin = 0;
+  },
+  step(api) {
+    const P = api.state.P, C = P.length, lr = 0.025 / C;
+    const G = P.map(() => [0, 0, 0]);
+    for (let i = 0; i < C; i++) for (let j = 0; j < C; j++) {
+      if (i === j) continue;
+      const s = P[i][0] * P[j][0] + P[i][1] * P[j][1] + P[i][2] * P[j][2], w = 2 * s;
+      G[i][0] += w * P[j][0]; G[i][1] += w * P[j][1]; G[i][2] += w * P[j][2];
+    }
+    for (let i = 0; i < C; i++) {
+      const gu = G[i][0] * P[i][0] + G[i][1] * P[i][1] + G[i][2] * P[i][2];
+      let x = P[i][0] - lr * (G[i][0] - gu * P[i][0]), y = P[i][1] - lr * (G[i][1] - gu * P[i][1]), z = P[i][2] - lr * (G[i][2] - gu * P[i][2]);
+      const n = Math.hypot(x, y, z) + 1e-12; P[i] = [x / n, y / n, z / n];
+    }
+    api.state.spin += 0.012;
+  },
+  draw(api) {
+    const { ctx, colors, size, state } = api;
+    const W = size.W, H = size.H; if (!W) return;
+    const P = state.P, C = P.length;
+    const cx = W / 2, cy = H / 2 + 6, R = Math.min(W, H) * 0.36;
+    const a = -0.42, b = state.spin; // tilt about X, spin about Y
+    const ca = Math.cos(a), sa = Math.sin(a), cb = Math.cos(b), sb = Math.sin(b);
+    const rot = (p) => { const x1 = p[0] * cb + p[2] * sb, z1 = -p[0] * sb + p[2] * cb, y1 = p[1]; const y2 = y1 * ca - z1 * sa, z2 = y1 * sa + z1 * ca; return [x1, y2, z2]; };
+
+    // sphere silhouette
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, 2 * Math.PI); ctx.strokeStyle = colors.border; ctx.lineWidth = 1; ctx.stroke();
+    // faint equator + meridian for depth cue
+    ctx.strokeStyle = colors.border; ctx.globalAlpha = 0.6; ctx.lineWidth = 1;
+    ctx.beginPath(); for (let t = 0; t <= 64; t++) { const th = (t / 64) * 2 * Math.PI; const q = rot([Math.cos(th), 0, Math.sin(th)]); const x = cx + R * q[0], y = cy - R * q[1]; t === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); } ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    // project points
+    const pts = P.map((p, i) => { const q = rot(p); return { x: cx + R * q[0], y: cy - R * q[1], depth: q[2], i }; });
+
+    // edges: every pair, opacity by alignment so the equiangular web reads
+    for (let i = 0; i < C; i++) for (let j = i + 1; j < C; j++) {
+      const s = P[i][0] * P[j][0] + P[i][1] * P[j][1] + P[i][2] * P[j][2];
+      const al = Math.max(0, 0.04 + 0.16 * (s + 1) / 2);
+      ctx.globalAlpha = al; ctx.strokeStyle = colors.muted; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(pts[i].x, pts[i].y); ctx.lineTo(pts[j].x, pts[j].y); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+
+    // depth-sorted points (far first)
+    pts.sort((u, v) => u.depth - v.depth);
+    for (const pt of pts) {
+      const t = (pt.depth + 1) / 2; // 0 far, 1 near
+      const r = 4 + 5 * t;
+      ctx.globalAlpha = 0.45 + 0.55 * t;
+      ctx.beginPath(); ctx.arc(pt.x, pt.y, r, 0, 2 * Math.PI);
+      ctx.fillStyle = PALETTE[pt.i % PALETTE.length]; ctx.fill();
+      ctx.lineWidth = 1.5; ctx.strokeStyle = colors.bg; ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+
+    // realised coherence
+    let mu = 0; for (let i = 0; i < C; i++) for (let j = i + 1; j < C; j++) { const s = Math.abs(P[i][0] * P[j][0] + P[i][1] * P[j][1] + P[i][2] * P[j][2]); mu = Math.max(mu, s); }
+    const wb = welch(C);
+    let energy = 0;
+    for(let i=0;i<C;i++)for(let j=0;j<C;j++)if(i!==j){const dot=P[i].reduce((s,v,k)=>s+v*P[j][k],0);energy+=dot*dot;}
+    const floor=Math.max(0,C*C/3-C),center=Math.hypot(...P.reduce((s,p)=>s.map((v,k)=>v+p[k]/C),[0,0,0]));
+    text(ctx, 'Total energy and worst-pair coherence', cx, 16, colors, { align: 'center', size: 12.5, color: colors.fg });
+    const tail=` · E gap ${(energy-floor).toExponential(2)} · μ ${mu.toFixed(3)} ≥ ${wb.toFixed(3)} · mean norm ${center.toFixed(3)}`;
+    api.readout('rd', `C=${C} in d=3${tail}`);
+  },
+});
+</script>

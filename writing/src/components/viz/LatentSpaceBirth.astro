@@ -1,0 +1,170 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 460 } = Astro.props;
+---
+<figure data-min-width="440" class="viz latentbirth" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+import { defineViz } from './engine/vizkit.js';
+import { panel, unitCircle, dot, text, PALETTE } from './engine/draw.js';
+import * as ng from './engine/nanograd.js';
+
+// A latent space being born, live. C classes of points, each a Gaussian blob in
+// input space, pushed through a shared MLP encoder onto the circle and trained
+// with a supervised contrastive loss (ⵟ-kernel). Toggle 'repulsion' off and the
+// classes collapse onto one point; on, they separate into tight, maximally-spread
+// clusters, the simplex. The canvas shows both the raw encoder plane and the
+// L2-normalized sphere view, since normalization can hide the path the model took.
+// Trained in your browser on the nanograd autodiff engine.
+const D = 8, HID = 24, DE = 2, M = 16; // input dims, hidden, embed dims, pts/class
+const randn = () => { const u = Math.random() || 1e-9, v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+
+defineViz('latentbirth', {
+  title: 'Watch a good latent space form',
+  height: 460, stepsPerFrame: 0.3, maxStep: 820,
+  controls: [
+    { type: 'play' }, { type: 'step' }, { type: 'button', name: 'reroll', label: 're-roll', reset: true },
+    { type: 'speed', presets: [0.25, 0.5, 1, 2] },
+    { type: 'newrow' },
+    { type: 'range', name: 'C', label: 'classes C', min: 3, max: 6, step: 1, value: 3, int: true, reset: true, fmt: v => v },
+    { type: 'range', name: 'rawSpan', label: 'raw span', min: 1, max: 10, step: 0.5, value: 4, fmt: v => `±${v.toFixed(1)}` },
+    { type: 'toggle', name: 'rep', label: 'repulsion', value: true },
+    { type: 'readout', name: 'rd' },
+  ],
+  setup(api) {
+    const C = api.get('C'), N = C * M;
+    // class centres in input space + noisy points
+    const X = new Float64Array(N * D), labels = new Int32Array(N);
+    const centres = [];
+    for (let c = 0; c < C; c++) { const ce = new Float64Array(D); for (let k = 0; k < D; k++) ce[k] = randn() * 1.4; centres.push(ce); }
+    for (let c = 0; c < C; c++) for (let p = 0; p < M; p++) { const i = c * M + p; labels[i] = c; for (let k = 0; k < D; k++) X[i * D + k] = centres[c][k] + randn() * 0.55; }
+    const Xt = ng.tensor(N, D, X);
+    // same / different class masks (exclude diagonal)
+    const mp = new Float64Array(N * N), mm = new Float64Array(N * N); let nP = 0, nM = 0;
+    for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) { if (i === j) continue; if (labels[i] === labels[j]) { mp[i * N + j] = 1; nP++; } else { mm[i * N + j] = 1; nM++; } }
+    const Mp = ng.tensor(N, N, mp), Mm = ng.tensor(N, N, mm);
+    const W1 = ng.param(D, HID, () => randn() * Math.sqrt(2 / D)), b1 = ng.param(1, HID, () => 0);
+    const W2 = ng.param(HID, DE, () => randn() * Math.sqrt(2 / HID)), b2 = ng.param(1, DE, () => 0);
+    const rawEnc = () => ng.add(ng.matmul(ng.relu(ng.add(ng.matmul(Xt, W1), b1)), W2), b2);
+    const enc = () => ng.normRows(rawEnc());
+    api.state = {
+      C, N, labels, rawEnc, enc,
+      adam: new ng.Adam([W1, b1, W2, b2], 0.007),
+      lossFn: (rep) => {
+        const z = enc(), S = ng.matmul(z, ng.transpose(z)), y = ng.yatk(S, 0.5, 0.5);
+        const intra = ng.div(ng.sumAll(ng.mul(ng.recip(ng.addk(y, 1)), Mp)), ng.scalar(nP));
+        if (!rep) return intra;
+        const inter = ng.div(ng.sumAll(ng.mul(ng.addk(y, 1), Mm)), ng.scalar(nM));
+        return ng.add(intra, inter);
+      },
+    };
+  },
+  step(api) { const L = api.state.lossFn(api.get('rep')); ng.backward(L); api.state.adam.step(); },
+  draw(api) {
+    const { ctx, colors, size, state } = api;
+    const gap = 10;
+    const top = 4;
+    const footerH = 34;
+    const usableW = size.W - 12;
+    const twoCol = usableW >= 620;
+    const plotH = Math.max(260, size.H - footerH - 8);
+    const rawBox = twoCol
+      ? { x: 6, y: top, w: (usableW - gap) / 2, h: plotH }
+      : { x: 6, y: top, w: usableW, h: (plotH - gap) / 2 };
+    const sphBox = twoCol
+      ? { x: 6 + rawBox.w + gap, y: top, w: rawBox.w, h: rawBox.h }
+      : { x: 6, y: top + rawBox.h + gap, w: usableW, h: rawBox.h };
+    const mr = panel(ctx, rawBox, colors, { header: 24 });
+    const ms = panel(ctx, sphBox, colors, { header: 24 });
+    const raw = state.rawEnc(), z = state.enc(), C = state.C, N = state.N, labels = state.labels;
+
+    // Raw encoder plane: not constrained to the sphere. The span is controlled
+    // directly so zooming is stable and does not hide model motion.
+    const scale = api.get('rawSpan');
+    const rawMap = (p) => mr.map([p[0] / scale, p[1] / scale]);
+
+    const gridVals = [-scale, -scale / 2, 0, scale / 2, scale];
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(mr.x, mr.y, mr.side, mr.side);
+    ctx.clip();
+    ctx.strokeStyle = colors.border;
+    ctx.lineWidth = 1;
+    ctx.globalAlpha = 0.45;
+    for (const v of gridVals) {
+      const [x0, y0] = rawMap([v, -scale]);
+      const [x1, y1] = rawMap([v, scale]);
+      const [x2, y2] = rawMap([-scale, v]);
+      const [x3, y3] = rawMap([scale, v]);
+      ctx.beginPath();
+      ctx.moveTo(x0, y0); ctx.lineTo(x1, y1);
+      ctx.moveTo(x2, y2); ctx.lineTo(x3, y3);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 0.9;
+    ctx.strokeStyle = colors.muted;
+    const [ax0, ay0] = rawMap([-scale, 0]), [ax1, ay1] = rawMap([scale, 0]);
+    const [vx0, vy0] = rawMap([0, -scale]), [vx1, vy1] = rawMap([0, scale]);
+    ctx.beginPath();
+    ctx.moveTo(ax0, ay0); ctx.lineTo(ax1, ay1);
+    ctx.moveTo(vx0, vy0); ctx.lineTo(vx1, vy1);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.restore();
+
+    text(ctx, 'raw encoder plane', rawBox.x + 8, rawBox.y + 5, colors, { size: 12, color: colors.fg });
+    text(ctx, `visible range ±${scale.toFixed(1)}`, rawBox.x + rawBox.w - 8, rawBox.y + 6, colors, { size: 10, mono: true, align: 'right', color: colors.muted });
+    text(ctx, 'zoom out: raise raw span · zoom in: lower it', rawBox.x + 8, rawBox.y + rawBox.h - 16, colors, { size: 10, color: colors.muted });
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(mr.x, mr.y, mr.side, mr.side);
+    ctx.clip();
+    ctx.globalAlpha = 0.7;
+    for (let i = 0; i < N; i++) {
+      const [px, py] = rawMap([raw.d[i * DE], raw.d[i * DE + 1]]);
+      dot(ctx, px, py, 2.5, PALETTE[labels[i] % PALETTE.length]);
+    }
+    ctx.globalAlpha = 1;
+    const rawCen = [];
+    for (let c = 0; c < C; c++) {
+      let sx = 0, sy = 0, n = 0;
+      for (let i = 0; i < N; i++) if (labels[i] === c) { sx += raw.d[i * DE]; sy += raw.d[i * DE + 1]; n++; }
+      rawCen.push([sx / Math.max(1, n), sy / Math.max(1, n)]);
+    }
+    for (let c = 0; c < C; c++) {
+      const [px, py] = rawMap(rawCen[c]);
+      ctx.beginPath(); ctx.arc(px, py, 6, 0, 2 * Math.PI);
+      ctx.fillStyle = PALETTE[c % PALETTE.length]; ctx.fill();
+      ctx.lineWidth = 2; ctx.strokeStyle = colors.bg; ctx.stroke();
+    }
+    ctx.restore();
+
+    // Normalized sphere view: this is where the angular/simplex geometry lives.
+    unitCircle(ctx, ms, colors);
+    text(ctx, 'L2-normalized sphere', sphBox.x + 8, sphBox.y + 5, colors, { size: 12, color: colors.fg });
+    ctx.globalAlpha = 0.7;
+    for (let i = 0; i < N; i++) { const [px, py] = ms.map([z.d[i * DE], z.d[i * DE + 1]]); dot(ctx, px, py, 2.5, PALETTE[labels[i] % PALETTE.length]); }
+    ctx.globalAlpha = 1;
+    // class centroids (normalised) + min separating angle
+    const cen = [];
+    for (let c = 0; c < C; c++) { let sx = 0, sy = 0; for (let i = 0; i < N; i++) if (labels[i] === c) { sx += z.d[i * DE]; sy += z.d[i * DE + 1]; } const n = Math.hypot(sx, sy) + 1e-9; cen.push([sx / n, sy / n]); }
+    for (let c = 0; c < C; c++) { const [px, py] = ms.map(cen[c]); ctx.beginPath(); ctx.arc(px, py, 6, 0, 2 * Math.PI); ctx.fillStyle = PALETTE[c % PALETTE.length]; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = colors.bg; ctx.stroke(); }
+    let minCos = 1; for (let a = 0; a < C; a++) for (let b = a + 1; b < C; b++) minCos = Math.min(minCos, cen[a][0] * cen[b][0] + cen[a][1] * cen[b][1]);
+    const rep = api.get('rep');
+    const title = rep ? 'supervised contrastive, repulsion on' : 'alignment only, no repulsion';
+    text(ctx, title, 8, size.H - 26, colors, { size: 12, color: colors.fg });
+    const status = rep
+      ? (C === 3 ? `sphere: simplex angle, min pair cos ${minCos.toFixed(2)} (target -0.5)` : `sphere: classes spread evenly, min pair cos ${minCos.toFixed(2)}`)
+      : `classes collapsing onto one point`;
+    text(ctx, status, 8, size.H - 12, colors, { size: 10.5, mono: true, color: colors.muted });
+    api.readout('rd', 'iter ' + api.iter);
+  },
+});
+</script>

@@ -1,0 +1,102 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 260 } = Astro.props;
+---
+<figure data-min-width="720" class="viz detbank" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+// The whole feature bank, drawn by hand. Six oriented-edge detectors at 0..150
+// degrees plus one corner detector. No filter here was learned: each is a named
+// measurement we chose, an edge at a fixed angle or a place where two edges meet.
+// Hover one to see what it fires on. These seven channels, pooled over a grid of
+// patches, are the entire representation.
+import { defineViz } from './engine/vizkit.js';
+import { loadHB, CHAN_COL } from './handbuilt.js';
+import { gate, loadingText } from './engine/draw.js';
+
+defineViz('detbank', {
+  title: 'Fixed feature bank: orientations and cross-gradient energy',
+  height: 260,
+  controls: [{ type: 'readout', name: 'rd' }],
+
+  setup(api) {
+    api.state.hover = -1;
+    gate(api, loadHB, (api, d) => { api.state.d = d; bind(api); });
+  },
+
+  draw(api) {
+    const { ctx, colors, size, state: st } = api;
+    const W = size.W, H = size.H;
+    if (W === 0 || !st) return;
+    ctx.clearRect(0, 0, W, H);
+    if (!st.ready) { loadingText(api); return; }
+    const d = st.d, N = d.nChan, deg = d.centersDeg;
+
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = colors.muted; ctx.font = '11px ui-sans-serif, system-ui';
+    ctx.fillText('seven hand-chosen detectors. nothing here was learned. hover one.', 12, 20);
+
+    const pad = 14, top = 34, gap = 12;
+    const tile = Math.min(96, (W - pad * 2 - gap * (N - 1)) / N);
+    const x0 = pad + Math.max(0, (W - pad * 2 - (tile * N + gap * (N - 1))) / 2);
+    st._tiles = [];
+    for (let i = 0; i < N; i++) {
+      const x = x0 + i * (tile + gap), y = top, isCorner = i === N - 1;
+      const focus = st.hover < 0 || st.hover === i;
+      ctx.globalAlpha = focus ? 1 : 0.35;
+      drawDetector(ctx, x, y, tile, isCorner ? null : (deg[i] * Math.PI / 180 + Math.PI / 2), CHAN_COL[i]);
+      ctx.strokeStyle = st.hover === i ? colors.accent : colors.border; ctx.lineWidth = st.hover === i ? 2 : 1;
+      ctx.strokeRect(x + 0.5, y + 0.5, tile - 1, tile - 1);
+      ctx.fillStyle = focus ? colors.fg : colors.muted; ctx.font = '10px ui-sans-serif, system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+      ctx.fillText(isCorner ? '|gx|·|gy|' : `${deg[i]}°`, x + tile / 2, y + tile + 6);
+      ctx.globalAlpha = 1;
+      st._tiles.push({ x, y, w: tile, h: tile, i });
+    }
+
+    api.readout('rd', st.hover < 0
+      ? `${N} channels (${d.NB} gradient orientations + 1 cross-gradient channel) measured at every patch, the whole representation`
+      : (st.hover === N - 1
+        ? '|gx|·|gy|: responds when both derivatives are nonzero; diagonal edges can activate it too'
+        : `gradient bin ${deg[st.hover]}°: its contour runs perpendicular to that direction; glyphs are schematic`));
+  },
+});
+
+// A crisp grayscale filter glyph (transform-safe vector ops, no putImageData): an
+// oriented edge is a dark/light half-plane split by a line at angle a, with that
+// line drawn in the channel colour; a corner (a === null) is a bright right-angle.
+const DARK = '#1b1915', LIGHT = '#e8e2d4';
+function drawDetector(ctx, x, y, s, a, col) {
+  const cx = x + s / 2, cy = y + s / 2;
+  ctx.save(); ctx.beginPath(); ctx.rect(x, y, s, s); ctx.clip();
+  ctx.fillStyle = DARK; ctx.fillRect(x, y, s, s);
+  if (a === null) {
+    const bw = s * 0.30;
+    ctx.fillStyle = LIGHT; ctx.fillRect(x, y + s - bw, s, bw); ctx.fillRect(x, y, bw, s);  // an L: two edges meeting
+    ctx.strokeStyle = col; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(x + bw / 2, y); ctx.lineTo(x + bw / 2, y + s); ctx.moveTo(x, y + s - bw / 2); ctx.lineTo(x + s, y + s - bw / 2); ctx.stroke();
+  } else {
+    ctx.save(); ctx.translate(cx, cy); ctx.rotate(a); ctx.fillStyle = LIGHT; ctx.fillRect(-s, 0, 2 * s, 2 * s); ctx.restore();  // light half-plane
+    ctx.strokeStyle = col; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(cx - Math.cos(a) * s * 0.55, cy - Math.sin(a) * s * 0.55); ctx.lineTo(cx + Math.cos(a) * s * 0.55, cy + Math.sin(a) * s * 0.55); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function bind(api) {
+  if (api.canvas.dataset.dbBound) return; api.canvas.dataset.dbBound = '1';
+  api.canvas.addEventListener('pointermove', (e) => {
+    const st = api.state; if (!st || !st._tiles) return;
+    const rc = api.canvas.getBoundingClientRect();
+    const px = (e.clientX - rc.left) * api.size.W / rc.width, py = (e.clientY - rc.top) * api.size.H / rc.height;
+    let h = -1; for (const t of st._tiles) if (px >= t.x && px <= t.x + t.w && py >= t.y && py <= t.y + t.h) h = t.i;
+    if (h !== st.hover) { st.hover = h; api.render(); }
+  });
+  api.canvas.addEventListener('pointerleave', () => { if (api.state) { api.state.hover = -1; api.render(); } });
+}
+</script>

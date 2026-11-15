@@ -1,0 +1,105 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 440 } = Astro.props;
+---
+<figure data-min-width="560" class="viz cornerfit" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+// Same samples, unit-diagonal kernels and fixed ridge parameter.
+import { defineViz } from './engine/vizkit.js';
+import { softPanel, T, rgba, parseColor } from './engine/draw.js';
+
+const N = 23, DOMX = 1.05;       // odd, so a sample sits exactly on the corner at x = 0
+const truth = (x) => 1 - Math.abs(x);                  // a tent: a real corner at x = 0
+
+function solve(G, y, lam) {                             // (G + λI) α = y, real elimination
+  const n = y.length, A = G.map((r, i) => [...r.map((v, j) => v + (i === j ? lam : 0)), y[i]]);
+  for (let c = 0; c < n; c++) { let p = c; for (let r = c + 1; r < n; r++) if (Math.abs(A[r][c]) > Math.abs(A[p][c])) p = r;
+    [A[c], A[p]] = [A[p], A[c]]; const d = A[c][c] || 1e-9; for (let j = c; j <= n; j++) A[c][j] /= d;
+    for (let r = 0; r < n; r++) if (r !== c) { const f = A[r][c]; for (let j = c; j <= n; j++) A[r][j] -= f * A[c][j]; } }
+  return A.map((r) => r[n]);
+}
+
+defineViz('cornerfit', {
+  title: 'Three unit-diagonal kernel ridge fits to one corner',
+  height: 440,
+  controls: [
+    { type: 'range', name: 'sig', label: 'bandwidth σ', min: 0.06, max: 0.4, step: 0.01, value: 0.14, reset: false, fmt: (v) => v.toFixed(2) },
+    { type: 'range', name: 'noise', label: 'noise', min: 0, max: 0.1, step: 0.005, value: 0, reset: false, fmt: (v) => v.toFixed(2) },
+    { type: 'button', name: 'resample', label: 'resample' },
+    { type: 'readout', name: 'rd' },
+  ],
+
+  setup(api) { const s = (api.state && api.state.seed) || 13; api.state = { seed: s, ...sample(s, api.get('noise')) }; },
+  onAction(name, api) { if (name === 'resample') { api.state.seed = (api.state.seed * 16807 + 7) % 2147483647; Object.assign(api.state, sample(api.state.seed, api.get('noise'))); } },
+  onControl(name, v, api) { if (name === 'noise') Object.assign(api.state, sample(api.state.seed, v)); },
+
+  draw(api) {
+    const { ctx, colors, size, state: st } = api;
+    const W = size.W, H = size.H; if (W === 0 || !st) return;
+    const sig = api.get('sig');
+    const GAU = '#b3661b', SOB = '#3a8f5e', YAT = '#9a6fc0';
+    ctx.clearRect(0, 0, W, H);
+    const pad = 14, topH = 26;
+    const box = { x: pad, y: pad + topH, w: W - pad * 2, h: H - pad - topH - 8 };
+
+    T(ctx, colors, 'title'); ctx.fillText('A corner, 23 samples, and three kernel ridge fits', pad, pad + 13);
+
+    const kG = (a, b) => Math.exp(-((a - b) ** 2) / (2 * sig * sig));
+    const kL = (a, b) => Math.exp(-Math.abs(a - b) / sig);
+    const kY = (a, b) => (sig * sig * 1.5) / ((a - b) ** 2 + sig * sig * 1.5); // unit-diagonal IMQ, not Yat
+    const X = st.x, Y = st.y;
+    const fit = (kfn) => { const G = X.map((xi) => X.map((xj) => kfn(xi, xj))); const al = solve(G, Y, 0.04);
+      return (x) => { let s = 0; for (let i = 0; i < N; i++) s += al[i] * kfn(x, X[i]); return s; }; };
+    const pG = fit(kG), pL = fit(kL), pY = fit(kY);
+
+    // main panel
+    softPanel(ctx, box.x, box.y, box.w, box.h, colors, { r: 10 });
+    const sx = (x) => box.x + ((x + DOMX) / (2 * DOMX)) * box.w;
+    const sy = (y) => box.y + box.h - ((y + 0.12) / 1.28) * box.h;
+    const curve = (fn, col, lw) => { ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.beginPath();
+      for (let i = 0; i <= 200; i++) { const x = -DOMX + (i / 200) * 2 * DOMX; const px = sx(x), py = sy(fn(x)); i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py); } ctx.stroke(); };
+    // true corner
+    ctx.setLineDash([4, 3]); curve(truth, colors.faint, 1.2); ctx.setLineDash([]);
+    curve(pG, GAU, 2.4); curve(pY, YAT, 2.4); curve(pL, SOB, 2.4);
+    for (let i = 0; i < N; i++) { ctx.fillStyle = colors.muted; ctx.globalAlpha = 0.85; ctx.beginPath(); ctx.arc(sx(X[i]), sy(Y[i]), 2.4, 0, 6.283); ctx.fill(); } ctx.globalAlpha = 1;
+
+    // legend, on a chip so it never collides with the descending curve
+    const lx = box.x + 18, lyy = box.y + box.h - 59;
+    softPanel(ctx, box.x + 8, lyy - 13, 234, 71, colors, { r: 8, fill: rgba(parseColor(colors.bg), 0.9), border: rgba(parseColor(colors.border), 0.6) });
+    [['Gaussian', GAU], ['IMQ distance kernel', YAT], ['Laplace (H¹ on R)', SOB], ['the true corner', colors.faint]].forEach(([t, col], i) => {
+      ctx.strokeStyle = col; ctx.lineWidth = 2.2; if (i === 3) ctx.setLineDash([4, 3]); ctx.beginPath(); ctx.moveTo(lx, lyy + i * 15); ctx.lineTo(lx + 18, lyy + i * 15); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = colors.muted; ctx.font = '10px ui-sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(t, lx + 23, lyy + i * 15); });
+
+    // ── inset: zoom the apex ──
+    const iw = Math.min(176, box.w * 0.38), ih = 118, ix = box.x + box.w - iw - 10, iy = box.y + 10;
+    softPanel(ctx, ix, iy, iw, ih, colors, { r: 8, fill: colors.bg });
+    T(ctx, colors, 'small', { align: 'left', baseline: 'top', color: colors.muted }); ctx.fillText('zoom on the apex', ix + 7, iy + 5);
+    const ZX = 0.32, ZYlo = 0.55, ZYhi = 1.06;
+    const zx = (x) => ix + 6 + ((x + ZX) / (2 * ZX)) * (iw - 12);
+    const zy = (y) => iy + ih - 8 - ((y - ZYlo) / (ZYhi - ZYlo)) * (ih - 26);
+    const zcurve = (fn, col, lw, dash) => { ctx.strokeStyle = col; ctx.lineWidth = lw; if (dash) ctx.setLineDash([3, 2]); ctx.beginPath();
+      for (let i = 0; i <= 120; i++) { const x = -ZX + (i / 120) * 2 * ZX; let px = zx(x), py = zy(fn(x)); i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py); } ctx.stroke(); ctx.setLineDash([]); };
+    ctx.save(); ctx.beginPath(); ctx.rect(ix + 1, iy + 14, iw - 2, ih - 16); ctx.clip();
+    zcurve(truth, colors.faint, 1.2, true); zcurve(pG, GAU, 2.4); zcurve(pY, YAT, 2.4); zcurve(pL, SOB, 2.4);
+    ctx.restore();
+
+    const sharp = (fn) => Math.max(0, 2 * fn(0) - fn(-0.07) - fn(0.07));
+    api.readout('rd', `peak sharpness  Gaussian ${sharp(pG).toFixed(2)} · IMQ ${sharp(pY).toFixed(2)} · Laplace ${sharp(pL).toFixed(2)} · second difference at h = 0.07; ridge = 0.04`);
+  },
+});
+
+function sample(seed, noise) {
+  let s = seed >>> 0 || 1; const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  const rn = () => Math.sqrt(-2 * Math.log(rnd() || 1e-9)) * Math.cos(6.283 * rnd());
+  const x = [], y = [];
+  for (let i = 0; i < N; i++) { const xi = -DOMX + i / (N - 1) * 2 * DOMX; x.push(xi); y.push(truth(xi) + rn() * noise); }
+  return { x, y };
+}
+</script>

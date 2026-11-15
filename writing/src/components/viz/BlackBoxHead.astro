@@ -1,0 +1,100 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 470 } = Astro.props;
+---
+<figure data-min-width="800" class="viz blackbox" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+// You can read the head even when you cannot read the body. The backbone is a
+// trained black box: its output is 64 numbers with no individual meaning. The
+// head placed on top is a bank of prototype pictures, each a real example you can
+// look at, and the prediction is resemblance to them. So a legible classifier
+// rides an illegible representation: the interpretability lives in the head you
+// place, not the body you train. Hover a class to focus its prototypes.
+import { defineViz } from './engine/vizkit.js';
+import { exemplarImg, CLASS_COL, CLASSES } from './trainfeat.js';
+import { gate, loadingText } from './engine/draw.js';
+const PE = 8;
+
+defineViz('blackbox', {
+  title: 'A readable head on an unreadable body',
+  height: 470,
+  controls: [{ type: 'readout', name: 'rd' }],
+
+  setup(api) {
+    api.state.hover = -1;
+    let s = 4242; const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+    api.state.bars = Array.from({ length: 16 }, () => 0.15 + 0.8 * rnd());
+    gate(api, exemplarImg, (api, feat) => { api.state.feat = feat; bind(api); });
+  },
+
+  draw(api) {
+    const { ctx, colors, size, state: st } = api;
+    const W = size.W, H = size.H;
+    if (W === 0 || !st) return;
+    ctx.clearRect(0, 0, W, H);
+    if (!st.ready) { loadingText(api); return; }
+
+    const pad = 14;
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = colors.muted; ctx.font = '11px ui-sans-serif, system-ui';
+    ctx.fillText('the interpretability lives in the head you place, not the body you train.', pad, pad + 12);
+
+    // left: the black box backbone
+    const boxW = Math.min(150, W * 0.26), y0 = pad + 26, boxH = H - y0 - pad;
+    ctx.fillStyle = '#23211c'; ctx.fillRect(pad, y0, boxW, boxH);
+    ctx.strokeStyle = colors.border; ctx.lineWidth = 1; ctx.strokeRect(pad + 0.5, y0 + 0.5, boxW - 1, boxH - 1);
+    ctx.fillStyle = '#e8e2d4'; ctx.font = 'bold 12px ui-sans-serif, system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('backbone g', pad + boxW / 2, y0 + 20);
+    ctx.fillStyle = '#9c968a'; ctx.font = '10px ui-sans-serif, system-ui'; ctx.fillText('TRAINED · a black box', pad + boxW / 2, y0 + 36);
+    // scrambled feature bars (uninterpretable numbers)
+    const bn = st.bars.length, bAreaY = y0 + 52, bAreaH = boxH - 80, bw = (boxW - 24) / bn;
+    for (let i = 0; i < bn; i++) { const bh = st.bars[i] * bAreaH; ctx.fillStyle = '#6f6a5e';
+      ctx.fillRect(pad + 12 + i * bw, bAreaY + bAreaH - bh, bw - 1.5, bh); }
+    ctx.fillStyle = '#9c968a'; ctx.font = '9px ui-monospace, monospace'; ctx.fillText('64 numbers, no meaning', pad + boxW / 2, y0 + boxH - 12);
+
+    // arrow
+    const ax = pad + boxW; ctx.strokeStyle = colors.faint; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(ax + 4, y0 + boxH / 2); ctx.lineTo(ax + 22, y0 + boxH / 2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(ax + 16, y0 + boxH / 2 - 4); ctx.lineTo(ax + 22, y0 + boxH / 2); ctx.lineTo(ax + 16, y0 + boxH / 2 + 4); ctx.stroke();
+
+    // right: the readable head (prototype pictures)
+    const hx = ax + 28, hw = W - pad - hx;
+    ctx.fillStyle = colors.blue; ctx.font = 'bold 12px ui-sans-serif, system-ui'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('head h: PLACED · prototype pictures you can read', hx, y0 + 12);
+    const rows = 10, rowH = (boxH - 20) / rows, cell = Math.min(rowH - 3, (hw - 60) / PE - 2);
+    st._rows = [];
+    for (let c = 0; c < 10; c++) {
+      const ry = y0 + 20 + c * rowH, cy = ry + rowH / 2, focus = st.hover < 0 || st.hover === c;
+      ctx.globalAlpha = focus ? 1 : 0.28;
+      ctx.fillStyle = CLASS_COL[c]; ctx.font = '9px ui-sans-serif, system-ui'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+      ctx.fillText(CLASSES[c], hx + 52, cy);
+      ctx.imageSmoothingEnabled = true;
+      for (let j = 0; j < PE; j++) { const x = hx + 58 + j * (cell + 2);
+        ctx.drawImage(st.feat, j * 28, c * 28, 28, 28, x, cy - cell / 2, cell, cell);
+        ctx.lineWidth = 1; ctx.strokeStyle = CLASS_COL[c] + '55'; ctx.strokeRect(x - 0.5, cy - cell / 2 - 0.5, cell + 1, cell + 1); }
+      st._rows.push({ y: ry, h: rowH, c }); ctx.globalAlpha = 1;
+    }
+
+    api.readout('rd', st.hover >= 0 ? `${CLASSES[st.hover]}: the network calls something a ${CLASSES[st.hover]} when it resembles these stored pictures`
+      : 'left: the trained backbone is unreadable · right: the placed head is a bank of pictures, fully readable');
+  },
+});
+
+function bind(api) {
+  if (api.canvas.dataset.bbBound) return; api.canvas.dataset.bbBound = '1';
+  api.canvas.addEventListener('pointermove', (e) => {
+    const st = api.state; if (!st || !st._rows) return;
+    const rc = api.canvas.getBoundingClientRect(), py = (e.clientY - rc.top) * api.size.H / rc.height;
+    let h = -1; for (const r of st._rows) if (py >= r.y && py <= r.y + r.h) h = r.c;
+    if (h !== st.hover) { st.hover = h; api.render(); }
+  });
+  api.canvas.addEventListener('pointerleave', () => { if (api.state) { api.state.hover = -1; api.render(); } });
+}
+</script>

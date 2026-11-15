@@ -1,0 +1,131 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 480 } = Astro.props;
+---
+<figure data-min-width="720" class="viz featvspix" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+// What a feature is, and what training it buys. Pixels are already a
+// representation, just a bad one: the two clothes a network confuses most,
+// Pullover and Coat, sit in one overlapping cloud in pixel space, so no boundary
+// can split them. A feature is a learned measurement; the backbone is trained to
+// turn the raw image into numbers chosen so the classes pull apart. Slide the
+// backbone training and watch the same two classes separate in feature space.
+// The separability number under each panel is read off exactly the layout shown.
+import { defineViz } from './engine/vizkit.js';
+import { loadFold, CLASS_COL, CLASSES } from './trainfeat.js';
+import { gate, loadingText } from './engine/draw.js';
+
+// fraction of two classes that land on their own side of the midpoint, along the
+// axis between the two class centroids, a one-line linear-separability read of
+// exactly the 2D layout on screen.
+function separability(pts, labs, ca, cb) {
+  let ax = 0, ay = 0, bx = 0, by = 0, na = 0, nb = 0;
+  for (let i = 0; i < pts.length; i++) {
+    if (labs[i] === ca) { ax += pts[i][0]; ay += pts[i][1]; na++; }
+    else if (labs[i] === cb) { bx += pts[i][0]; by += pts[i][1]; nb++; }
+  }
+  if (!na || !nb) return 0;
+  ax /= na; ay /= na; bx /= nb; by /= nb;
+  let dx = bx - ax, dy = by - ay; const L = Math.hypot(dx, dy) || 1; dx /= L; dy /= L;
+  const mid = ((ax + bx) * dx + (ay + by) * dy) / 2;
+  let ok = 0;
+  for (let i = 0; i < pts.length; i++) {
+    if (labs[i] === ca && (pts[i][0] * dx + pts[i][1] * dy) < mid) ok++;
+    else if (labs[i] === cb && (pts[i][0] * dx + pts[i][1] * dy) >= mid) ok++;
+  }
+  return 100 * ok / (na + nb);
+}
+
+defineViz('featvspix', {
+  title: 'A feature is a measurement the backbone learns so the classes pull apart',
+  height: 480,
+  controls: [
+    { type: 'range', name: 'stage', label: 'backbone training', min: 0, max: 4, step: 1, value: 0, int: true, reset: false, fmt: (v) => v, play: { period: 4500, loop: false } },
+    { type: 'readout', name: 'rd' },
+  ],
+
+  setup(api) {
+    gate(api, loadFold, (api, d) => {
+      const [ca, cb] = d.confusePair;
+      Object.assign(api.state, { d, ca, cb, labels: d.labels, sepPix: separability(d.pixelEmbed, d.labels, ca, cb) });
+    });
+  },
+
+  draw(api) {
+    const { ctx, colors, size, state: st } = api;
+    const W = size.W, H = size.H;
+    if (W === 0 || !st) return;
+    ctx.clearRect(0, 0, W, H);
+    if (!st.ready) { loadingText(api); return; }
+
+    const s = api.get('stage'), fr = st.d.frames[s];
+    const ca = st.ca, cb = st.cb;
+    const sepFeat = separability(fr.embed, st.labels, ca, cb);
+
+    const pad = 14, topH = 30, botH = 46, gap = 26;
+    const side = Math.min((W - pad * 2 - gap) / 2, H - topH - botH - pad);
+    const lx = pad + (W - pad * 2 - gap - side * 2) / 2, rx = lx + side + gap;
+    const y0 = topH;
+
+    // titles
+    ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = colors.fg; ctx.font = 'bold 12px ui-sans-serif, system-ui';
+    ctx.fillText('PIXEL SPACE', lx + side / 2, 14);
+    ctx.fillText('FEATURE SPACE', rx + side / 2, 14);
+    ctx.fillStyle = colors.muted; ctx.font = '10px ui-sans-serif, system-ui';
+    ctx.fillText('the raw 784 numbers', lx + side / 2, 26);
+    ctx.fillText(`what the backbone measures · ${fr.ep} epoch${fr.ep === 1 ? '' : 's'} trained`, rx + side / 2, 26);
+
+    const panel = (px, pts) => {
+      ctx.strokeStyle = colors.border; ctx.lineWidth = 1; ctx.strokeRect(px + 0.5, y0 + 0.5, side - 1, side - 1);
+      const sx = (u) => px + (u * 0.46 + 0.5) * side, sy = (v) => y0 + (0.5 - v * 0.46) * side;
+      // background: everyone else, faint grey
+      ctx.fillStyle = colors.faint;
+      for (let i = 0; i < pts.length; i++) {
+        if (st.labels[i] === ca || st.labels[i] === cb) continue;
+        ctx.globalAlpha = 0.28; ctx.beginPath(); ctx.arc(sx(pts[i][0]), sy(pts[i][1]), 2, 0, 6.283); ctx.fill();
+      }
+      // the two confusable classes, in full colour on top
+      for (let i = 0; i < pts.length; i++) {
+        const lab = st.labels[i]; if (lab !== ca && lab !== cb) continue;
+        ctx.globalAlpha = 0.85; ctx.fillStyle = CLASS_COL[lab];
+        ctx.beginPath(); ctx.arc(sx(pts[i][0]), sy(pts[i][1]), 3.2, 0, 6.283); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    };
+    panel(lx, st.d.pixelEmbed);
+    panel(rx, fr.embed);
+
+    // separability badges under each panel
+    const badge = (px, val, climbing) => {
+      ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+      ctx.fillStyle = climbing ? colors.accent : colors.muted; ctx.font = 'bold 20px ui-sans-serif, system-ui';
+      ctx.fillText(`${val.toFixed(0)}%`, px + side / 2, y0 + side + 24);
+      ctx.fillStyle = colors.muted; ctx.font = '10px ui-sans-serif, system-ui';
+      ctx.fillText('separable', px + side / 2, y0 + side + 38);
+    };
+    badge(lx, st.sepPix, false);
+    badge(rx, sepFeat, true);
+
+    // legend
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    const ly = y0 + side + 30; let lxk = lx;
+    for (const c of [ca, cb]) {
+      ctx.fillStyle = CLASS_COL[c]; ctx.beginPath(); ctx.arc(lxk + 4, ly, 4, 0, 6.283); ctx.fill();
+      ctx.fillStyle = colors.muted; ctx.font = '10px ui-sans-serif, system-ui';
+      ctx.fillText(CLASSES[c], lxk + 12, ly); lxk += 12 + ctx.measureText(CLASSES[c]).width + 12;
+    }
+
+    api.readout('rd', s === 0
+      ? `In pixel space ${CLASSES[ca]} and ${CLASSES[cb]} overlap in one cloud (${st.sepPix.toFixed(0)}% separable): the raw image cannot tell them apart. Slide to train the backbone.`
+      : `Train the backbone and the same two classes pull apart in feature space (${st.sepPix.toFixed(0)}% → ${sepFeat.toFixed(0)}% separable). That separation is what training the features buys; the head just reads it.`);
+  },
+});
+</script>

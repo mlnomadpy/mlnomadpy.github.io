@@ -1,0 +1,124 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 430 } = Astro.props;
+---
+<figure data-min-width="960" class="viz symskewscore" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+import { defineViz } from './engine/vizkit.js';
+import { panel, text, PALETTE, parseColor } from './engine/draw.js';
+import { np, withJax, drawJaxLoading } from './engine/jax.js';
+
+// Any bilinear score matrix B splits as B = S + A, with S = ½(B+Bᵀ) symmetric and
+// A = ½(B−Bᵀ) antisymmetric, so s_ij = xᵢᵀS xⱼ + xᵢᵀA xⱼ. The symmetric part is a
+// symmetric bilinear form (positive definite in this demo); the antisymmetric part is pure
+// directedness (xᵢᵀA xⱼ = −xⱼᵀA xᵢ). In 2-D the only antisymmetric form is the
+// cross product, A = α·[[0,−1],[1,0]], so the directed score is α·(xᵢ × xⱼ), the
+// oriented area. Crucially the diagonal sees only S: xᵀB x = xᵀS x, so directedness
+// is invisible on the self-score. All three score matrices are jax-js matmuls.
+const TOKENS = ['a', 'b', 'c', 'd', 'e', 'f'];
+const X = [
+  [-0.82, 0.18], [-0.30, 0.74], [0.10, -0.50],
+  [0.66, 0.58], [0.86, -0.22], [-0.48, -0.66],
+];
+
+function symMetric(beta) {
+  // S = Rᵀ diag(1.25, 0.45) R  (symmetric, axes rotated by beta)
+  const c = Math.cos(beta), s = Math.sin(beta), l1 = 1.25, l2 = 0.45;
+  return [
+    [l1 * c * c + l2 * s * s, (l1 - l2) * c * s],
+    [(l1 - l2) * c * s, l1 * s * s + l2 * c * c],
+  ];
+}
+
+function quad(X, M) {
+  // X M Xᵀ  → (n,n) score matrix, on jax-js
+  const XM = np.matmul(np.array(X), np.array(M));
+  return np.matmul(XM, np.swapaxes(np.array(X), 0, 1)).js();
+}
+
+function heat(ctx, box, A, n, colors, title) {
+  panel(ctx, box, colors, {});
+  text(ctx, title, box.x + box.w / 2, box.y + 6, colors, { align: 'center', size: 10.5, weight: '600' });
+  const side = Math.min(box.w - 16, box.h - 38);
+  const ox = box.x + (box.w - side) / 2, oy = box.y + 26, cs = side / n;
+  const bg = parseColor(colors.cellBg), hi = parseColor(colors.accent), neg = parseColor(colors.blue);
+  let mx = 1e-6; for (const r of A) for (const v of r) mx = Math.max(mx, Math.abs(v));
+  for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+    const t = Math.min(1, Math.abs(A[i][j]) / mx), c = A[i][j] < 0 ? neg : hi;
+    ctx.fillStyle = `rgb(${Math.round(bg[0] + (c[0] - bg[0]) * t)},${Math.round(bg[1] + (c[1] - bg[1]) * t)},${Math.round(bg[2] + (c[2] - bg[2]) * t)})`;
+    ctx.fillRect(ox + j * cs, oy + i * cs, cs + 0.5, cs + 0.5);
+  }
+  // outline the diagonal
+  ctx.strokeStyle = colors.fg; ctx.lineWidth = 1;
+  for (let i = 0; i < n; i++) ctx.strokeRect(ox + i * cs + 0.5, oy + i * cs + 0.5, cs, cs);
+  ctx.strokeStyle = colors.border; ctx.strokeRect(ox + 0.5, oy + 0.5, side - 1, side - 1);
+  return { ox, oy, side };
+}
+
+defineViz('symskewscore', {
+  title: 'Score = symmetric comparison + antisymmetric directedness',
+  height: 430,
+  controls: [
+    { type: 'range', name: 'beta', label: 'S rotation', min: -1.4, max: 1.4, step: 0.02, value: 0.5, reset: false, fmt: v => v.toFixed(2) },
+    { type: 'range', name: 'alpha', label: 'directedness α', min: -1.6, max: 1.6, step: 0.02, value: 0.9, reset: false, fmt: v => v.toFixed(2) },
+    { type: 'readout', name: 'rd' },
+  ],
+  setup(api) { withJax(api); },
+  draw(api) {
+    if (!api.state.jaxReady) return drawJaxLoading(api);
+    const { ctx, colors, size } = api;
+    const box = { x: 6, y: 4, w: size.W - 12, h: size.H - 8 };
+    panel(ctx, box, colors, {});
+    const n = TOKENS.length;
+    const beta = api.get('beta'), alpha = api.get('alpha');
+    const S = symMetric(beta);
+    const J = [[0, -alpha], [alpha, 0]];
+    const Msym = quad(X, S);
+    const Manti = quad(X, J);
+    const Mtot = Msym.map((r, i) => r.map((v, j) => v + Manti[i][j]));
+
+    // ── left: token cloud + metric ellipse ──
+    const left = { x: box.x + 10, y: box.y + 26, w: box.w * 0.30, h: box.h - 54 };
+    text(ctx, 'tokens + positive-definite S', left.x, box.y + 9, colors, { size: 11.5, weight: '600' });
+    panel(ctx, left, colors, {});
+    const cx = left.x + left.w / 2, cy = left.y + left.h / 2, R = Math.min(left.w, left.h) * 0.40;
+    const xy = (p) => [cx + p[0] * R, cy - p[1] * R];
+    // metric contour xᵀSx = 1
+    ctx.strokeStyle = colors.accent + '66'; ctx.lineWidth = 1.2; ctx.beginPath();
+    for (let t = 0; t <= 64; t++) {
+      const th = (t / 64) * Math.PI * 2, u = [Math.cos(th), Math.sin(th)];
+      const q = u[0] * (S[0][0] * u[0] + S[0][1] * u[1]) + u[1] * (S[1][0] * u[0] + S[1][1] * u[1]);
+      const r = 1 / Math.sqrt(Math.max(1e-3, q));
+      const [px, py] = xy([u[0] * r, u[1] * r]); t ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
+    }
+    ctx.closePath(); ctx.stroke();
+    for (let i = 0; i < n; i++) {
+      const [px, py] = xy(X[i]);
+      ctx.fillStyle = PALETTE[i % PALETTE.length]; ctx.beginPath(); ctx.arc(px, py, 5.5, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = colors.cellBg; ctx.lineWidth = 1.4; ctx.stroke();
+      text(ctx, TOKENS[i], px, py + 11, colors, { align: 'center', size: 9, color: colors.muted });
+    }
+
+    // ── three score heatmaps ──
+    const gap = 8, hx0 = box.x + box.w * 0.33 + gap;
+    const hw = (box.x + box.w - 10 - hx0 - 2 * gap) / 3;
+    const hbox = (k) => ({ x: hx0 + k * (hw + gap), y: box.y + 26, w: hw, h: box.h - 70 });
+    heat(ctx, hbox(0), Msym, n, colors, 'symmetric  xᵀSx');
+    heat(ctx, hbox(1), Manti, n, colors, 'antisym  α·xᵀJx');
+    heat(ctx, hbox(2), Mtot, n, colors, 'total  xᵀBx');
+
+    let asym = 0; for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) asym = Math.max(asym, Math.abs(Mtot[i][j] - Mtot[j][i]));
+    let ddiff = 0; for (let i = 0; i < n; i++) ddiff = Math.max(ddiff, Math.abs(Mtot[i][i] - Msym[i][i]));
+    text(ctx, `Diagonal: xᵢᵀBxᵢ = xᵢᵀSxᵢ · max diff ${ddiff.toFixed(3)} · α scales the antisymmetric part`,
+      box.x + 12, box.y + box.h - 16, colors, { size: 10, mono: true, color: colors.muted });
+    api.readout('rd', `max |s_ij − s_ji| = ${asym.toFixed(2)} · live`);
+  },
+});
+</script>

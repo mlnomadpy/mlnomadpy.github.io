@@ -1,0 +1,108 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 340 } = Astro.props;
+---
+<figure data-min-width="720" class="viz confledger" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+// The confidence ledger: what each net claims on its own diet (Fashion-MNIST
+// test) versus on images it has never seen the likes of (MNIST digits). Both
+// histograms are built live from the exported logits: softmax, take the max,
+// bin. The shapes do the arguing; the readout counts the claims above 90%.
+// Data: scripts/yat_calibration.py, seed 0.
+import { defineViz } from './engine/vizkit.js';
+import { gate, loadingText, frame, T as Ty, fmt } from './engine/draw.js';
+import { loadCalib, maxConf, histogram } from './calib.js';
+
+const HB = 30;
+
+defineViz('confledger', {
+  title: 'What it claims, on and off its training diet',
+  height: 340,
+  controls: [{ type: 'readout', name: 'rd' }],
+
+  setup(api) {
+    gate(api, loadCalib, (api, d) => {
+      api.state.nets = {};
+      for (const name of ['yat', 'relu']) {
+        const cid = maxConf(d[name].test, 1), cood = maxConf(d[name].ood, 1);
+        api.state.nets[name] = {
+          id: histogram(cid, HB), ood: histogram(cood, HB),
+          id90: cid.filter((v) => v > 0.9).length / cid.length,
+          ood90: cood.filter((v) => v > 0.9).length / cood.length,
+        };
+      }
+    });
+  },
+
+  draw(api) {
+    const { ctx, colors, size, state: st } = api;
+    const W = size.W, H = size.H;
+    if (W === 0 || !st) return;
+    if (!st.ready) { loadingText(api); return; }
+
+    const pad = 14, gapX = 26, top = 34, bottom = 34;
+    const pw = (W - 2 * pad - gapX) / 2, ph = H - top - bottom;
+    const nets = [
+      { key: 'yat', label: 'Yat MLP', col: colors.accent },
+      { key: 'relu', label: 'ReLU MLP', col: colors.blue },
+    ];
+    // shared scale across both panels, sized to the tallest bin so nothing clips
+    const yMax = 1.06 * Math.max(...['yat', 'relu'].flatMap((k) => [...st.nets[k].id, ...st.nets[k].ood]));
+
+    nets.forEach((net, pi) => {
+      const bx = pad + pi * (pw + gapX), by = top;
+      const n = st.nets[net.key];
+      const sx = (v) => bx + v * pw, sy = (v) => by + ph - Math.min(1, v / yMax) * ph;
+
+      Ty(ctx, colors, 'label', { color: net.col, weight: 'b' });
+      ctx.fillText(net.label, bx, by - 8);
+      frame(ctx, colors, bx, by, pw, ph);
+
+      const bw = pw / HB;
+      // Fashion test: filled bars in the net's colour
+      for (let i = 0; i < HB; i++) {
+        if (!n.id[i]) continue;
+        ctx.fillStyle = net.col; ctx.globalAlpha = 0.55;
+        ctx.fillRect(sx(i / HB) + 0.5, sy(n.id[i]), bw - 1, by + ph - sy(n.id[i]));
+      }
+      ctx.globalAlpha = 1;
+      // MNIST: outlined step curve in fg, drawn on top
+      ctx.strokeStyle = colors.fg; ctx.lineWidth = 1.8; ctx.beginPath();
+      for (let i = 0; i < HB; i++) {
+        const y = sy(n.ood[i]);
+        i === 0 ? ctx.moveTo(sx(0), y) : ctx.lineTo(sx(i / HB), y);
+        ctx.lineTo(sx((i + 1) / HB), y);
+      }
+      ctx.stroke();
+
+      // the 0.9 gate
+      ctx.strokeStyle = colors.faint; ctx.setLineDash([3, 3]);
+      ctx.beginPath(); ctx.moveTo(sx(0.9), by); ctx.lineTo(sx(0.9), by + ph); ctx.stroke();
+      ctx.setLineDash([]);
+
+      Ty(ctx, colors, 'small', { align: 'center' });
+      for (const t of [0.1, 0.5, 0.9]) ctx.fillText(fmt(t, 1), sx(t), by + ph + 12);
+      ctx.fillText('claimed confidence', bx + pw / 2, by + ph + 25);
+    });
+
+    // shared legend, upper area of the left panel
+    const lx = pad + 12; let ly = top + 18;
+    ctx.fillStyle = colors.accent; ctx.globalAlpha = 0.55; ctx.fillRect(lx, ly - 8, 12, 10); ctx.globalAlpha = 1;
+    Ty(ctx, colors, 'small'); ctx.fillText('Fashion-MNIST test (in distribution)', lx + 17, ly);
+    ly += 15;
+    ctx.strokeStyle = colors.fg; ctx.lineWidth = 1.8;
+    ctx.beginPath(); ctx.moveTo(lx, ly - 4); ctx.lineTo(lx + 12, ly - 4); ctx.stroke();
+    Ty(ctx, colors, 'small'); ctx.fillText('MNIST digits (never seen)', lx + 17, ly);
+
+    const y = st.nets.yat, r = st.nets.relu;
+    api.readout('rd', `claims above 90%, on MNIST it has never seen: Yat ${(y.ood90 * 100).toFixed(1)}%, ReLU ${(r.ood90 * 100).toFixed(1)}%`);
+  },
+});
+</script>

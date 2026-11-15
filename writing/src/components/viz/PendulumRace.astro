@@ -1,0 +1,153 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 430 } = Astro.props;
+---
+<figure data-min-width="720" class="viz pendrace" data-caption={caption} data-height={height} data-height-mobile="500" tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+// Two networks trained on the same pendulum data, integrated live from the same
+// start, using the REAL trained weights from the run. Left: phase space (q, p),
+// both trajectories drawing in real time (RK4, the run's integrator). Right:
+// the true pendulum energy along each rollout. The plain field's energy
+// wanders; the HNN's holds. Drag the white start dot and both restart there.
+import { defineViz } from './engine/vizkit.js';
+import { T, dot, legend, fmt, axes, gate, loadingText } from './engine/draw.js';
+import { drag } from './engine/pointer.js';
+import { load, baseField, hnnField, rk4, trueEnergy } from './hamnet.js';
+
+const QR = 3.2, PR = 2.6;                 // phase-space view half-ranges
+const MAXT = 60;                          // seconds of pendulum time shown
+
+function resetRuns(st) {
+  st.base = { q: st.q0, p: st.p0, trail: [[st.q0, st.p0]], E: [trueEnergy(st.q0, st.p0)] };
+  st.hnn = { q: st.q0, p: st.p0, trail: [[st.q0, st.p0]], E: [trueEnergy(st.q0, st.p0)] };
+  st.t = 0;
+}
+
+defineViz('pendrace', {
+  title: 'Two learned pendulums, one start, live',
+  height: 430,
+  stepsPerFrame: 4,
+  autoplay: false,
+  controls: [
+    { type: 'play' }, { type: 'reset' }, { type: 'speed' },
+    { type: 'readout', name: 'rd' },
+  ],
+
+  setup(api) {
+    const st = api.state;
+    st.q0 ??= 1.6; st.p0 ??= 0.0;
+    resetRuns(st);
+    gate(api, () => load('pendulum'), (a, d) => {
+      a.state.data = d;
+      // pre-integrate a few seconds so the first paint already shows the race
+      const s = a.state;
+      for (let i = 0; i < 120; i++) {
+        [s.base, s.hnn].forEach((sys, j) => {
+          const m = j === 0 ? d.models.baseline : d.models.hnn;
+          const field = j === 0 ? baseField : hnnField;
+          [sys.q, sys.p] = rk4(field, m, sys.q, sys.p, d.dt);
+          sys.trail.push([sys.q, sys.p]);
+          sys.E.push(trueEnergy(sys.q, sys.p));
+        });
+        s.t += d.dt;
+      }
+    });
+    if (!api.canvas.dataset.vkDrag) {
+      drag(api.canvas, {
+        cursor: 'grab',
+        onStart(p) {
+          const m = api.state._map; if (!m) return;
+          const [px, py] = m.toPx(api.state.q0, api.state.p0);
+          api.state.dragging = Math.hypot(p.x - px, p.y - py) < 16;
+        },
+        onMove(p) {
+          const st2 = api.state, m = st2._map;
+          if (!st2.dragging || !m) return;
+          const [q, pv] = m.toVal(p.x, p.y);
+          st2.q0 = Math.max(-QR, Math.min(QR, q));
+          st2.p0 = Math.max(-PR, Math.min(PR, pv));
+          resetRuns(st2);
+          api.render();
+        },
+        onEnd() { api.state.dragging = false; },
+      });
+    }
+  },
+
+  step(api) {
+    const st = api.state, d = st.data;
+    if (!st.ready || !d || st.t >= MAXT) return;
+    const dt = d.dt;
+    [st.base, st.hnn].forEach((sys, i) => {
+      const m = i === 0 ? d.models.baseline : d.models.hnn;
+      const field = i === 0 ? baseField : hnnField;
+      [sys.q, sys.p] = rk4(field, m, sys.q, sys.p, dt);
+      sys.trail.push([sys.q, sys.p]);
+      sys.E.push(trueEnergy(sys.q, sys.p));
+    });
+    st.t += dt;
+  },
+
+  draw(api) {
+    const { ctx, colors, size: { W, H } } = api, st = api.state;
+    if (!st.ready || !st.data) { loadingText(api); return; }
+    const pad = 14, half = (W - 3 * pad) / 2;
+    const box = { x: pad, y: 34, w: half, h: H - 96 };
+    const ebox = { x: 2 * pad + half, y: 34, w: half, h: H - 96 };
+    const E0 = trueEnergy(st.q0, st.p0);
+    const cols = { base: '#c2553a', hnn: '#4a7fb3' };
+
+    // ---- left: phase space
+    const toPx = (q, p) => [box.x + ((q + QR) / (2 * QR)) * box.w,
+                            box.y + (1 - (p + PR) / (2 * PR)) * box.h];
+    st._map = { toPx, toVal: (x, y) => [((x - box.x) / box.w) * 2 * QR - QR, (1 - (y - box.y) / box.h) * 2 * PR - PR] };
+    axes(ctx, box, { xMin: -QR, xMax: QR, yMin: -PR, yMax: PR, grid: true, zero: true }, colors);
+    T(ctx, colors, 'label');
+    ctx.fillText('phase space: angle q, momentum p', box.x, box.y - 8);
+    [['base', st.base], ['hnn', st.hnn]].forEach(([key, sys]) => {
+      ctx.strokeStyle = cols[key]; ctx.lineWidth = 1.6; ctx.globalAlpha = 0.9; ctx.beginPath();
+      sys.trail.forEach(([q, p], i) => { const [x, y] = toPx(q, p); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+      ctx.stroke(); ctx.globalAlpha = 1;
+      const [q, p] = sys.trail[sys.trail.length - 1];
+      const [x, y] = toPx(q, p); dot(ctx, x, y, 4.5, cols[key]);
+    });
+    const [sx, sy] = toPx(st.q0, st.p0);
+    dot(ctx, sx, sy, 7, colors.fg); dot(ctx, sx, sy, 3.5, colors.bg);
+
+    // ---- right: true energy along each rollout
+    const eMax = Math.max(2.5, E0 * 2.2);
+    axes(ctx, ebox, { xMin: 0, xMax: MAXT, yMin: 0, yMax: eMax, grid: true }, colors);
+    T(ctx, colors, 'label');
+    ctx.fillText('true energy along each rollout', ebox.x, ebox.y - 8);
+    const yAt = (E) => ebox.y + (1 - Math.min(E, eMax) / eMax) * ebox.h;
+    ctx.setLineDash([4, 4]); ctx.strokeStyle = colors.border; ctx.beginPath();
+    ctx.moveTo(ebox.x, yAt(E0)); ctx.lineTo(ebox.x + ebox.w, yAt(E0)); ctx.stroke(); ctx.setLineDash([]);
+    [['base', st.base], ['hnn', st.hnn]].forEach(([key, sys]) => {
+      ctx.strokeStyle = cols[key]; ctx.lineWidth = 1.8; ctx.beginPath();
+      sys.E.forEach((E, i) => {
+        const x = ebox.x + (i * st.data.dt / MAXT) * ebox.w;
+        i ? ctx.lineTo(x, yAt(E)) : ctx.moveTo(x, yAt(E));
+      });
+      ctx.stroke();
+    });
+
+    legend(ctx, pad, H - 50, [
+      { color: cols.base, label: 'plain MLP field (predicts the motion directly)' },
+      { color: cols.hnn, label: 'HNN (motion from a learned energy)' },
+    ], colors);
+    const last = (a) => a[a.length - 1];
+    const bd = Math.abs(last(st.base.E) - E0) / Math.max(E0, 1e-6);
+    const hd = Math.abs(last(st.hnn.E) - E0) / Math.max(E0, 1e-6);
+    api.readout('rd', `t=${fmt(st.t, 1)}s  |dE|/E0  plain ${fmt(bd * 100, 1)}%  hnn ${fmt(hd * 100, 1)}%`);
+    T(ctx, colors, 'label');
+    ctx.fillText('drag the white dot to restart both pendulums from a new state', pad, H - 8);
+  },
+});
+</script>

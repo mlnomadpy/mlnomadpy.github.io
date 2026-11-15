@@ -1,0 +1,144 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 400 } = Astro.props;
+---
+<figure data-min-width="640" class="viz fieldsoftmax" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+// One Yat net, two ways of asking "do you recognize this?". Top row: the raw
+// field magnitude, max_u phi_u(x), the strongest kernel match, on a log axis.
+// Bottom row: the softmax confidence built from the very same forward pass.
+// Same inputs, same weights; the normalization is the only difference. Slide
+// the gate to keep a chosen fraction of Fashion and watch how much MNIST leaks
+// through each channel; switch the training seed and watch which channel's
+// separation (AUROC, computed live) holds still. Data: the three seeds of
+// scripts/yat_calibration.py (public/yat-calibration/channels.json).
+import { defineViz } from './engine/vizkit.js';
+import { gate, loadingText, frame, T as Ty } from './engine/draw.js';
+import { loadJSON } from './engine/io.js';
+import { ensureJax } from './engine/jax.js';
+import { histogram, auroc } from './calib.js';
+
+import datasetUrl from '../../../assets/yat-calibration/channels.json?url';
+const HB = 44;
+
+function percentile(sorted, q) {
+  const i = Math.min(sorted.length - 1, Math.max(0, Math.floor(q * sorted.length)));
+  return sorted[i];
+}
+
+function buildRows(d, seed) {
+  const s = d[`s${seed}`];
+  const L = (v) => Math.log10(Math.max(0.3, v));
+  const k = { id: s.kmaxTest.map(L), ood: s.kmaxOod.map(L) };
+  const lo = Math.min(...k.id, ...k.ood), hi = Math.max(...k.id, ...k.ood);
+  const rows = [
+    { label: 'max kernel score (the field magnitude)', lo, hi, log: true,
+      id: k.id, ood: k.ood },
+    { label: 'softmax confidence (the same pass, normalized)', lo: 0, hi: 1, log: false,
+      id: s.confTest, ood: s.confOod },
+  ];
+  for (const r of rows) {
+    r.idSorted = [...r.id].sort((a, b) => a - b);
+    r.au = auroc(r.id, r.ood);
+    r.hId = histogram(r.id, HB, r.lo, r.hi);
+    r.hOod = histogram(r.ood, HB, r.lo, r.hi);
+  }
+  return rows;
+}
+
+defineViz('fieldsoftmax', {
+  title: 'The same net, before and after the softmax',
+  height: 400,
+  controls: [
+    { type: 'select', name: 'seed', label: 'training seed', reset: false,
+      options: [{ value: '0', label: 'seed 0' }, { value: '1', label: 'seed 1' }, { value: '2', label: 'seed 2' }], value: '0' },
+    { type: 'range', name: 'keep', label: 'keep this much of Fashion', min: 0.8, max: 0.99, step: 0.01, value: 0.95, fmt: (v) => (v * 100).toFixed(0) + '%' },
+    { type: 'readout', name: 'rd' },
+  ],
+
+  setup(api) {
+    gate(api, () => Promise.all([loadJSON(datasetUrl), ensureJax()]).then(([d]) => d),
+      (api, d) => { api.state.d = d; api.state.rows = buildRows(d, 0); api.state.seed = 0; });
+  },
+
+  onControl(name, value, api) {
+    if (name === 'seed' && api.state.d) {
+      api.state.seed = +value;
+      api.state.rows = buildRows(api.state.d, +value);
+    }
+  },
+
+  draw(api) {
+    const { ctx, colors, size, state: st } = api;
+    const W = size.W, H = size.H;
+    if (W === 0 || !st) return;
+    if (!st.ready) { loadingText(api); return; }
+    const keep = api.get('keep');
+
+    const padL = 14, padR = 14, top = 12, rowGap = 44, bottom = 26;
+    const pw = W - padL - padR, ph = (H - top - rowGap - bottom - 18) / 2;
+    const leaks = [];
+
+    st.rows.forEach((r, ri) => {
+      const by = top + 14 + ri * (ph + rowGap);
+      const sx = (v) => padL + ((v - r.lo) / (r.hi - r.lo)) * pw;
+      const yMax = Math.max(...r.hId, ...r.hOod) * 1.08;
+      const sy = (v) => by + ph - (v / yMax) * ph;
+
+      Ty(ctx, colors, 'label', { weight: 'b' });
+      ctx.fillText(r.label, padL, by - 6);
+      Ty(ctx, colors, 'small', { align: 'right' });
+      ctx.fillText(`AUROC ${r.au.toFixed(3)}`, padL + pw, by - 6);
+      frame(ctx, colors, padL, by, pw, ph);
+
+      const bw = pw / HB;
+      for (let i = 0; i < HB; i++) {  // Fashion: accent fill
+        if (!r.hId[i]) continue;
+        ctx.fillStyle = colors.accent; ctx.globalAlpha = 0.5;
+        ctx.fillRect(padL + i * bw + 0.5, sy(r.hId[i]), bw - 1, by + ph - sy(r.hId[i]));
+      }
+      for (let i = 0; i < HB; i++) {  // MNIST: blue fill on top
+        if (!r.hOod[i]) continue;
+        ctx.fillStyle = colors.blue; ctx.globalAlpha = 0.5;
+        ctx.fillRect(padL + i * bw + 0.5, sy(r.hOod[i]), bw - 1, by + ph - sy(r.hOod[i]));
+      }
+      ctx.globalAlpha = 1;
+
+      // the gate: threshold at the (1-keep) percentile of Fashion
+      const thr = percentile(r.idSorted, 1 - keep);
+      const leak = r.ood.filter((v) => v >= thr).length / r.ood.length;
+      leaks.push(leak);
+      const tx = sx(thr);
+      ctx.strokeStyle = colors.fg; ctx.lineWidth = 1.6; ctx.setLineDash([5, 3]);
+      ctx.beginPath(); ctx.moveTo(tx, by - 2); ctx.lineTo(tx, by + ph); ctx.stroke(); ctx.setLineDash([]);
+      const flip = tx > padL + pw * 0.55;
+      Ty(ctx, colors, 'small', { align: flip ? 'right' : 'left', color: colors.fg });
+      ctx.fillText(`gate: MNIST leaking ${(leak * 100).toFixed(1)}%`, tx + (flip ? -5 : 5), by + 11);
+
+      // x ticks
+      Ty(ctx, colors, 'small', { align: 'center' });
+      if (r.log) {
+        for (const t of [0, 1, 2, 3]) if (t > r.lo && t < r.hi) ctx.fillText('10' + '⁰¹²³'[t], sx(t), by + ph + 12);
+      } else {
+        for (const t of [0.1, 0.5, 0.9]) ctx.fillText(t.toFixed(1), sx(t), by + ph + 12);
+      }
+    });
+
+    // legend under the last row
+    const ly = H - 8; let lx = padL;
+    ctx.fillStyle = colors.accent; ctx.globalAlpha = 0.5; ctx.fillRect(lx, ly - 9, 12, 10); ctx.globalAlpha = 1;
+    Ty(ctx, colors, 'small'); ctx.fillText('Fashion-MNIST test', lx + 16, ly); lx += 140;
+    ctx.fillStyle = colors.blue; ctx.globalAlpha = 0.5; ctx.fillRect(lx, ly - 9, 12, 10); ctx.globalAlpha = 1;
+    Ty(ctx, colors, 'small'); ctx.fillText('MNIST digits', lx + 16, ly);
+
+    api.readout('rd', `seed ${st.seed}, gate keeps ${(keep * 100).toFixed(0)}% of Fashion. MNIST leaking: field ${(leaks[0] * 100).toFixed(1)}%, softmax ${(leaks[1] * 100).toFixed(1)}%`);
+  },
+});
+</script>

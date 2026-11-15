@@ -1,0 +1,198 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 440 } = Astro.props;
+---
+<figure data-min-width="400" class="viz yatmlplearn" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+// A Yat-kernel MLP trained live in your browser on the nanograd autodiff engine.
+// Each hidden unit is the Euclidean Yat kernel (W·x+b)²/(‖x−W‖²+ε) against a
+// learned prototype W; a linear readout turns the kernel activations into a
+// logit. There is no activation function. Watch the prototypes (the kernel
+// centres) migrate onto the data and the decision field form, the network is
+// in the rich, feature-learning regime, not the lazy/NTK regime, yet it is a
+// kernel machine at every step.
+import { defineViz } from './engine/vizkit.js';
+import { parseColor } from './engine/draw.js';
+import * as ng from './engine/nanograd.js';
+import { rng32 } from './engine/datasets.js';
+
+const B = 0.5;        // numerator bias b (≥ 0)
+const PAD = 10;
+const HM = 56;        // field resolution
+
+function makeData(kind, N, seed) {
+  const r = rng32(seed);
+  const randn = () => { let u = 0, v = 0; while (!u) u = r(); while (!v) v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+  const X = new Float64Array(N * 2), lab = new Int8Array(N);
+  for (let i = 0; i < N; i++) {
+    let x, y, c; const u = r();
+    if (kind === 'moons') { c = u < 0.5 ? 0 : 1; const a = Math.PI * r();
+      if (c === 0) { x = Math.cos(a); y = Math.sin(a); } else { x = 1 - Math.cos(a); y = 0.5 - Math.sin(a); }
+      x += randn() * 0.08; y += randn() * 0.08; x -= 0.5; y -= 0.25; }
+    else if (kind === 'spiral') { c = u < 0.5 ? 0 : 1; const t = r(); const a = t * 3.3 + c * Math.PI; const rad = 0.2 + t * 1.05;
+      x = rad * Math.cos(a) + randn() * 0.05; y = rad * Math.sin(a) + randn() * 0.05; }
+    else if (kind === 'rings') { c = u < 0.5 ? 0 : 1; const a = 2 * Math.PI * r(); const rad = (c ? 1.25 : 0.5) + randn() * 0.08;
+      x = rad * Math.cos(a); y = rad * Math.sin(a); }
+    else { c = u < 0.5 ? 0 : 1; x = (c ? 1 : -1) * 0.85 + randn() * 0.5; y = randn() * 0.6; }
+    X[i * 2] = x; X[i * 2 + 1] = y; lab[i] = c;
+  }
+  return { X, lab, N };
+}
+
+defineViz('yatmlplearn', {
+  title: 'A Yat-kernel MLP learning, live',
+  height: 440, stepsPerFrame: 1.5, maxStep: 650, autoplay: true,
+  controls: [
+    { type: 'play' }, { type: 'step' }, { type: 'button', name: 'reroll', label: 're-roll', reset: true },
+    { type: 'speed', presets: [0.5, 1, 2, 4] },
+    { type: 'newrow' },
+    { type: 'select', name: 'data', label: 'data', value: 'moons', reset: true,
+      options: [{ value: 'moons', label: 'two-moons' }, { value: 'spiral', label: 'spiral' }, { value: 'rings', label: 'rings' }, { value: 'blobs', label: 'blobs' }] },
+    { type: 'range', name: 'K', label: 'prototypes', min: 4, max: 32, step: 2, value: 16, int: true, reset: true, fmt: (v) => v },
+    { type: 'range', name: 'eps', label: 'ε bandwidth', min: -1.4, max: 0.6, step: 0.05, value: -0.3, reset: false, fmt: (v) => Math.pow(10, v).toFixed(2) },
+    { type: 'readout', name: 'rd' },
+  ],
+
+  setup(api) {
+    const kind = api.get('data'), K = api.get('K'), N = 150;
+    const data = makeData(kind, N, 7);
+    let xmn = 1e9, xmx = -1e9, ymn = 1e9, ymx = -1e9;
+    for (let i = 0; i < N; i++) { const x = data.X[i * 2], y = data.X[i * 2 + 1];
+      xmn = Math.min(xmn, x); xmx = Math.max(xmx, x); ymn = Math.min(ymn, y); ymx = Math.max(ymx, y); }
+    const mx = (xmx - xmn) * 0.2 + 0.25, my = (ymx - ymn) * 0.2 + 0.25;
+    const bounds = { xmn: xmn - mx, xmx: xmx + mx, ymn: ymn - my, ymx: ymx + my };
+
+    const Xd = ng.tensor(N, 2, data.X);
+    const yArr = new Float64Array(N); for (let i = 0; i < N; i++) yArr[i] = data.lab[i] ? 1 : -1;
+    const Yneg = ng.tensor(N, 1, Float64Array.from(yArr, (v) => -v));
+
+    const r = rng32(101);
+    const W = ng.param(K, 2, (i) => (i % 2 === 0)
+      ? bounds.xmn + (bounds.xmx - bounds.xmn) * r()
+      : bounds.ymn + (bounds.ymx - bounds.ymn) * r());
+    const A = ng.param(K, 1, () => r() * 0.4 - 0.2);
+    const c = ng.param(1, 1, () => 0);
+    const adam = new ng.Adam([W, A, c], 0.03);
+
+    const epsOf = () => Math.pow(10, api.get('eps'));
+    const forward = () => {                                   // logits over the data batch
+      const eps = epsOf();
+      const dot = ng.matmul(Xd, ng.transpose(W));             // (N,K) = x·W
+      const xn = ng.sumRows(ng.square(Xd));                   // (N,1) = ‖x‖²
+      const wn = ng.transpose(ng.sumRows(ng.square(W)));      // (1,K) = ‖W‖²
+      const dist2 = ng.add(ng.add(xn, wn), ng.mulk(dot, -2)); // (N,K) = ‖x−W‖²
+      const num = ng.square(ng.addk(dot, B));                 // (N,K) = (x·W+b)²
+      const ker = ng.div(num, ng.addk(dist2, eps));           // (N,K) = Yat activations
+      return ng.add(ng.matmul(ker, A), c);                    // (N,1) logit
+    };
+
+    api.state = { N, K, data, bounds, Xd, Yneg, W, A, c, adam, forward, epsOf, loss: 0, acc: 0,
+      ver: 0, off: document.createElement('canvas'), img: null };
+  },
+
+  step(api) {
+    const st = api.state;
+    const logit = st.forward();
+    const loss = ng.mulk(ng.sumAll(ng.softplus(ng.mul(logit, st.Yneg))), 1 / st.N);
+    ng.backward(loss);
+    st.adam.step();
+    st.ver++;                                                 // a training step invalidates the cached decision field
+    st.loss = loss.d[0];
+    let ok = 0; for (let i = 0; i < st.N; i++) { const p = logit.d[i] > 0 ? 1 : 0; if (p === st.data.lab[i]) ok++; }
+    st.acc = ok / st.N;
+  },
+
+  draw(api) {
+    const { ctx, colors, size, state: st } = api;
+    const W = size.W, H = size.H;
+    if (W === 0 || !st) return;
+    ctx.clearRect(0, 0, W, H);
+
+    const footerH = 22;
+    const x0 = PAD, y0 = PAD, plotW = W - PAD * 2, plotH = H - PAD * 2 - footerH;
+    const { xmn, xmx, ymn, ymx } = st.bounds;
+    const sx = (x) => x0 + ((x - xmn) / (xmx - xmn)) * plotW;
+    const sy = (y) => y0 + ((ymx - y) / (ymx - ymn)) * plotH;
+    const wx = (px) => xmn + ((px - x0) / plotW) * (xmx - xmn);
+    const wy = (py) => ymx - ((py - y0) / plotH) * (ymx - ymn);
+
+    const eps = st.epsOf();
+    const predict = (px, py) => {
+      let logit = st.c.d[0];
+      for (let k = 0; k < st.K; k++) {
+        const wxk = st.W.d[k * 2], wyk = st.W.d[k * 2 + 1];
+        const d = px * wxk + py * wyk;
+        const di = (px - wxk) * (px - wxk) + (py - wyk) * (py - wyk);
+        logit += ((d + B) * (d + B) / (di + eps)) * st.A.d[k];
+      }
+      return logit;
+    };
+
+    // ── decision field (diverging heatmap: class 0 ↔ class 1) ──
+    // Rasterized to a persistent HM×HM offscreen canvas, then stretched into the
+    // plot. The field depends only on the trained params (bumped via st.ver each
+    // step), eps, the plot geometry and the theme, not on any hover state, so it is
+    // cached and only rebuilt when one of those changes: while training it recomputes
+    // every step; when paused, repaints reuse the bitmap. Pixel-identical.
+    const bg = parseColor(colors.bg);
+    const cls1 = parseColor(colors.accent);     // label 1
+    const cls0 = parseColor(colors.blue);       // label 0
+    const fieldKey = st.ver + '|' + eps + '|' + plotW + 'x' + plotH + '|' + colors.bg + '|' + colors.accent + '|' + colors.blue;
+    if (st._fieldKey !== fieldKey) {
+      const img = st.img || (st.img = ctx.createImageData(HM, HM));
+      for (let py = 0; py < HM; py++) {
+        const yw = wy(y0 + (py / (HM - 1)) * plotH);
+        for (let px = 0; px < HM; px++) {
+          const xw = wx(x0 + (px / (HM - 1)) * plotW);
+          const v = predict(xw, yw);
+          const t = Math.min(1, Math.abs(Math.tanh(v * 0.9)));
+          const tgt = v >= 0 ? cls1 : cls0;
+          const o = (py * HM + px) * 4;
+          img.data[o] = Math.round(bg[0] + (tgt[0] - bg[0]) * t * 0.8);
+          img.data[o + 1] = Math.round(bg[1] + (tgt[1] - bg[1]) * t * 0.8);
+          img.data[o + 2] = Math.round(bg[2] + (tgt[2] - bg[2]) * t * 0.8);
+          img.data[o + 3] = 255;
+        }
+      }
+      const off = st.off; off.width = HM; off.height = HM;
+      off.getContext('2d').putImageData(img, 0, 0);
+      st._fieldKey = fieldKey;
+    }
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(st.off, x0, y0, plotW, plotH);
+    ctx.strokeStyle = colors.border; ctx.lineWidth = 1; ctx.strokeRect(x0 + 0.5, y0 + 0.5, plotW - 1, plotH - 1);
+
+    // ── data points ──
+    for (let i = 0; i < st.N; i++) {
+      const c = st.data.lab[i] ? colors.accent : colors.blue;
+      ctx.fillStyle = c; ctx.globalAlpha = 0.85;
+      ctx.beginPath(); ctx.arc(sx(st.data.X[i * 2]), sy(st.data.X[i * 2 + 1]), 2.6, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // ── prototypes (kernel centres), coloured by the class they vote for ──
+    for (let k = 0; k < st.K; k++) {
+      const px = sx(st.W.d[k * 2]), py = sy(st.W.d[k * 2 + 1]);
+      const a = st.A.d[k];
+      const c = a >= 0 ? colors.accent : colors.blue;
+      const rad = 3.5 + Math.min(6, Math.abs(a) * 6);
+      ctx.beginPath(); ctx.arc(px, py, rad, 0, Math.PI * 2);
+      ctx.fillStyle = c; ctx.globalAlpha = 0.9; ctx.fill();
+      ctx.globalAlpha = 1; ctx.lineWidth = 1.6; ctx.strokeStyle = colors.bg; ctx.stroke();
+    }
+
+    ctx.fillStyle = colors.muted; ctx.font = '11px ui-monospace, monospace';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+    ctx.fillText('● data · ◯ center (size: readout weight)', x0, H - 5);
+
+    api.readout('rd', `step ${api.iter} · loss ${st.loss.toFixed(3)} · train acc ${(st.acc * 100).toFixed(1)}% · ${st.K} prototypes · nanograd`);
+  },
+});
+</script>

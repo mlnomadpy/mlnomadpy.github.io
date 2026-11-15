@@ -1,0 +1,112 @@
+---
+interface Props {
+  caption?: string;
+  height?: number;
+}
+const { caption, height = 430 } = Astro.props;
+---
+<figure data-min-width="800" class="viz inductionpattern" data-caption={caption} data-height={height} tabindex="0">
+  <div class="viz-cell"></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+import { defineViz } from './engine/vizkit.js';
+import { panel, text, PALETTE, parseColor } from './engine/draw.js';
+import { np, nn, withJax, drawJaxLoading } from './engine/jax.js';
+
+// A directed relation a bilinear B can encode: the induction head. The query reads
+// the CURRENT token's identity; the key reads each position's PREVIOUS token. So
+// position i attends to positions j whose predecessor equals tokenᵢ, i.e. the token
+// that followed an earlier occurrence of the current token, and copies it as the
+// prediction of tokenᵢ₊₁. The score Q Kᵀ, the causal mask, and the softmax all run
+// in jax-js. This is the asymmetry of B made concrete: "ask for my own identity,
+// answer with my predecessor's" is not a symmetric similarity.
+const SEQ = ['a', 'b', 'c', 'a', 'b', 'c', 'a', 'b'];
+const VOCAB = ['a', 'b', 'c'];
+const idx = SEQ.map((t) => VOCAB.indexOf(t));
+const onehot = (k) => VOCAB.map((_, v) => (v === k ? 1 : 0));
+
+function attention(tau) {
+  const n = SEQ.length, d = VOCAB.length;
+  const Q = idx.map((k) => onehot(k));                          // query = current-token identity
+  const K = idx.map((k, j) => (j === 0 ? new Array(d).fill(0) : onehot(idx[j - 1]))); // key = previous-token identity
+  const S = np.matmul(np.array(Q), np.swapaxes(np.array(K), 0, 1)).js();   // (n,n) raw scores, jax-js
+  const masked = S.map((row, i) => row.map((v, j) => (j >= 1 && j <= i ? v / tau : -1e9)));
+  const A = nn.softmax(np.array(masked), -1).js();             // causal-masked softmax, jax-js
+  // predicted next token after each query = vote over copied tokens tok_j
+  const pred = A.map((row) => {
+    const v = new Array(VOCAB.length).fill(0);
+    row.forEach((w, j) => { if (w > 1e-6) v[idx[j]] += w; });
+    return v.indexOf(Math.max(...v));
+  });
+  return { A, pred };
+}
+
+defineViz('inductionpattern', {
+  title: 'A bilinear head that implements induction',
+  height: 430,
+  controls: [
+    { type: 'range', name: 'q', label: 'query position', min: 1, max: SEQ.length - 1, step: 1, value: SEQ.length - 1, int: true, reset: false, fmt: v => String(v) },
+    { type: 'range', name: 'tau', label: 'sharpness', min: 0.12, max: 1.0, step: 0.02, value: 0.3, reset: false, fmt: v => v.toFixed(2) },
+    { type: 'readout', name: 'rd' },
+  ],
+  setup(api) { withJax(api); },
+  draw(api) {
+    if (!api.state.jaxReady) return drawJaxLoading(api);
+    const { ctx, colors, size } = api;
+    const box = { x: 6, y: 4, w: size.W - 12, h: size.H - 8 };
+    panel(ctx, box, colors, {});
+    const n = SEQ.length;
+    const { A, pred } = attention(api.get('tau'));
+    const qi = api.get('q');
+
+    // ── sequence strip ──
+    const sw = Math.min(46, (box.w - 24) / n);
+    const sx0 = box.x + 14, sy = box.y + 30;
+    text(ctx, 'sequence (query reads token · key reads previous token)', box.x + 14, box.y + 11, colors, { size: 11.5, weight: '600' });
+    for (let i = 0; i < n; i++) {
+      const x = sx0 + i * sw;
+      ctx.fillStyle = PALETTE[idx[i] % PALETTE.length] + (i === qi ? 'ff' : '55');
+      ctx.fillRect(x, sy, sw - 6, 22);
+      ctx.strokeStyle = i === qi ? colors.fg : colors.border; ctx.lineWidth = i === qi ? 2 : 1; ctx.strokeRect(x + 0.5, sy + 0.5, sw - 7, 21);
+      text(ctx, SEQ[i], x + (sw - 6) / 2, sy + 11, colors, { align: 'center', baseline: 'middle', size: 12, weight: '600', color: colors.fg });
+      text(ctx, String(i), x + (sw - 6) / 2, sy + 28, colors, { align: 'center', size: 8.5, mono: true, color: colors.muted });
+    }
+
+    // ── attention matrix ──
+    const top = sy + 60;
+    const side = Math.min(box.w * 0.52, box.h - (top - box.y) - 40);
+    const ox = box.x + 28, oy = top, cs = side / n;
+    const bg = parseColor(colors.cellBg), hi = parseColor(colors.accent);
+    text(ctx, 'attention  α = softmax(QKᵀ, causal)', ox, top - 13, colors, { size: 11, weight: '600' });
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+      if (j > i || j < 1) { ctx.fillStyle = colors.bg; }
+      else { const t = Math.min(1, A[i][j]); ctx.fillStyle = `rgb(${Math.round(bg[0] + (hi[0] - bg[0]) * t)},${Math.round(bg[1] + (hi[1] - bg[1]) * t)},${Math.round(bg[2] + (hi[2] - bg[2]) * t)})`; }
+      ctx.fillRect(ox + j * cs, oy + i * cs, cs + 0.5, cs + 0.5);
+    }
+    ctx.strokeStyle = colors.fg; ctx.lineWidth = 1.8; ctx.strokeRect(ox - 0.5, oy + qi * cs + 0.5, side + 1, cs);  // selected query row
+    ctx.strokeStyle = colors.border; ctx.lineWidth = 1; ctx.strokeRect(ox + 0.5, oy + 0.5, side, side);
+    text(ctx, 'key j →', ox + side / 2, oy + side + 6, colors, { align: 'center', size: 9.5, mono: true, color: colors.muted });
+    ctx.save(); ctx.translate(ox - 14, oy + side / 2); ctx.rotate(-Math.PI / 2); text(ctx, '← query i', 0, 0, colors, { align: 'center', size: 9.5, mono: true, color: colors.muted }); ctx.restore();
+
+    // ── selected-row distribution + prediction ──
+    const rp = { x: ox + side + 30, y: top, w: box.x + box.w - (ox + side + 30) - 14, h: side };
+    text(ctx, `query ${qi} = “${SEQ[qi]}”`, rp.x, top - 13, colors, { size: 11, weight: '600' });
+    panel(ctx, rp, colors, {});
+    const bh = (rp.h - 30) / n;
+    for (let j = 0; j < n; j++) {
+      const by = rp.y + 8 + j * bh;
+      const w = (j >= 1 && j <= qi) ? A[qi][j] : 0;
+      ctx.fillStyle = colors.border; ctx.fillRect(rp.x + 26, by + 1, rp.w - 36, bh - 3);
+      ctx.fillStyle = PALETTE[idx[j] % PALETTE.length]; ctx.fillRect(rp.x + 26, by + 1, (rp.w - 36) * w, bh - 3);
+      text(ctx, SEQ[j] + j, rp.x + 4, by + bh / 2, colors, { baseline: 'middle', size: 9, mono: true, color: colors.muted });
+    }
+    text(ctx, `predicts “${VOCAB[pred[qi]]}”`, rp.x + rp.w / 2, rp.y + rp.h - 12, colors, { align: 'center', size: 11, weight: '700', color: colors.accent });
+
+    text(ctx, 'Previous-token keys produce the induction stripe below the diagonal.',
+      box.x + 14, box.y + box.h - 14, colors, { size: 10, mono: true, color: colors.muted });
+    api.readout('rd', `position ${qi} “${SEQ[qi]}” → predict “${VOCAB[pred[qi]]}” · live`);
+  },
+});
+</script>
